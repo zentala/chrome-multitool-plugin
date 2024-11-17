@@ -1,0 +1,17 @@
+{
+  "manifest_version": 3,
+  "name": "Zentala Chrome Multitool Plugin",
+  "version": "1.0",
+  "description": "Personal browser extension with custom shortcuts, automations, integrations and productivity tools",
+  "permissions": [
+    "activeTab",
+    "storage",
+    "tabs"
+  ],
+  "action": {
+    "default_popup": "popup.html"
+  },
+  "background": {
+    "service_worker": "background.js"
+  }
+} 
