@@ -6,7 +6,18 @@
   "permissions": [
     "activeTab",
     "storage",
-    "tabs"
+    "tabs",
+    "scripting"
+  ],
+  "host_permissions": [
+    "https://allegro.pl/*"
+  ],
+  "content_scripts": [
+    {
+      "matches": ["https://allegro.pl/*"],
+      "js": ["content.js"],
+      "run_at": "document_end"
+    }
   ],
   "action": {
     "default_popup": "popup.html"

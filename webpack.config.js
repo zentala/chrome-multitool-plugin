@@ -6,6 +6,7 @@ module.exports = {
   entry: {
     popup: './src/popup.tsx',
     background: './src/background/background.ts',
+    content: './src/content/allegroInjector.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -15,7 +16,16 @@ module.exports = {
     rules: [
       {
         test: /\.(ts|tsx)$/,
-        use: 'ts-loader',
+        use: [
+          {
+            loader: 'ts-loader',
+            options: {
+              compilerOptions: {
+                noEmit: false,
+              },
+            },
+          },
+        ],
         exclude: /node_modules/,
       },
       {
@@ -27,7 +37,11 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js'],
   },
-  devtool: 'cheap-source-map',
+  devtool: false,
+  mode: 'development',
+  optimization: {
+    minimize: false
+  },
   plugins: [
     new HtmlWebpackPlugin({
       template: './public/popup.html',
