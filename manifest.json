@@ -6,12 +6,25 @@
   "permissions": [
     "activeTab",
     "storage",
-    "tabs"
+    "tabs",
+    "https://fonts.googleapis.com/"
   ],
   "action": {
     "default_popup": "popup.html"
   },
   "background": {
     "service_worker": "background.js"
-  }
+  },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com;",
+    "sandbox": "sandbox allow-scripts; style-src 'self' https://fonts.googleapis.com;"
+  },
+  "content_scripts": [
+    {
+      "matches": ["*://*.allegro.pl/*"],
+      "css": [
+        "https://fonts.googleapis.com/icon?family=Material+Icons"
+      ]
+    }
+  ]
 } 

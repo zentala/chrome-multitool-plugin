@@ -4,8 +4,6 @@ interface DebugLog {
   message: string;
 }
 
-// 1. Użyjmy alertów zamiast console.log
-alert('Start loading!');
 
 // 2. Dodajmy element debugowania do DOM
 function addDebugInfo(text: string): void {
