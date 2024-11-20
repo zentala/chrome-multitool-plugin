@@ -2,14 +2,14 @@ import { logViewer } from './logViewer';
 import { favouritesService } from '../services/favourites.service';
 import { notificationService } from '../services/notification.service';
 
-class AllegroInjector {
+class AllegroCardInjector {
   private favouritesService: typeof favouritesService;
   private notificationService: typeof notificationService;
 
   constructor() {
     this.favouritesService = favouritesService;
     this.notificationService = notificationService;
-    logViewer.log('AllegroInjector: Inicjalizacja dla koszyka Allegro');
+    logViewer.log('AllegroCardInjector: Inicjalizacja dla koszyka Allegro');
     this.init();
   }
 
@@ -28,6 +28,7 @@ class AllegroInjector {
           color: #777;
           vertical-align: middle;
           cursor: pointer;
+          font-size: 28px;
         }
       `;
       document.head.appendChild(style);
@@ -93,4 +94,4 @@ class AllegroInjector {
   }
 }
 
-new AllegroInjector(); 
+new AllegroCardInjector(); 

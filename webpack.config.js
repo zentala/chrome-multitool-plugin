@@ -6,7 +6,9 @@ module.exports = {
   entry: {
     popup: './src/popup.tsx',
     background: './src/background/background.ts',
-    content: './src/content/allegroInjector.ts'
+    allegroSharedInjector: './src/content/allegroSharedInjector.ts',
+    allegroCartPageInjector: './src/content/allegroCartPageInjector.ts',
+    allegroFavouritesPageInjector: './src/content/allegroFavouritesPageInjector.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

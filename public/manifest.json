@@ -14,8 +14,18 @@
   ],
   "content_scripts": [
     {
+      "matches": ["https://allegro.pl/koszyk"],
+      "js": ["allegroCartPageInjector.js"],
+      "run_at": "document_end"
+    },
+    { 
+      "matches": ["https://allegro.pl/ulubione"],
+      "js": ["allegroFavouritesPageInjector.js"],
+      "run_at": "document_end"
+    },
+    {
       "matches": ["https://allegro.pl/*"],
-      "js": ["content.js"],
+      "js": ["allegroSharedInjector.js"],
       "run_at": "document_end"
     }
   ],
