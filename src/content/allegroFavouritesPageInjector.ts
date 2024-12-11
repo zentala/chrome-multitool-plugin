@@ -40,18 +40,26 @@ class AllegroFavouritesPageInjector {
       const favourites = await storageService.getAllFavourites();
       logViewer.log(`Pobrano ${favourites.length} ulubionych produktów`);
 
+      // Przekształć AllegroFavourite[] na FavouriteItem[]
+      const favouriteItems = favourites.map(item => ({
+        id: item.id,
+        title: item.name || 'Brak tytułu',
+        imageUrl: item.thumbnailUrl || '',
+        price: parseFloat(item.price) || 0,
+        url: item.url || '',
+      }));
+
       // Przygotuj kontener dla React
       const root = document.createElement('div');
       root.className = 'allegro-favourites-root';
       container.replaceWith(root);
 
-      // Renderuj komponent React
+      // Renderuj komponent React z przekształconymi danymi
       createRoot(root).render(
         React.createElement(FavouritesWrapper, {
-          favourites: favourites,
+          favourites: favouriteItems,
           onRemove: async (id: string) => {
             await storageService.removeFromFavourites(id);
-            // Odśwież widok po usunięciu
             this.renderFavouritesContent(root);
           }
         })

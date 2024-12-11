@@ -5,4 +5,5 @@ export interface Product {
   thumbnailUrl: string;
   url: string;
   addedAt: string;
+  category: string;
 } 

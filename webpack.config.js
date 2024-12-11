@@ -5,10 +5,7 @@ const CopyPlugin = require('copy-webpack-plugin');
 module.exports = {
   entry: {
     popup: './src/popup.tsx',
-    background: './src/background/background.ts',
-    allegroSharedInjector: './src/content/allegroSharedInjector.ts',
-    allegroCartPageInjector: './src/content/allegroCartPageInjector.ts',
-    allegroFavouritesPageInjector: './src/content/allegroFavouritesPageInjector.ts'
+    bookmarkManager: './src/bookmarkManager.tsx'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -49,6 +46,11 @@ module.exports = {
       template: './public/popup.html',
       filename: 'popup.html',
       chunks: ['popup'],
+    }),
+    new HtmlWebpackPlugin({
+      template: './public/bookmarkManager.html',
+      filename: 'bookmarkManager.html',
+      chunks: ['bookmarkManager'],
     }),
     new CopyPlugin({
       patterns: [
