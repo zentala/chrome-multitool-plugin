@@ -1,13 +1,19 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
+import { render } from 'react-dom';
+import { ThemeProvider } from '@material-ui/core/styles';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import { theme } from './theme';
 import { BookmarkManagerApp } from './components/BookmarkManagerApp';
 
-const container = document.getElementById('bookmark-manager-root');
+const container = document.getElementById('root');
 if (container) {
-  const root = createRoot(container);
-  root.render(
+  render(
     <React.StrictMode>
-      <BookmarkManagerApp />
-    </React.StrictMode>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <BookmarkManagerApp />
+      </ThemeProvider>
+    </React.StrictMode>,
+    container
   );
 } 

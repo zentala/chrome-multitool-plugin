@@ -1,4 +1,4 @@
-import React, { useState, useEffect, ChangeEvent, useRef } from 'react';
+import React, { useState, useEffect, ChangeEvent } from 'react';
 import { 
   makeStyles,
   AppBar,
@@ -87,10 +87,6 @@ export const BookmarkManagerApp: React.FC = () => {
   const [viewMode, setViewMode] = useState<'tree' | 'json'>('tree');
   const [isLoading, setIsLoading] = useState(true);
 
-  const bookmarkLinksRef = useRef<{ [key: string]: HTMLAnchorElement }>({});
-  const treeViewRef = useRef<HTMLDivElement>(null);
-  const viewButtonsRef = useRef<{ [key: string]: HTMLButtonElement }>({});
-
   useEffect(() => {
     let isSubscribed = true;
 
@@ -131,25 +127,6 @@ export const BookmarkManagerApp: React.FC = () => {
     console.log('AKTUALNY STAN ZAKŁADEK:', bookmarks);
   }, [bookmarks]);
 
-  useEffect(() => {
-    const handleBookmarkClick = (url: string) => {
-      chrome.tabs.create({ url });
-    };
-
-    Object.entries(bookmarkLinksRef.current).forEach(([url, element]) => {
-      element.addEventListener('click', (e) => {
-        e.preventDefault();
-        handleBookmarkClick(url);
-      });
-    });
-
-    return () => {
-      Object.entries(bookmarkLinksRef.current).forEach(([_, element]) => {
-        element.removeEventListener('click', () => {});
-      });
-    };
-  }, [bookmarkLinksRef.current]);
-
   const enrichBookmarksWithExtendedData = async (
     nodes: chrome.bookmarks.BookmarkTreeNode[] | undefined
   ): Promise<BookmarkEntity[]> => {
@@ -186,45 +163,15 @@ export const BookmarkManagerApp: React.FC = () => {
     return enrichedNodes;
   };
 
-  const handleViewModeChange = (mode: 'tree' | 'json') => {
-    console.log('Zmiana trybu widoku na:', mode);
-    setViewMode(mode);
+  const handleViewModeChange = (
+    event: React.MouseEvent<HTMLElement>,
+    newMode: 'tree' | 'json' | null
+  ) => {
+    if (newMode) {
+      console.log('Zmiana trybu widoku na:', newMode);
+      setViewMode(newMode);
+    }
   };
-
-  useEffect(() => {
-    Object.entries(viewButtonsRef.current).forEach(([mode, button]) => {
-      button.addEventListener('click', () => handleViewModeChange(mode as 'tree' | 'json'));
-    });
-
-    return () => {
-      Object.entries(viewButtonsRef.current).forEach(([_, button]) => {
-        button.removeEventListener('click', () => {});
-      });
-    };
-  }, []);
-
-  useEffect(() => {
-    const treeView = treeViewRef.current;
-    if (!treeView) return;
-
-    const handleNodeToggle = (nodeId: string) => {
-      console.log('Przełączono węzeł:', nodeId);
-    };
-
-    const treeItems = treeView.getElementsByClassName('MuiTreeItem-root');
-    Array.from(treeItems).forEach((item) => {
-      item.addEventListener('click', () => {
-        const nodeId = item.getAttribute('data-nodeid');
-        if (nodeId) handleNodeToggle(nodeId);
-      });
-    });
-
-    return () => {
-      Array.from(treeItems).forEach((item) => {
-        item.removeEventListener('click', () => {});
-      });
-    };
-  }, [bookmarks]);
 
   const renderBookmarkTree = (
     bookmark: BookmarkEntity,
@@ -248,12 +195,10 @@ export const BookmarkManagerApp: React.FC = () => {
           <span>{bookmark.title || 'Folder'}</span>
         ) : (
           <a 
-            ref={(el) => {
-              if (el && bookmark.url) {
-                bookmarkLinksRef.current[bookmark.url] = el;
-              }
-            }}
             href={bookmark.url}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             style={{ 
               color: 'inherit', 
               textDecoration: 'none'
@@ -314,22 +259,13 @@ export const BookmarkManagerApp: React.FC = () => {
             <ToggleButtonGroup
               value={viewMode}
               exclusive
+              onChange={handleViewModeChange}
               aria-label="view mode"
             >
-              <ToggleButton 
-                value="tree"
-                ref={(el) => {
-                  if (el) viewButtonsRef.current['tree'] = el;
-                }}
-              >
+              <ToggleButton value="tree">
                 Tree ({bookmarks?.length || 0})
               </ToggleButton>
-              <ToggleButton 
-                value="json"
-                ref={(el) => {
-                  if (el) viewButtonsRef.current['json'] = el;
-                }}
-              >
+              <ToggleButton value="json">
                 JSON
               </ToggleButton>
             </ToggleButtonGroup>
@@ -341,11 +277,13 @@ export const BookmarkManagerApp: React.FC = () => {
             </div>
           ) : viewMode === 'tree' ? (
             <TreeView
-              ref={treeViewRef}
               className={classes.treeView}
               defaultCollapseIcon={<ExpandMoreIcon />}
               defaultExpandIcon={<ChevronRightIcon />}
               defaultExpanded={[]}
+              onNodeToggle={(event: ChangeEvent<{}>, nodeIds: string[]) => {
+                console.log('Przełączono węzeł:', nodeIds);
+              }}
             >
               {bookmarks.map((bookmark) => renderBookmarkTree(bookmark))}
             </TreeView>

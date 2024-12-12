@@ -1,37 +1,19 @@
 import React from 'react';
-import { createRoot } from 'react-dom/client';
-import './styles/main.scss';
-
-const Popup: React.FC = () => {
-  const openBookmarkManager = () => {
-    chrome.tabs.create({
-      url: chrome.runtime.getURL('bookmarkManager.html')
-    });
-  };
-
-  return (
-    <div className="popup">
-      <h1>Zentala Chrome Multitool</h1>
-      <div>Custom shortcuts, automations, integrations and productivity tools</div>
-      <div className="menu">
-        <button 
-          className="menu-item"
-          onClick={openBookmarkManager}
-        >
-          <span className="material-icons">bookmarks</span>
-          Bookmark Manager
-        </button>
-      </div>
-    </div>
-  );
-};
+import { render } from 'react-dom';
+import { ThemeProvider } from '@material-ui/core/styles';
+import CssBaseline from '@material-ui/core/CssBaseline';
+import { theme } from './theme';
+import { PopupApp } from './components/PopupApp';
 
 const container = document.getElementById('root');
 if (container) {
-  const root = createRoot(container);
-  root.render(
+  render(
     <React.StrictMode>
-      <Popup />
-    </React.StrictMode>
+      <ThemeProvider theme={theme}>
+        <CssBaseline />
+        <PopupApp />
+      </ThemeProvider>
+    </React.StrictMode>,
+    container
   );
 }

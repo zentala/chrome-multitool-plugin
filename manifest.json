@@ -5,6 +5,8 @@
   "description": "Personal browser extension with custom shortcuts, automations, integrations and productivity tools",
   "permissions": [
     "activeTab",
+    "bookmarks",
+    "scripting",
     "storage",
     "tabs",
     "https://fonts.googleapis.com/"
@@ -15,9 +17,13 @@
   "background": {
     "service_worker": "background.js"
   },
+  "web_accessible_resources": [{
+    "resources": ["bookmarkManager.html"],
+    "matches": ["<all_urls>"]
+  }],
   "content_security_policy": {
-    "extension_pages": "script-src 'self'; object-src 'self'; style-src 'self' https://fonts.googleapis.com;",
-    "sandbox": "sandbox allow-scripts; style-src 'self' https://fonts.googleapis.com;"
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval' 'unsafe-inline' 'unsafe-eval'; object-src 'self'; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;",
+    "sandbox": "sandbox allow-scripts; style-src 'self' https://fonts.googleapis.com; font-src https://fonts.gstatic.com;"
   },
   "content_scripts": [
     {
