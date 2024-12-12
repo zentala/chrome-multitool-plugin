@@ -9,11 +9,13 @@ import {
   CircularProgress,
   ToggleButton, 
   ToggleButtonGroup,
-  IconButton
+  IconButton,
+  Box
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import EditIcon from '@mui/icons-material/Edit';
+import SettingsIcon from '@mui/icons-material/Settings';
 import { BookmarkEntity, FolderEntity } from '../types/bookmarks.types';
 import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
 import { bookmarkExtensionService } from '../services';
@@ -22,6 +24,9 @@ import { makeStyles } from '@mui/styles';
 import { TreeView, TreeItem } from '@mui/x-tree-view';
 import { EditDataDialog } from './EditDataDialog';
 import { localStorageService } from '../services/localStorage.service';
+import { BookmarkChat } from './BookmarkChat';
+import { SettingsDialog } from './SettingsDialog';
+import { BookmarksTree } from './BookmarksTree';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -96,10 +101,11 @@ export const BookmarkManagerApp: React.FC = () => {
 
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<{
-    id: string;
+    bookmark: BookmarkEntity;
     isFolder: boolean;
-    data: any;
   } | null>(null);
+
+  const [settingsOpen, setSettingsOpen] = useState(false);
 
   const fetchBookmarksWithExtendedData = async () => {
     try {
@@ -233,41 +239,28 @@ export const BookmarkManagerApp: React.FC = () => {
     };
   }, [bookmarks]);
 
-  const handleEditClick = async (bookmark: BookmarkEntity, isFolder: boolean) => {
-    const data = isFolder 
-      ? await localStorageService.getFolderData(bookmark.id)
-      : await localStorageService.getBookmarkData(bookmark.id);
-      
-    setEditingItem({
-      id: bookmark.id,
-      isFolder,
-      data: data || {}
-    });
+  const handleEditClick = (bookmark: BookmarkEntity, isFolder: boolean) => {
+    setEditingItem({ bookmark, isFolder });
     setEditDialogOpen(true);
   };
 
   const handleSaveExtendedData = async (data: any) => {
     if (!editingItem) return;
-    console.log('Dane do zapisu:', data);
     
     try {
       if (editingItem.isFolder) {
-        await localStorageService.saveFolderData(editingItem.id, data);
-        setBookmarks(prevBookmarks => 
-          updateBookmarkInTree(prevBookmarks, editingItem.id, {
-            ...data,
-            isFolder: true
-          })
-        );
+        await localStorageService.saveFolderData(editingItem.bookmark.id, data);
       } else {
-        await localStorageService.saveBookmarkData(editingItem.id, data);
-        setBookmarks(prevBookmarks => 
-          updateBookmarkInTree(prevBookmarks, editingItem.id, {
-            ...data,
-            isFolder: false
-          })
-        );
+        await localStorageService.saveBookmarkData(editingItem.bookmark.id, data);
       }
+      
+      // Odśwież dane zakładek
+      setBookmarks(prevBookmarks => 
+        updateBookmarkInTree(prevBookmarks, editingItem.bookmark.id, {
+          ...data,
+          isFolder: editingItem.isFolder
+        })
+      );
       setEditDialogOpen(false);
     } catch (error) {
       console.error('Błąd podczas zapisywania:', error);
@@ -431,71 +424,79 @@ export const BookmarkManagerApp: React.FC = () => {
     }, 0);
   };
 
+  const handleChatCommand = (command: string) => {
+    const [cmd, ...args] = command.slice(1).split(' ');
+    
+    switch (cmd) {
+      case 'search':
+        // Implementacja wyszukiwania
+        break;
+        
+      case 'tag':
+        // Implementacja sugestii tagów
+        break;
+        
+      case 'organize':
+        // Implementacja reorganizacji
+        break;
+        
+      default:
+        console.warn('Nieznana komenda:', cmd);
+    }
+  };
+
   return (
     <div className={classes.root}>
-                  
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6">
+          <Typography variant="h6" sx={{ flexGrow: 1 }}>
             Menedżer Zakładek
           </Typography>
+          <IconButton color="inherit" onClick={() => setSettingsOpen(true)}>
+            <SettingsIcon />
+          </IconButton>
         </Toolbar>
       </AppBar>
 
       <Container className={classes.container}>
-        <Paper className={classes.paper}>
-          <div className={classes.viewControls}>
-            <ToggleButtonGroup
-              value={viewMode}
-              exclusive
-              aria-label="view mode"
-            >
-              <ToggleButton 
-                value="tree"
-                ref={(el) => {
-                  if (el) viewButtonsRef.current['tree'] = el;
-                }}
-              >
-                Tree ({bookmarks?.length || 0})
-              </ToggleButton>
-              <ToggleButton 
-                value="json"
-                ref={(el) => {
-                  if (el) viewButtonsRef.current['json'] = el;
-                }}
-              >
-                JSON
-              </ToggleButton>
-            </ToggleButtonGroup>
-          </div>
-
-          {isLoading ? (
-            <div className={classes.loaderContainer}>
-              <CircularProgress />
-            </div>
-          ) : viewMode === 'tree' ? (
-            <TreeView
-              ref={treeViewRef}
-              className={classes.treeView}
-              defaultExpandIcon={<ChevronRightIcon />}
-              defaultCollapseIcon={<ExpandMoreIcon />}
-            >
-              {bookmarks.map((bookmark) => renderBookmarkTree(bookmark))}
-            </TreeView>
-          ) : (
-            <pre className={classes.jsonView}>
-              {JSON.stringify(bookmarks, null, 2)}
-            </pre>
-          )}
-        </Paper>
+        <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 120px)' }}>
+          <BookmarkChat 
+            bookmarks={bookmarks}
+            onCommandReceived={(command) => {
+              // Obsługa komend
+              console.log('Received command:', command);
+            }}
+          />
+          <Paper className={classes.paper} sx={{ flexGrow: 1 }}>
+            {viewMode === 'tree' ? (
+              <BookmarksTree 
+                bookmarks={bookmarks} 
+                onEditClick={handleEditClick}
+                bookmarkLinksRef={bookmarkLinksRef}
+              />
+            ) : (
+              <pre className={classes.jsonView}>
+                {JSON.stringify(bookmarks, null, 2)}
+              </pre>
+            )}
+          </Paper>
+        </Box>
       </Container>
-      <EditDataDialog
-        open={editDialogOpen}
-        onClose={() => setEditDialogOpen(false)}
-        onSave={handleSaveExtendedData}
-        initialData={editingItem?.data || {}}
-        isFolder={editingItem?.isFolder || false}
+
+      <SettingsDialog 
+        open={settingsOpen}
+        onClose={() => setSettingsOpen(false)}
       />
+
+      {editingItem && (
+        <EditDataDialog
+          open={editDialogOpen}
+          onClose={() => setEditDialogOpen(false)}
+          onSave={handleSaveExtendedData}
+          initialData={editingItem.bookmark.extended || {}}
+          isFolder={editingItem.isFolder}
+        />
+      )}
     </div>
   );
 }; 

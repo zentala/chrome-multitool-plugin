@@ -1,4 +1,10 @@
-import { BookmarkExtendedData, FolderExtendedData } from './storage.types';
+import { FolderExtendedData } from './storage.types';
+
+export interface BookmarkExtendedData {
+  description?: string;
+  tags?: string[];
+  lastModified?: number;
+}
 
 export interface BookmarkEntity extends chrome.bookmarks.BookmarkTreeNode {
   children?: BookmarkEntity[];
@@ -9,6 +15,7 @@ export interface FolderEntity extends BookmarkEntity {
   url?: undefined;
   extended?: FolderExtendedData | null;
 }
+
 
 // xport interface ExtendedBookmarkData {
 //   id: string;
