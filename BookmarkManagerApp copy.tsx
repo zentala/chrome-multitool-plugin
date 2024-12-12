@@ -94,7 +94,7 @@ export const BookmarkManagerApp: React.FC = () => {
       try {
         setIsLoading(true);
         const tree = await chrome.bookmarks.getTree();
-        console.log('SUROWE DANE Z CHROME:', tree);
+        // console.log('SUROWE DANE Z CHROME:', tree);
         
         if (!isSubscribed) return;
 
@@ -118,14 +118,14 @@ export const BookmarkManagerApp: React.FC = () => {
     };
   }, []);
 
-  useEffect(() => {
-    console.log('AKTUALNY STAN:', bookmarks);
-    console.log('AKTUALNY TRYB:', viewMode);
-  }, [bookmarks, viewMode]);
+  // useEffect(() => {
+  //   console.log('AKTUALNY STAN:', bookmarks);
+  //   console.log('AKTUALNY TRYB:', viewMode);
+  // }, [bookmarks, viewMode]);
 
-  useEffect(() => {
-    console.log('AKTUALNY STAN ZAKŁADEK:', bookmarks);
-  }, [bookmarks]);
+  // useEffect(() => {
+  //   console.log('AKTUALNY STAN ZAKŁADEK:', bookmarks);
+  // }, [bookmarks]);
 
   const enrichBookmarksWithExtendedData = async (
     nodes: chrome.bookmarks.BookmarkTreeNode[] | undefined
@@ -168,7 +168,7 @@ export const BookmarkManagerApp: React.FC = () => {
     newMode: 'tree' | 'json' | null
   ) => {
     if (newMode) {
-      console.log('Zmiana trybu widoku na:', newMode);
+      // console.log('Zmiana trybu widoku na:', newMode);
       setViewMode(newMode);
     }
   };
@@ -281,9 +281,9 @@ export const BookmarkManagerApp: React.FC = () => {
               defaultCollapseIcon={<ExpandMoreIcon />}
               defaultExpandIcon={<ChevronRightIcon />}
               defaultExpanded={[]}
-              onNodeToggle={(event: ChangeEvent<{}>, nodeIds: string[]) => {
-                console.log('Przełączono węzeł:', nodeIds);
-              }}
+              // onNodeToggle={(event: ChangeEvent<{}>, nodeIds: string[]) => {
+              //   console.log('Przełączono węzeł:', nodeIds);
+              // }}
             >
               {bookmarks.map((bookmark) => renderBookmarkTree(bookmark))}
             </TreeView>

@@ -8,16 +8,20 @@ import {
   Paper,
   CircularProgress,
   ToggleButton, 
-  ToggleButtonGroup
+  ToggleButtonGroup,
+  IconButton
 } from '@mui/material';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
+import EditIcon from '@mui/icons-material/Edit';
 import { BookmarkEntity, FolderEntity } from '../types/bookmarks.types';
-import { bookmarkExtensionService } from '../services/bookmarkExtension.service';
-import TestToggleButton from './TestToggleButton';
+import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
+import { bookmarkExtensionService } from '../services';
 import { Theme } from '@mui/material/styles';
 import { makeStyles } from '@mui/styles';
 import { TreeView, TreeItem } from '@mui/x-tree-view';
+import { EditDataDialog } from './EditDataDialog';
+import { localStorageService } from '../services/localStorage.service';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -90,45 +94,54 @@ export const BookmarkManagerApp: React.FC = () => {
   const treeViewRef = useRef<HTMLUListElement>(null);
   const viewButtonsRef = useRef<{ [key: string]: HTMLButtonElement }>({});
 
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingItem, setEditingItem] = useState<{
+    id: string;
+    isFolder: boolean;
+    data: any;
+  } | null>(null);
+
+  const fetchBookmarksWithExtendedData = async () => {
+    try {
+      setIsLoading(true);
+      const tree = await chrome.bookmarks.getTree();
+      // console.log('SUROWE DANE Z CHROME:', tree);
+      
+      if (tree[0].children && tree[0].children.length > 0) {
+        const enrichedTree = await enrichBookmarksWithExtendedData(tree[0].children);
+        setBookmarks(enrichedTree);
+      } else {
+        setBookmarks([]);
+      }
+      setIsLoading(false);
+    } catch (error) {
+      console.error('Błąd:', error);
+      setIsLoading(false);
+    }
+  };
+
   useEffect(() => {
     let isSubscribed = true;
 
-    const fetchBookmarksWithExtendedData = async () => {
-      try {
-        setIsLoading(true);
-        const tree = await chrome.bookmarks.getTree();
-        console.log('SUROWE DANE Z CHROME:', tree);
-        
-        if (!isSubscribed) return;
-
-        if (tree[0].children && tree[0].children.length > 0) {
-          const enrichedTree = await enrichBookmarksWithExtendedData(tree[0].children);
-          setBookmarks(enrichedTree);
-        } else {
-          setBookmarks([]);
-        }
-        setIsLoading(false);
-      } catch (error) {
-        console.error('Błąd:', error);
-        setIsLoading(false);
-      }
+    const initializeBookmarks = async () => {
+      await fetchBookmarksWithExtendedData();
     };
 
-    fetchBookmarksWithExtendedData();
+    initializeBookmarks();
     
     return () => {
       isSubscribed = false;
     };
   }, []);
 
-  useEffect(() => {
-    console.log('AKTUALNY STAN:', bookmarks);
-    console.log('AKTUALNY TRYB:', viewMode);
-  }, [bookmarks, viewMode]);
+  // useEffect(() => {
+  //   console.log('AKTUALNY STAN:', bookmarks);
+  //   console.log('AKTUALNY TRYB:', viewMode);
+  // }, [bookmarks, viewMode]);
 
-  useEffect(() => {
-    console.log('AKTUALNY STAN ZAKŁADEK:', bookmarks);
-  }, [bookmarks]);
+  // useEffect(() => {
+  //   console.log('AKTUALNY STAN ZAKŁADEK:', bookmarks);
+  // }, [bookmarks]);
 
   useEffect(() => {
     const handleBookmarkClick = (url: string) => {
@@ -155,11 +168,6 @@ export const BookmarkManagerApp: React.FC = () => {
     if (!nodes) {
       return [];
     }
-    // console.log('Struktura drzewa:', nodes.map(node => ({
-    //   id: node.id,
-    //   title: node.title,
-    //   childrenCount: node.children ? node.children.length : 0
-    // })));
     
     const enrichedNodes = await Promise.all(
       nodes.map(async (node) => {
@@ -186,7 +194,7 @@ export const BookmarkManagerApp: React.FC = () => {
   };
 
   const handleViewModeChange = (mode: 'tree' | 'json') => {
-    console.log('Zmiana trybu widoku na:', mode);
+    // console.log('Zmiana trybu widoku na:', mode);
     setViewMode(mode);
   };
 
@@ -225,6 +233,69 @@ export const BookmarkManagerApp: React.FC = () => {
     };
   }, [bookmarks]);
 
+  const handleEditClick = async (bookmark: BookmarkEntity, isFolder: boolean) => {
+    const data = isFolder 
+      ? await localStorageService.getFolderData(bookmark.id)
+      : await localStorageService.getBookmarkData(bookmark.id);
+      
+    setEditingItem({
+      id: bookmark.id,
+      isFolder,
+      data: data || {}
+    });
+    setEditDialogOpen(true);
+  };
+
+  const handleSaveExtendedData = async (data: any) => {
+    if (!editingItem) return;
+    console.log('Dane do zapisu:', data);
+    
+    try {
+      if (editingItem.isFolder) {
+        await localStorageService.saveFolderData(editingItem.id, data);
+        setBookmarks(prevBookmarks => 
+          updateBookmarkInTree(prevBookmarks, editingItem.id, {
+            ...data,
+            isFolder: true
+          })
+        );
+      } else {
+        await localStorageService.saveBookmarkData(editingItem.id, data);
+        setBookmarks(prevBookmarks => 
+          updateBookmarkInTree(prevBookmarks, editingItem.id, {
+            ...data,
+            isFolder: false
+          })
+        );
+      }
+      setEditDialogOpen(false);
+    } catch (error) {
+      console.error('Błąd podczas zapisywania:', error);
+    }
+  };
+
+  const updateBookmarkInTree = (
+    bookmarks: BookmarkEntity[],
+    id: string,
+    newData: any
+  ): BookmarkEntity[] => {
+    return bookmarks.map(bookmark => {
+      if (bookmark.id === id) {
+        return {
+          ...bookmark,
+          extended: newData
+        };
+      }
+      if (bookmark.children) {
+        return {
+          ...bookmark,
+          children: updateBookmarkInTree(bookmark.children, id, newData)
+        };
+      }
+      return bookmark;
+    });
+  };
+
   const renderBookmarkTree = (
     bookmark: BookmarkEntity,
     parentPath: string = ''
@@ -233,38 +304,105 @@ export const BookmarkManagerApp: React.FC = () => {
 
     const isFolder = !bookmark.url;
     const nodePath = `${parentPath}/${bookmark.id}`;
+    const extended = bookmark.extended;
 
     const label = (
       <div style={{ 
         display: 'flex', 
-        alignItems: 'center',
+        alignItems: 'flex-start',
+        justifyContent: 'space-between',
+        width: '100%',
         padding: '4px 0',
-        color: isFolder ? 'inherit' : '#1976d2'
       }}>
-        {isFolder ? (
-          <span>{bookmark.title || 'Folder'}</span>
-        ) : (
-          <a 
-            ref={(el) => {
-              if (el && bookmark.url) {
-                bookmarkLinksRef.current[bookmark.url] = el;
-              }
-            }}
-            href={bookmark.url}
-            style={{ 
-              color: 'inherit', 
-              textDecoration: 'none'
-            }}
-            onMouseOver={(e) => {
-              e.currentTarget.style.textDecoration = 'underline';
-            }}
-            onMouseOut={(e) => {
-              e.currentTarget.style.textDecoration = 'none';
-            }}
-          >
-            {bookmark.title || 'Bez tytułu'}
-          </a>
-        )}
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column',
+          flex: 1
+        }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+            {isFolder ? (
+              <span>{bookmark.title || 'Folder'}</span>
+            ) : (
+              <>
+                <a 
+                  ref={(el) => {
+                    if (el && bookmark.url) {
+                      bookmarkLinksRef.current[bookmark.url] = el;
+                    }
+                  }}
+                  href={bookmark.url}
+                  style={{ 
+                    color: 'inherit', 
+                    textDecoration: 'none'
+                  }}
+                  onMouseOver={(e) => {
+                    e.currentTarget.style.textDecoration = 'underline';
+                  }}
+                  onMouseOut={(e) => {
+                    e.currentTarget.style.textDecoration = 'none';
+                  }}
+                >
+                  {bookmark.title || 'Bez tytułu'}
+                </a>
+                {bookmark.url && (
+                  <Typography variant="caption" color="textSecondary">
+                    {bookmark.url}
+                  </Typography>
+                )}
+              </>
+            )}
+          </div>
+          {extended && (
+            <div style={{ 
+              fontSize: '0.85em',
+              color: 'rgba(0, 0, 0, 0.6)',
+              marginTop: '4px'
+            }}>
+              {extended.description && (
+                <div style={{ marginBottom: '2px' }}>
+                  {extended.description}
+                </div>
+              )}
+              {extended.tags && extended.tags.length > 0 && (
+                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                  {extended.tags.map(tag => (
+                    <span
+                      key={tag}
+                      style={{
+                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                        padding: '2px 6px',
+                        borderRadius: '4px',
+                        fontSize: '0.85em'
+                      }}
+                    >
+                      {tag}
+                    </span>
+                  ))}
+                </div>
+              )}
+              {isFolder && (extended as FolderExtendedData).purpose && (
+                <div style={{ fontStyle: 'italic', marginTop: '2px' }}>
+                  Cel: {(extended as FolderExtendedData).purpose}
+                </div>
+              )}
+              {!isFolder && (extended as BookmarkExtendedData).excerpt && (
+                <div style={{ marginTop: '2px' }}>
+                  {(extended as BookmarkExtendedData).excerpt}
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+        <IconButton
+          size="small"
+          onClick={(e) => {
+            e.stopPropagation();
+            handleEditClick(bookmark, isFolder);
+          }}
+          style={{ alignSelf: 'flex-start' }}
+        >
+          <EditIcon fontSize="small" />
+        </IconButton>
       </div>
     );
 
@@ -295,7 +433,6 @@ export const BookmarkManagerApp: React.FC = () => {
 
   return (
     <div className={classes.root}>
-                  <TestToggleButton />
                   
       <AppBar position="static">
         <Toolbar>
@@ -352,6 +489,13 @@ export const BookmarkManagerApp: React.FC = () => {
           )}
         </Paper>
       </Container>
+      <EditDataDialog
+        open={editDialogOpen}
+        onClose={() => setEditDialogOpen(false)}
+        onSave={handleSaveExtendedData}
+        initialData={editingItem?.data || {}}
+        isFolder={editingItem?.isFolder || false}
+      />
     </div>
   );
 }; 
