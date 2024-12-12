@@ -6,9 +6,16 @@ export interface BookmarkExtendedData {
   lastModified?: number;
 }
 
+export interface BookmarkMetadata {
+  folderPath?: string;
+  lastModified?: number;
+  [key: string]: any;
+}
+
 export interface BookmarkEntity extends chrome.bookmarks.BookmarkTreeNode {
   children?: BookmarkEntity[];
   extended?: BookmarkExtendedData | null;
+  metadata?: BookmarkMetadata;
 }
 
 export interface FolderEntity extends BookmarkEntity {
