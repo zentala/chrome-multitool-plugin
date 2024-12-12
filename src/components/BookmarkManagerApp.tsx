@@ -34,6 +34,8 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
   container: {
     marginTop: theme.spacing(4),
+    // i want this containwe to be wider
+    maxWidth: '100%',
   },
   paper: {
     padding: theme.spacing(2),
@@ -458,7 +460,6 @@ export const BookmarkManagerApp: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-      <Container className={classes.container}>
         <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 120px)' }}>
           <BookmarkChat 
             bookmarks={bookmarks}
@@ -481,7 +482,6 @@ export const BookmarkManagerApp: React.FC = () => {
             )}
           </Paper>
         </Box>
-      </Container>
 
       <SettingsDialog 
         open={settingsOpen}

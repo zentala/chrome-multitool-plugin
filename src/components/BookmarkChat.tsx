@@ -16,10 +16,11 @@ import { settingsService } from '../services/settings.service';
 import { BookmarkEntity } from '../types/bookmarks.types';
 import { vectorStoreService } from '../services/vectorStore.service';
 import { EmbeddingsConfirmDialog } from './EmbeddingsConfirmDialog';
+import { SearchResults, SearchResult } from './SearchResults';
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
-  content: string;
+  content: string | React.ReactNode;
   isDebug?: boolean;
   isCollapsible?: boolean;
   isExpanded?: boolean;
@@ -159,44 +160,31 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
     }]);
 
     try {
-      addDebugMessage(`🔍 Wyszukiwanie dla zapytania: "${userMessage}"`);
-      const similarBookmarks = await vectorStoreService.similaritySearch(userMessage);
-      
-      addDebugMessage(`📚 Znalezione zakładki (${similarBookmarks.length}):`);
-      const formattedBookmarks = similarBookmarks.map(doc => ({
-        title: doc.metadata.title,
-        url: doc.metadata.url,
-        description: doc.metadata.description,
-        tags: doc.metadata.tags,
-        folderPath: doc.metadata.folderPath
-      }));
+      // Jeśli to jest komenda wyszukiwania
+      if (userMessage.toLowerCase().includes('znajdz') || userMessage.toLowerCase().includes('szukaj')) {
+        addDebugMessage(`🔍 Wyszukiwanie dla zapytania: "${userMessage}"`);
+        const similarBookmarks = await vectorStoreService.similaritySearch(userMessage);
+        
+        // Dodaj wyniki wyszukiwania jako komponent React
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: <SearchResults results={similarBookmarks as SearchResult[]} />
+        }]);
+      } else {
+        // Standardowa odpowiedź z chata
+        const response = await chatModel.invoke([
+          new SystemMessage(SYSTEM_PROMPT),
+          new HumanMessage(userMessage)
+        ]);
 
-      // Dodaj szczegółowe wyniki jako zwijalną wiadomość
-      setMessages(prev => [...prev, {
-        role: 'system',
-        content: JSON.stringify(formattedBookmarks, null, 2),
-        isDebug: true,
-        isCollapsible: true,
-        isExpanded: false
-      }]);
+        setMessages(prev => [...prev, {
+          role: 'assistant',
+          content: response.content.toString()
+        }]);
 
-      const response = await chatModel.invoke([
-        new SystemMessage(SYSTEM_PROMPT),
-        new HumanMessage(`Zapytanie użytkownika: "${userMessage}"
-
-Znalezione zakładki:
-${JSON.stringify(formattedBookmarks, null, 2)}
-
-Pomóż użytkownikowi znaleźć odpowiednie zakładki lub zaproponuj organizację.`)
-      ]);
-      
-      setMessages(prev => [...prev, {
-        role: 'assistant',
-        content: response.content.toString()
-      }]);
-
-      if (response.content.toString().startsWith('/')) {
-        onCommandReceived?.(response.content.toString());
+        if (response.content.toString().startsWith('/')) {
+          onCommandReceived?.(response.content.toString());
+        }
       }
     } catch (error: any) {
       console.error('Błąd w chacie:', error);
@@ -234,7 +222,7 @@ Pomóż użytkownikowi znaleźć odpowiednie zakładki lub zaproponuj organizacj
       display: 'flex', 
       flexDirection: 'column',
       p: 2,
-      maxWidth: '400px'
+      maxWidth: '800px'
     }}>
       <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
         <Button 
@@ -289,7 +277,7 @@ ${JSON.stringify(debug.folderStructure, null, 2)}
         overflowY: 'auto',
         mb: 2,
         gap: 2,
-        display: 'flex',
+        display: 'flex', 
         flexDirection: 'column'
       }}>
         {messages.map((message, index) => (
@@ -303,7 +291,7 @@ ${JSON.stringify(debug.folderStructure, null, 2)}
                   ? 'primary.main' 
                   : 'grey.100',
               color: message.role === 'user' ? 'white' : 'text.primary',
-              p: 1,
+              p: 2,
               borderRadius: 1,
               maxWidth: '80%',
               fontFamily: message.isDebug ? 'monospace' : 'inherit',
@@ -320,7 +308,7 @@ ${JSON.stringify(debug.folderStructure, null, 2)}
           >
             {message.isCollapsible && !message.isExpanded ? (
               <Typography variant="body2">
-                📋 Kliknij aby zobaczyć szczegóły ({message.content.length} znaków)
+                📋 Kliknij aby zobaczyć szczegóły
               </Typography>
             ) : (
               <Typography 
@@ -361,6 +349,7 @@ ${JSON.stringify(debug.folderStructure, null, 2)}
           {isLoading ? <CircularProgress size={24} /> : <SendIcon />}
         </IconButton>
       </Box>
+
       <EmbeddingsConfirmDialog
         open={confirmDialogData.open}
         bookmarksToProcess={confirmDialogData.bookmarks}
