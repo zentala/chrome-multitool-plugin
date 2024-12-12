@@ -10,7 +10,14 @@ export const theme = createTheme({
     },
   },
   typography: {
-    fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
+    fontFamily: '"IBM Plex Sans", "Roboto", "Helvetica", "Arial", sans-serif',
+    // h5: {
+    //   fontFamily: '"IBM Plex Sans", sans-serif',
+    //   fontWeight: 500,
+    // },
+    // body2: {
+    //   fontFamily: '"IBM Plex Sans", sans-serif',
+    // },
   },
   components: {
     MuiButton: {

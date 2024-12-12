@@ -30,7 +30,10 @@ import { BookmarksTree } from './BookmarksTree';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
-    flexGrow: 1,
+    display: 'flex',
+    flexDirection: 'column',
+    minHeight: '100vh',
+    backgroundColor: '#eee',
   },
   container: {
     marginTop: theme.spacing(4),
@@ -50,7 +53,7 @@ const useStyles = makeStyles((theme: Theme) => ({
     minHeight: '400px',
     flexGrow: 1,
     maxWidth: '100%',
-    overflowY: 'auto',
+    // overflowY: 'auto',
     border: `1px solid ${theme.palette.divider}`,
     borderRadius: theme.shape.borderRadius,
     padding: theme.spacing(2),
@@ -88,6 +91,22 @@ const useStyles = makeStyles((theme: Theme) => ({
     justifyContent: 'center',
     padding: theme.spacing(4),
     minHeight: '400px',
+  },
+  contentContainer: {
+    display: 'flex',
+    gap: theme.spacing(2),
+    flexGrow: 1,
+    padding: theme.spacing(3),
+    height: 'calc(100vh - 64px)', // 64px to domyślna wysokość AppBar
+    overflow: 'hidden' // zapobiega przewijaniu całego kontenera
+  },
+  chatContainer: {
+    width: '50%',
+    overflow: 'visible'
+  },
+  treeContainer: {
+    width: '50%',
+    overflow: 'visible'
   },
 }));
 
@@ -451,8 +470,8 @@ export const BookmarkManagerApp: React.FC = () => {
     <div className={classes.root}>
       <AppBar position="static">
         <Toolbar>
-          <Typography variant="h6" sx={{ flexGrow: 1 }}>
-            Menedżer Zakładek
+          <Typography variant="h6" sx={{ flexGrow: 1, fontWeight: 400 }}>
+            Chat with bookmarks
           </Typography>
           <IconButton color="inherit" onClick={() => setSettingsOpen(true)}>
             <SettingsIcon />
@@ -460,28 +479,31 @@ export const BookmarkManagerApp: React.FC = () => {
         </Toolbar>
       </AppBar>
 
-        <Box sx={{ display: 'flex', gap: 2, height: 'calc(100vh - 120px)' }}>
+      <Box className={classes.contentContainer}>
+        <Box className={classes.chatContainer}>
           <BookmarkChat 
             bookmarks={bookmarks}
             onCommandReceived={(command) => {
-              // Obsługa komend
               console.log('Received command:', command);
             }}
           />
-          <Paper className={classes.paper} sx={{ flexGrow: 1 }}>
-            {viewMode === 'tree' ? (
-              <BookmarksTree 
-                bookmarks={bookmarks} 
-                onEditClick={handleEditClick}
-                bookmarkLinksRef={bookmarkLinksRef}
-              />
-            ) : (
-              <pre className={classes.jsonView}>
-                {JSON.stringify(bookmarks, null, 2)}
-              </pre>
-            )}
-          </Paper>
         </Box>
+        <Paper 
+          className={`${classes.paper} ${classes.treeContainer}`}
+        >
+          {viewMode === 'tree' ? (
+            <BookmarksTree 
+              bookmarks={bookmarks} 
+              onEditClick={handleEditClick}
+              bookmarkLinksRef={bookmarkLinksRef}
+            />
+          ) : (
+            <pre className={classes.jsonView}>
+              {JSON.stringify(bookmarks, null, 2)}
+            </pre>
+          )}
+        </Paper>
+      </Box>
 
       <SettingsDialog 
         open={settingsOpen}

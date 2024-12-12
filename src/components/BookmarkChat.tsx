@@ -17,6 +17,7 @@ import { BookmarkEntity } from '../types/bookmarks.types';
 import { vectorStoreService } from '../services/vectorStore.service';
 import { EmbeddingsConfirmDialog } from './EmbeddingsConfirmDialog';
 import { SearchResults, SearchResult } from './SearchResults';
+import { DebugPanel } from './DebugPanel'
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -222,7 +223,7 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
       display: 'flex', 
       flexDirection: 'column',
       p: 2,
-      maxWidth: '800px'
+      overflow: 'hidden',
     }}>
       <Box sx={{ display: 'flex', gap: 1, mb: 1 }}>
         <Button 
@@ -231,21 +232,7 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
             console.log('Debug info:', debug);
             setMessages(prev => [...prev, {
               role: 'assistant',
-              content: `Informacje debugowania:
-1. Status:
-   - Zainicjalizowana: ${debug.isInitialized}
-   - Provider: ${debug.provider}
-   - Embeddings: ${debug.embeddingsStatus}
-   - VectorStore: ${debug.vectorStoreStatus}
-
-2. Dokumenty:
-   - Liczba: ${debug.documentsCount}
-   - Przykładowe (5):
-     ${JSON.stringify(debug.sampleDocuments, null, 2)}
-
-3. Struktura folderów:
-${JSON.stringify(debug.folderStructure, null, 2)}
-`
+              content: <DebugPanel debugInfo={debug} />
             }]);
           }}
           size="small"
@@ -274,11 +261,12 @@ ${JSON.stringify(debug.folderStructure, null, 2)}
       </Box>
       <Box sx={{ 
         flexGrow: 1, 
-        overflowY: 'auto',
+        overflowY: 'scroll',
         mb: 2,
         gap: 2,
         display: 'flex', 
-        flexDirection: 'column'
+        flexDirection: 'column',
+        maxHeight: 'calc(100% - 100px)',
       }}>
         {messages.map((message, index) => (
           <Box

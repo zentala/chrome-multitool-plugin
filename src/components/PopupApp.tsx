@@ -7,13 +7,12 @@ import {
   ListItemText,
 } from '@mui/material';
 import BookmarksIcon from '@mui/icons-material/Bookmarks';
-import TestToggleButton from './TestToggleButton';
 import { makeStyles } from '@mui/styles';
 import { Theme } from '@mui/material/styles';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
-    minWidth: 300,
+    minWidth: 350,
     padding: theme.spacing(2),
   },
   title: {
@@ -27,9 +26,14 @@ const useStyles = makeStyles((theme: Theme) => ({
     marginTop: theme.spacing(2),
   },
   listItem: {
+    cursor: 'pointer',
     '&:hover': {
       backgroundColor: theme.palette.action.hover,
     },
+  },
+  listItemDisabled: {
+    opacity: 0.5,
+    pointerEvents: 'none',
   },
 }));
 
@@ -48,7 +52,7 @@ export const PopupApp: React.FC = () => {
         Zentala Chrome Multitool
       </Typography>
       <Typography variant="body2" className={classes.subtitle}>
-        Custom shortcuts, automations, integrations and productivity tools
+        Custom integrations and productivity tools.
       </Typography>
       <List className={classes.list}>
         <ListItem 
@@ -61,8 +65,16 @@ export const PopupApp: React.FC = () => {
           </ListItemIcon>
           <ListItemText primary="Bookmark Manager" />
         </ListItem>
+        <ListItem 
+          component="li"
+          className={`${classes.listItem} ${classes.listItemDisabled}`}
+        >
+          <ListItemIcon>
+            <BookmarksIcon />
+          </ListItemIcon>
+          <ListItemText primary="Allegro Favourites" secondary="Coming soon" />
+        </ListItem>
       </List>
-      <TestToggleButton />
     </div>
   );
 }; 
