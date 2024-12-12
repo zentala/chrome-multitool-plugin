@@ -1,4 +1,4 @@
-import { createTheme } from '@material-ui/core/styles';
+import { createTheme } from '@mui/material/styles';
 
 export const theme = createTheme({
   palette: {
@@ -12,10 +12,12 @@ export const theme = createTheme({
   typography: {
     fontFamily: '"Roboto", "Helvetica", "Arial", sans-serif',
   },
-  overrides: {
+  components: {
     MuiButton: {
-      root: {
-        textTransform: 'none',
+      styleOverrides: {
+        root: {
+          textTransform: 'none',
+        },
       },
     },
   },

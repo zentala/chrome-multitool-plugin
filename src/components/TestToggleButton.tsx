@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { ToggleButton, ToggleButtonGroup } from '@material-ui/lab';
-import FormatAlignLeftIcon from '@material-ui/icons/FormatAlignLeft';
-import FormatAlignCenterIcon from '@material-ui/icons/FormatAlignCenter';
-import FormatAlignRightIcon from '@material-ui/icons/FormatAlignRight';
+import { ToggleButton, ToggleButtonGroup } from '@mui/material';
+import FormatAlignLeftIcon from '@mui/icons-material/FormatAlignLeft';
+import FormatAlignCenterIcon from '@mui/icons-material/FormatAlignCenter';
+import FormatAlignRightIcon from '@mui/icons-material/FormatAlignRight';
 
 const TestToggleButton: React.FC = () => {
   const [alignment, setAlignment] = useState('left');

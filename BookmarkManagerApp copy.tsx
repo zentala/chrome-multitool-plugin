@@ -14,8 +14,8 @@ import {
   TreeView,
   TreeItem 
 } from '@material-ui/lab';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { BookmarkEntity, FolderEntity } from '../types/bookmarks.types';
 import { bookmarkExtensionService } from '../services/bookmarkExtension.service';
 import TestToggleButton from './TestToggleButton';

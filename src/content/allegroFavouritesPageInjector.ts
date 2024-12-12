@@ -1,7 +1,7 @@
 import { logViewer } from './logViewer';
 import { storageService } from '../services/storage.service';
 import { FavouritesWrapper } from '../components/FavouritesWrapper';
-import { render } from 'react-dom';
+import { createRoot } from 'react-dom/client';
 import React from 'react';
 
 class AllegroFavouritesPageInjector {
@@ -54,16 +54,16 @@ class AllegroFavouritesPageInjector {
       root.className = 'allegro-favourites-root';
       container.replaceWith(root);
 
-      // Użyj render zamiast createRoot
-      render(
+      // Użyj createRoot zamiast render
+      const reactRoot = createRoot(root);
+      reactRoot.render(
         React.createElement(FavouritesWrapper, {
           favourites: favouriteItems,
           onRemove: async (id: string) => {
             await storageService.removeFromFavourites(id);
             this.renderFavouritesContent(root);
           }
-        }),
-        root
+        })
       );
 
       logViewer.log('Wyrenderowano komponent FavouritesWrapper');

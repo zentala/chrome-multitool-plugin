@@ -1,17 +1,17 @@
 import React from 'react';
 import { 
-  makeStyles,
   Typography,
-  Button,
   List,
   ListItem,
   ListItemIcon,
   ListItemText,
-} from '@material-ui/core';
-import BookmarksIcon from '@material-ui/icons/Bookmarks';
+} from '@mui/material';
+import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import TestToggleButton from './TestToggleButton';
+import { makeStyles } from '@mui/styles';
+import { Theme } from '@mui/material/styles';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     minWidth: 300,
     padding: theme.spacing(2),
@@ -50,10 +50,9 @@ export const PopupApp: React.FC = () => {
       <Typography variant="body2" className={classes.subtitle}>
         Custom shortcuts, automations, integrations and productivity tools
       </Typography>
-      
       <List className={classes.list}>
         <ListItem 
-          button 
+          component="li"
           className={classes.listItem}
           onClick={openBookmarkManager}
         >

@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import {
-  makeStyles,
   TextField,
   Typography,
   Grid,
@@ -9,9 +8,11 @@ import {
   CardContent,
   CardActions,
   Button
-} from '@material-ui/core';
+} from '@mui/material';
+import { makeStyles } from '@mui/styles';
+import { Theme } from '@mui/material/styles';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     padding: theme.spacing(3),
   },
@@ -74,7 +75,7 @@ export const FavouritesWrapper: React.FC<FavouritesWrapperProps> = ({
           variant="outlined"
           label="Szukaj w ulubionych..."
           value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
+          onChange={(e: { target: { value: React.SetStateAction<string>; }; }) => setSearchQuery(e.target.value)}
         />
       </div>
 

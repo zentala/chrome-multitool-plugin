@@ -1,26 +1,25 @@
-import React, { useState, useEffect, ChangeEvent, useRef } from 'react';
+import * as React from 'react';
+import { useState, useEffect, ChangeEvent, useRef } from 'react';
 import { 
-  makeStyles,
   AppBar,
   Toolbar,
   Typography,
   Container,
   Paper,
-  CircularProgress 
-} from '@material-ui/core';
-import { 
+  CircularProgress,
   ToggleButton, 
-  ToggleButtonGroup,
-  TreeView,
-  TreeItem 
-} from '@material-ui/lab';
-import ExpandMoreIcon from '@material-ui/icons/ExpandMore';
-import ChevronRightIcon from '@material-ui/icons/ChevronRight';
+  ToggleButtonGroup
+} from '@mui/material';
+import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
+import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import { BookmarkEntity, FolderEntity } from '../types/bookmarks.types';
 import { bookmarkExtensionService } from '../services/bookmarkExtension.service';
 import TestToggleButton from './TestToggleButton';
+import { Theme } from '@mui/material/styles';
+import { makeStyles } from '@mui/styles';
+import { TreeView, TreeItem } from '@mui/x-tree-view';
 
-const useStyles = makeStyles((theme) => ({
+const useStyles = makeStyles((theme: Theme) => ({
   root: {
     flexGrow: 1,
   },
@@ -88,7 +87,7 @@ export const BookmarkManagerApp: React.FC = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   const bookmarkLinksRef = useRef<{ [key: string]: HTMLAnchorElement }>({});
-  const treeViewRef = useRef<HTMLDivElement>(null);
+  const treeViewRef = useRef<HTMLUListElement>(null);
   const viewButtonsRef = useRef<{ [key: string]: HTMLButtonElement }>({});
 
   useEffect(() => {
@@ -232,8 +231,6 @@ export const BookmarkManagerApp: React.FC = () => {
   ): React.ReactNode => {
     if (!bookmark || !bookmark.id) return null;
 
-    // console.log('Renderowanie węzła:', bookmark);
-
     const isFolder = !bookmark.url;
     const nodePath = `${parentPath}/${bookmark.id}`;
 
@@ -343,9 +340,8 @@ export const BookmarkManagerApp: React.FC = () => {
             <TreeView
               ref={treeViewRef}
               className={classes.treeView}
-              defaultCollapseIcon={<ExpandMoreIcon />}
               defaultExpandIcon={<ChevronRightIcon />}
-              defaultExpanded={[]}
+              defaultCollapseIcon={<ExpandMoreIcon />}
             >
               {bookmarks.map((bookmark) => renderBookmarkTree(bookmark))}
             </TreeView>
