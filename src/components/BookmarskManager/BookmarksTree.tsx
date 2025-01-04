@@ -4,8 +4,8 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { IconButton, Typography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
-import { BookmarkEntity } from '../types/bookmarks.types';
-import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
+import { BookmarkEntity } from '../../types/bookmarks.types';
+import { BookmarkExtendedData, FolderExtendedData } from '../../types/storage.types';
 
 interface BookmarksTreeProps {
   bookmarks: BookmarkEntity[];

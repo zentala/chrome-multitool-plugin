@@ -46,6 +46,12 @@ export const PopupApp: React.FC = () => {
     });
   };
 
+  const openFavouritesAllegro = () => {
+    chrome.tabs.create({
+      url: chrome.runtime.getURL('favouritesAllegro.html')
+    });
+  };
+
   return (
     <div className={classes.root}>
       <Typography variant="h5" component="h1" className={classes.title}>
@@ -67,12 +73,16 @@ export const PopupApp: React.FC = () => {
         </ListItem>
         <ListItem 
           component="li"
-          className={`${classes.listItem} ${classes.listItemDisabled}`}
+          className={classes.listItem}
+          onClick={openFavouritesAllegro}
         >
           <ListItemIcon>
             <BookmarksIcon />
           </ListItemIcon>
-          <ListItemText primary="Allegro Favourites" secondary="Coming soon" />
+          <ListItemText 
+            primary="Allegro Favourites" 
+            secondary="Check your Allegro favourites"
+          />
         </ListItem>
       </List>
     </div>

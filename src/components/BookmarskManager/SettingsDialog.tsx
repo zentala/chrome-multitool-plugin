@@ -19,8 +19,8 @@ import {
 } from '@mui/material';
 import Visibility from '@mui/icons-material/Visibility';
 import VisibilityOff from '@mui/icons-material/VisibilityOff';
-import { settingsService } from '../services/settings.service';
-import { vectorStoreService } from '../services/vectorStore.service';
+import { settingsService } from '../../services/settings.service';
+import { vectorStoreService } from '../../services/vectorStore.service';
 
 interface SettingsDialogProps {
   open: boolean;

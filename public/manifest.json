@@ -13,7 +13,7 @@
     "default_popup": "popup.html"
   },
   "web_accessible_resources": [{
-    "resources": ["bookmarkManager.html", "bookmarkManager.js"],
+    "resources": ["bookmarkManager.html", "bookmarkManager.js", "favouritesAllegro.html", "favouritesAllegro.js"],
     "matches": ["<all_urls>"]
   }]
 }

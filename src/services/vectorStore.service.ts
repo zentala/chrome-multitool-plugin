@@ -21,27 +21,28 @@ interface StoredEmbedding {
 }
 
 interface SearchDocument {
-  pageContent: string;
-  metadata: {
-    bookmarkId: string;
-    title: string;
-    url: string;
-    folderPath?: string;
-    description?: string;
-    tags?: string[];
-    lastModified?: number;
-    [key: string]: any;
-  };
-}
-
-interface KeywordSearchResult {
-  doc: SearchDocument;
-  keywordScore: number;
-  titleScore: number;
-  urlScore: number;
-  contentScore: number;
-  vectorScore?: number;
-}
+    pageContent: string;
+    metadata: {
+      bookmarkId: string;
+      title: string;
+      url: string;
+      folderPath?: string;
+      description?: string;
+      tags?: string[];
+      lastModified?: number;
+      [key: string]: any;
+    };
+  }
+  
+  interface KeywordSearchResult {
+    doc: SearchDocument;
+    keywordScore: number;
+    titleScore: number;
+    urlScore: number;
+    contentScore: number;
+    vectorScore?: number;
+  }
+  
 
 class VectorStoreService {
   private static readonly DB_NAME = 'bookmarks_vectorstore';
@@ -562,126 +563,94 @@ class VectorStoreService {
       const queryKeywords = this.extractKeywordsFromText(query);
       console.log('Słowa kluczowe z zapytania:', queryKeywords);
 
-      // Najpierw znajdź dokumenty po słowach kluczowych
-      const keywordResults = this.documents.map(doc => {
-        const titleScore = this.calculateKeywordMatch(queryKeywords, this.extractKeywordsFromText(doc.metadata.title));
-        const urlScore = this.calculateKeywordMatch(queryKeywords, this.extractKeywordsFromUrl(doc.metadata.url));
-        const contentScore = this.calculateKeywordMatch(queryKeywords, doc.pageContent);
-
-        // Oblicz łączny score dla słów kluczowych
-        const keywordScore = Math.max(
-          titleScore * 1.0,    // Pełne dopasowanie w tytule
-          urlScore * 0.8,      // Prawie pełne dopasowanie w URL
-          contentScore * 0.6    // Dopasowanie w treści
-        );
-
-        return {
-          doc: doc as SearchDocument,
-          keywordScore,
-          titleScore,
-          urlScore,
-          contentScore
-        } as KeywordSearchResult;
-      });
-
-      // Filtruj dokumenty, które mają jakiekolwiek dopasowanie słów kluczowych
-      const keywordMatches = keywordResults.filter(r => r.keywordScore > 0);
-      console.log(`\nZnaleziono ${keywordMatches.length} dopasowań po słowach kluczowych`);
-
-      // Jeśli mamy wystarczająco dużo dopasowań po słowach kluczowych, użyj ich
-      if (keywordMatches.length >= k) {
-        const results = keywordMatches
-          .sort((a, b) => b.keywordScore - a.keywordScore)
-          .slice(0, k);
-
-        // Loguj wyniki
-        console.log('\nZnalezione dokumenty (wyszukiwanie po słowach kluczowych):');
-        results.forEach(({doc, keywordScore, titleScore, urlScore, contentScore}, index) => {
-          console.log(`\n[${index + 1}] Wyniki scoringu:`);
-          console.log(`- Score słów kluczowych:`);
-          console.log(`  • Tytuł: ${titleScore.toFixed(4)}`);
-          console.log(`  • URL: ${urlScore.toFixed(4)}`);
-          console.log(`  • Treść: ${contentScore.toFixed(4)}`);
-          console.log(`  • Łączny: ${keywordScore.toFixed(4)}`);
-          console.log('Tytuł:', doc.metadata.title);
-          console.log('URL:', doc.metadata.url);
-          console.log('Folder:', doc.metadata.folderPath);
-        });
-
-        return results.map(r => r.doc);
-      }
-
-      // Jeśli nie mamy wystarczająco dopasowań po słowach kluczowych,
-      // użyj wyszukiwania wektorowego jako uzupełnienia
-      console.log('\nZa mało dopasowań po słowach kluczowych, używam wyszukiwania wektorowego...');
-      
       // Generuj embedding dla zapytania
+      console.log('Generuję embedding dla zapytania...');
       const queryEmbedding = await this.embeddings.embedQuery(normalizedQuery);
-      const vectorResults = await this.vectorStore.similaritySearchVectorWithScore(
+      console.log('Długość wektora zapytania:', queryEmbedding.length);
+
+      // Wykonaj wyszukiwanie z większą liczbą wyników do filtrowania
+      console.log('\nWykonuję wyszukiwanie wektorowe...');
+      const results = await this.vectorStore.similaritySearchVectorWithScore(
         queryEmbedding,
-        k * 2
+        k * 3 // Pobierz więcej wyników do filtrowania
       );
 
-      // Połącz wyniki z obu metod
-      const combinedResults = [...keywordMatches];
-      
-      // Dodaj wyniki wektorowe, które nie są już w wynikach słów kluczowych
-      for (const [doc, vectorScore] of vectorResults) {
-        if (!combinedResults.some(r => r.doc.metadata.url === doc.metadata.url)) {
-          combinedResults.push({
-            doc: doc as SearchDocument,
-            keywordScore: 0,
-            titleScore: 0,
-            urlScore: 0,
-            contentScore: 0,
-            vectorScore: 1 - vectorScore
-          } as KeywordSearchResult);
-        }
-      }
+      // Filtruj i sortuj wyniki
+      const filteredResults = results
+        .map(([doc, vectorScore]) => {
+          // Przekształć score wektorowy na wartość od 0 do 1 (im bliżej 1 tym lepiej)
+          const normalizedVectorScore = 1 - vectorScore; // Odwracamy score, bo oryginalnie mniejsza wartość = lepsze dopasowanie
 
-      // Sortuj i wybierz najlepsze wyniki
-      const finalResults = combinedResults
-        .sort((a, b) => {
-          const aScore = a.keywordScore || ((a.vectorScore || 0) * 0.5);
-          const bScore = b.keywordScore || ((b.vectorScore || 0) * 0.5);
-          return bScore - aScore;
+          // Oblicz score dla słów kluczowych z różnych pól
+          const titleKeywordScore = this.calculateKeywordMatch(queryKeywords, this.extractKeywordsFromText(doc.metadata.title));
+          const urlKeywordScore = this.calculateKeywordMatch(queryKeywords, this.extractKeywordsFromUrl(doc.metadata.url));
+          const contentKeywordScore = this.calculateKeywordMatch(queryKeywords, doc.pageContent);
+          
+          // Połącz wszystkie score z odpowiednimi wagami
+          const keywordScore = (
+            titleKeywordScore * 0.5 +    // Tytuł ma największą wagę
+            urlKeywordScore * 0.3 +      // URL też jest ważny
+            contentKeywordScore * 0.2     // Reszta treści
+          );
+          
+          // Połącz score wektorowy z keywordowym
+          // Jeśli mamy dobre dopasowanie słów kluczowych, dajemy im większą wagę
+          const keywordWeight = keywordScore > 0.5 ? 0.7 : 0.3;
+          const vectorWeight = 1 - keywordWeight;
+          
+          const combinedScore = (
+            normalizedVectorScore * vectorWeight + 
+            keywordScore * keywordWeight
+          );
+          
+          return {
+            doc,
+            vectorScore: normalizedVectorScore,
+            titleKeywordScore,
+            urlKeywordScore,
+            contentKeywordScore,
+            keywordScore,
+            combinedScore,
+            weights: {
+              keyword: keywordWeight,
+              vector: vectorWeight
+            }
+          };
         })
+        .sort((a, b) => b.combinedScore - a.combinedScore) // Sortuj malejąco po combinedScore
         .slice(0, k);
 
-      // Loguj wyniki
-      console.log('\nZnalezione dokumenty (wyniki połączone):');
-      finalResults.forEach(({doc, keywordScore, titleScore, urlScore, contentScore, vectorScore}, index) => {
+      // Loguj wyniki ze szczegółowymi score
+      console.log('\nZnalezione dokumenty (z score):');
+      filteredResults.forEach(({doc, vectorScore, titleKeywordScore, urlKeywordScore, contentKeywordScore, keywordScore, combinedScore, weights}, index) => {
         console.log(`\n[${index + 1}] Wyniki scoringu:`);
-        if (keywordScore > 0) {
-          console.log(`- Score słów kluczowych:`);
-          console.log(`  • Tytuł: ${titleScore?.toFixed(4) || '0.0000'}`);
-          console.log(`  • URL: ${urlScore?.toFixed(4) || '0.0000'}`);
-          console.log(`  • Treść: ${contentScore?.toFixed(4) || '0.0000'}`);
-          console.log(`  • Łączny: ${keywordScore.toFixed(4)}`);
-        }
-        if (vectorScore) {
-          console.log(`- Score wektorowy: ${vectorScore.toFixed(4)}`);
-        }
+        console.log(`- Score wektorowy (znormalizowany): ${vectorScore.toFixed(4)} (waga: ${weights.vector.toFixed(2)})`);
+        console.log(`- Score słów kluczowych:`);
+        console.log(`  • Tytuł: ${titleKeywordScore.toFixed(4)}`);
+        console.log(`  • URL: ${urlKeywordScore.toFixed(4)}`);
+        console.log(`  • Treść: ${contentKeywordScore.toFixed(4)}`);
+        console.log(`  • Łączny: ${keywordScore.toFixed(4)} (waga: ${weights.keyword.toFixed(2)})`);
+        console.log(`- Score końcowy: ${combinedScore.toFixed(4)}`);
         console.log('Tytuł:', doc.metadata.title);
         console.log('URL:', doc.metadata.url);
         console.log('Folder:', doc.metadata.folderPath);
       });
 
-      return finalResults.map(r => r.doc);
+      // Zwróć tylko dokumenty
+      return filteredResults.map(({doc}) => doc);
     } catch (error) {
       console.error('Błąd podczas wyszukiwania:', error);
       throw error;
     }
   }
 
-  private calculateKeywordMatch(queryKeywords: string, docKeywords: string | undefined): number {
-    if (!queryKeywords || !docKeywords) return 0;
-    
+  private calculateKeywordMatch(queryKeywords: string, docKeywords: string): number {
     const queryWords = new Set(queryKeywords.toLowerCase().split(/\s+/));
     const docWords = new Set(docKeywords.toLowerCase().split(/\s+/));
     
     if (queryWords.size === 0 || docWords.size === 0) return 0;
 
+    let matches = 0;
     let exactMatches = 0;
     let partialMatches = 0;
 

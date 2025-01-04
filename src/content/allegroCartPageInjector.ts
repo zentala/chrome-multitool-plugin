@@ -1,13 +1,11 @@
 import { logViewer } from './logViewer';
-import { favouritesService } from '../services/favourites.service';
 import { notificationService } from '../services/notification.service';
+import useFavourites from '../components/FavouritiesAllegro/hooks/useFavourites';
 
 class AllegroCardInjector {
-  private favouritesService: typeof favouritesService;
   private notificationService: typeof notificationService;
 
   constructor() {
-    this.favouritesService = favouritesService;
     this.notificationService = notificationService;
     logViewer.log('AllegroCardInjector: Inicjalizacja dla koszyka Allegro');
     this.init();
@@ -36,6 +34,8 @@ class AllegroCardInjector {
 
     const allegroRemoveButtonContainers = document.querySelectorAll('._1bwbj._292b3_UJkFo');
     
+    const { addToFavourites } = useFavourites();
+
     allegroRemoveButtonContainers.forEach(container => {
       (container as HTMLElement).style.flexDirection = 'column';
       (container as HTMLElement).style.gap = '8px';
@@ -60,7 +60,7 @@ class AllegroCardInjector {
         allegroFavButton.addEventListener('click', async (e: MouseEvent) => {
           e.preventDefault();
           const target = e.currentTarget as HTMLButtonElement;
-          await this.favouritesService.addToFavourites(target);
+          await addToFavourites(target);
           
           const iconElement = target.querySelector('.material-symbols-outlined');
           if (iconElement) {

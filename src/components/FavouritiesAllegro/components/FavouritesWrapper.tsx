@@ -11,6 +11,7 @@ import {
 } from '@mui/material';
 import { makeStyles } from '@mui/styles';
 import { Theme } from '@mui/material/styles';
+import { AllegroFavourite } from '../types';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -39,16 +40,8 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
-interface FavouriteItem {
-  id: string;
-  title: string;
-  price: number;
-  imageUrl: string;
-  url: string;
-}
-
 interface FavouritesWrapperProps {
-  favourites: FavouriteItem[];
+  favourites: AllegroFavourite[];
   onRemove: (id: string) => Promise<void>;
 }
 
@@ -109,7 +102,7 @@ export const FavouritesWrapper: React.FC<FavouritesWrapperProps> = ({
                 <Button 
                   size="small" 
                   color="secondary"
-                  onClick={() => onRemove(item.id)}
+                  onClick={() => item.id && onRemove(item.id)}
                 >
                   Usuń z ulubionych
                 </Button>

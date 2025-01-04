@@ -10,7 +10,7 @@ import {
   Box,
   Autocomplete
 } from '@mui/material';
-import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
+import { BookmarkExtendedData, FolderExtendedData } from '../../types/storage.types';
 
 interface EditDataDialogProps {
   open: boolean;

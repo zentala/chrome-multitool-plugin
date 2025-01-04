@@ -5,7 +5,8 @@ const CopyPlugin = require('copy-webpack-plugin');
 module.exports = {
   entry: {
     popup: './src/popup.tsx',
-    bookmarkManager: './src/bookmarkManager.tsx'
+    bookmarkManager: './src/bookmarkManager.tsx',
+    favouritesAllegro: './src/favouritesAllegro.tsx'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -67,6 +68,11 @@ module.exports = {
       template: './public/bookmarkManager.html',
       filename: 'bookmarkManager.html',
       chunks: ['bookmarkManager'],
+    }),
+    new HtmlWebpackPlugin({
+      template: './public/favouritesAllegro.html',
+      filename: 'favouritesAllegro.html',
+      chunks: ['favouritesAllegro'],
     }),
     new CopyPlugin({
       patterns: [
