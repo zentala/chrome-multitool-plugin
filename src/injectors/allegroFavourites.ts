@@ -1,4 +1,4 @@
-import { logViewer } from './logViewer';
+import { logViewer } from '../components/Shared/logViewer';
 import { storageService } from '../services/storage.service';
 import { FavouritesWrapper } from '../components/FavouritiesAllegro/components/FavouritesWrapper';
 import { createRoot } from 'react-dom/client';

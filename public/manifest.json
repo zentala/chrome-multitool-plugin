@@ -5,15 +5,58 @@
   "description": "Personal browser extension with custom shortcuts, automations, integrations and productivity tools",
   "permissions": [
     "activeTab",
+    "bookmarks",
+    "scripting",
     "storage",
-    "tabs",
-    "bookmarks"
+    "tabs"
+  ],
+  "host_permissions": [
+    "https://allegro.pl/*"
+  ],
+  "optional_host_permissions": [
+    "https://youtube.com/*",
+    "https://fonts.googleapis.com/",
+    "https://*.openai.com/*",
+    "https://*.anthropic.com/*"
   ],
   "action": {
     "default_popup": "popup.html"
   },
+  "content_security_policy": {
+    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;",
+    "sandbox": "sandbox allow-scripts; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["https://allegro.pl/*"],
+      "js": ["allegroCart.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["https://youtube.com/*"],
+      "js": ["youtube.js"],
+      "run_at": "document_end"
+    },
+    {
+      "matches": ["<all_urls>"],
+      "js": ["global.js"],
+      "run_at": "document_start"
+    }
+  ],
+
+
+  // ** Background working scripts **
+  // "background": {
+  //   "service_worker": "background.js"
+  // },
+  
   "web_accessible_resources": [{
-    "resources": ["bookmarkManager.html", "bookmarkManager.js", "favouritesAllegro.html", "favouritesAllegro.js"],
+    "resources": ["allegroCartPageInjector.js"],
+    "matches": ["<all_urls>"]
+  },
+  {
+    "resources": ["globalInjector.js"],
     "matches": ["<all_urls>"]
   }]
 }

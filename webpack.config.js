@@ -6,7 +6,10 @@ module.exports = {
   entry: {
     popup: './src/popup.tsx',
     bookmarkManager: './src/bookmarkManager.tsx',
-    favouritesAllegro: './src/favouritesAllegro.tsx'
+    favouritesAllegro: './src/favouritesAllegro.tsx',
+    allegroCartPageInjector: './src/injectors/allegroCart.ts',
+    globalInjector: './src/injectors/global.ts',
+    youtube: './src/injectors/youtube.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -78,6 +81,6 @@ module.exports = {
       patterns: [
         { from: "public/manifest.json", to: "manifest.json" },
       ],
-    }),
+    })
   ],
 }; 

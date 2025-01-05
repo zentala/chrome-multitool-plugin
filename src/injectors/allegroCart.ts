@@ -1,6 +1,8 @@
-import { logViewer } from './logViewer';
+import { logViewer } from '../components/Shared/logViewer';
 import { notificationService } from '../services/notification.service';
 import useFavourites from '../components/FavouritiesAllegro/hooks/useFavourites';
+
+console.log('AllegroCartPageInjector script loaded');
 
 class AllegroCardInjector {
   private notificationService: typeof notificationService;

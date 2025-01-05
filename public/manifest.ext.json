@@ -30,9 +30,9 @@
   "content_scripts": [
     {
       "matches": ["*://*.allegro.pl/*"],
-      "css": [
-        "https://fonts.googleapis.com/icon?family=Material+Icons"
-      ]
+      "css": ["https://fonts.googleapis.com/icon?family=Material+Icons"],
+      "js": ["dist/allegroCartPageInjector.js"],
+      "run_at": "document_idle"
     }
   ]
 } 
