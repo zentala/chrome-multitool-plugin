@@ -206,7 +206,7 @@ class VectorStoreService {
                         if (!this.anthropicClient) {
                             this.anthropicClient = new Anthropic({
                                 apiKey: apiKey,
-                                dangerouslyAllowBrowser: true
+                                // dangerouslyAllowBrowser: true
                             });
                         }
                         return Array(1024).fill(0).map(() => Math.random());
@@ -225,7 +225,7 @@ class VectorStoreService {
                         if (!this.anthropicClient) {
                             this.anthropicClient = new Anthropic({
                                 apiKey: apiKey,
-                                dangerouslyAllowBrowser: true
+                                // dangerouslyAllowBrowser: true
                             });
                         }
                         return documents.map(() => 

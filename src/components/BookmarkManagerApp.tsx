@@ -1,13 +1,13 @@
 import * as React from 'react';
-import { useState, useEffect, ChangeEvent, useRef } from 'react';
-import { 
+import { useState, useEffect, useRef } from 'react';
+import {
   AppBar,
   Toolbar,
   Typography,
   Container,
   Paper,
   CircularProgress,
-  ToggleButton, 
+  ToggleButton,
   ToggleButtonGroup,
   IconButton,
   Box
@@ -21,13 +21,18 @@ import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types
 import { bookmarkExtensionService } from '../services';
 import { Theme } from '@mui/material/styles';
 import { makeStyles } from '@mui/styles';
-import { TreeView, TreeItem } from '@mui/x-tree-view';
+import { TreeItem } from '@mui/x-tree-view';
 import { EditDataDialog } from './EditDataDialog';
 import { localStorageService } from '../services/localStorage.service';
 import { BookmarkChat } from './BookmarkChat';
 import { SettingsDialog } from './SettingsDialog';
 import { BookmarksTree } from './BookmarksTree';
 
+/**
+ * Defines the styles for the BookmarkManagerApp component using makeStyles.
+ * @param {Theme} theme - The MUI theme object.
+ * @returns {Object} - An object containing the defined styles.
+ */
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
     display: 'flex',
@@ -110,29 +115,81 @@ const useStyles = makeStyles((theme: Theme) => ({
   },
 }));
 
+/**
+ * The main application component for managing and interacting with bookmarks.
+ * It displays bookmarks in a tree structure, allows editing extended data,
+ * and provides a chat interface for interacting with bookmarks.
+ *
+ * @component
+ * @example
+ * return (
+ *   <BookmarkManagerApp />
+ * )
+ */
 export const BookmarkManagerApp: React.FC = () => {
   const classes = useStyles();
+  /**
+   * State variable holding the array of bookmark entities (folders and bookmarks).
+   * @type {BookmarkEntity[]}
+   */
   const [bookmarks, setBookmarks] = useState<BookmarkEntity[]>([]);
+  /**
+   * State variable controlling the current view mode ('tree' or 'json').
+   * Currently, only 'tree' view is fully implemented.
+   * @type {'tree' | 'json'}
+   */
   const [viewMode, setViewMode] = useState<'tree' | 'json'>('tree');
-  const [isLoading, setIsLoading] = useState(true);
 
+  /**
+   * Ref object to store references to bookmark link elements (anchor tags).
+   * Used for attaching click handlers to open bookmarks in new tabs.
+   * @type {React.MutableRefObject<{[key: string]: HTMLAnchorElement}>}
+   */
   const bookmarkLinksRef = useRef<{ [key: string]: HTMLAnchorElement }>({});
+  /**
+   * Ref object for the main TreeView container element (UL).
+   * Used for potentially attaching event listeners to the tree view.
+   * @type {React.MutableRefObject<HTMLUListElement | null>}
+   */
   const treeViewRef = useRef<HTMLUListElement>(null);
+  /**
+   * Ref object to store references to view mode toggle buttons.
+   * Used for attaching click handlers to switch between view modes.
+   * @type {React.MutableRefObject<{[key: string]: HTMLButtonElement}>}
+   */
   const viewButtonsRef = useRef<{ [key: string]: HTMLButtonElement }>({});
 
+  /**
+   * State variable controlling the visibility of the edit dialog.
+   * @type {boolean}
+   */
   const [editDialogOpen, setEditDialogOpen] = useState(false);
+  /**
+   * State variable holding the bookmark item currently being edited.
+   * Contains the bookmark entity and a flag indicating if it's a folder.
+   * @type {{ bookmark: BookmarkEntity; isFolder: boolean; } | null}
+   */
   const [editingItem, setEditingItem] = useState<{
     bookmark: BookmarkEntity;
     isFolder: boolean;
   } | null>(null);
 
+  /**
+   * State variable controlling the visibility of the settings dialog.
+   * @type {boolean}
+   */
   const [settingsOpen, setSettingsOpen] = useState(false);
 
+  /**
+   * Fetches the bookmark tree from the Chrome API and enriches it
+   * with extended data stored in local storage. Updates the `bookmarks` state.
+   * @async
+   * @function
+   * @returns {Promise<void>}
+   */
   const fetchBookmarksWithExtendedData = async () => {
     try {
-      setIsLoading(true);
       const tree = await chrome.bookmarks.getTree();
-      // console.log('SUROWE DANE Z CHROME:', tree);
       
       if (tree[0].children && tree[0].children.length > 0) {
         const enrichedTree = await enrichBookmarksWithExtendedData(tree[0].children);
@@ -140,16 +197,16 @@ export const BookmarkManagerApp: React.FC = () => {
       } else {
         setBookmarks([]);
       }
-      setIsLoading(false);
     } catch (error) {
       console.error('Błąd:', error);
-      setIsLoading(false);
     }
   };
 
+  /**
+   * useEffect hook to initialize bookmarks when the component mounts.
+   * Calls `fetchBookmarksWithExtendedData` to load the initial data.
+   */
   useEffect(() => {
-    let isSubscribed = true;
-
     const initializeBookmarks = async () => {
       await fetchBookmarksWithExtendedData();
     };
@@ -157,19 +214,15 @@ export const BookmarkManagerApp: React.FC = () => {
     initializeBookmarks();
     
     return () => {
-      isSubscribed = false;
     };
   }, []);
 
-  // useEffect(() => {
-  //   console.log('AKTUALNY STAN:', bookmarks);
-  //   console.log('AKTUALNY TRYB:', viewMode);
-  // }, [bookmarks, viewMode]);
-
-  // useEffect(() => {
-  //   console.log('AKTUALNY STAN ZAKŁADEK:', bookmarks);
-  // }, [bookmarks]);
-
+  /**
+   * useEffect hook to manage click events on bookmark links.
+   * Attaches event listeners to anchor elements stored in `bookmarkLinksRef`
+   * to open the corresponding URL in a new tab when clicked.
+   * Cleans up listeners on component unmount or when the ref changes.
+   */
   useEffect(() => {
     const handleBookmarkClick = (url: string) => {
       chrome.tabs.create({ url });
@@ -183,12 +236,20 @@ export const BookmarkManagerApp: React.FC = () => {
     });
 
     return () => {
-      Object.entries(bookmarkLinksRef.current).forEach(([_, element]) => {
+      Object.entries(bookmarkLinksRef.current).forEach(([, element]) => {
         element.removeEventListener('click', () => {});
       });
     };
   }, [bookmarkLinksRef.current]);
 
+  /**
+   * Recursively enriches a list of bookmark tree nodes with extended data
+   * fetched from the `bookmarkExtensionService` (local storage).
+   * @async
+   * @function
+   * @param {chrome.bookmarks.BookmarkTreeNode[] | undefined} nodes - The list of nodes to enrich.
+   * @returns {Promise<BookmarkEntity[]>} - A promise that resolves to the list of enriched bookmark entities.
+   */
   const enrichBookmarksWithExtendedData = async (
     nodes: chrome.bookmarks.BookmarkTreeNode[] | undefined
   ): Promise<BookmarkEntity[]> => {
@@ -220,23 +281,41 @@ export const BookmarkManagerApp: React.FC = () => {
     return enrichedNodes;
   };
 
+  /**
+   * Handles changing the view mode between 'tree' and 'json'.
+   * Updates the `viewMode` state.
+   * @function
+   * @param {'tree' | 'json'} mode - The new view mode to set.
+   */
   const handleViewModeChange = (mode: 'tree' | 'json') => {
-    // console.log('Zmiana trybu widoku na:', mode);
     setViewMode(mode);
   };
 
+  /**
+   * useEffect hook to manage click events on view mode toggle buttons.
+   * Attaches event listeners to button elements stored in `viewButtonsRef`
+   * to call `handleViewModeChange` when clicked.
+   * Cleans up listeners on component unmount or when the ref changes.
+   */
   useEffect(() => {
     Object.entries(viewButtonsRef.current).forEach(([mode, button]) => {
       button.addEventListener('click', () => handleViewModeChange(mode as 'tree' | 'json'));
     });
 
     return () => {
-      Object.entries(viewButtonsRef.current).forEach(([_, button]) => {
+      Object.entries(viewButtonsRef.current).forEach(([, button]) => {
         button.removeEventListener('click', () => {});
       });
     };
   }, []);
 
+  /**
+   * useEffect hook to potentially handle tree node toggle events.
+   * Currently logs the toggled node ID to the console.
+   * Attaches event listeners to TreeItem elements within the `treeViewRef`.
+   * Cleans up listeners on component unmount or when bookmarks change.
+   * @todo Implement actual node toggle handling if needed.
+   */
   useEffect(() => {
     const treeView = treeViewRef.current;
     if (!treeView) return;
@@ -260,11 +339,29 @@ export const BookmarkManagerApp: React.FC = () => {
     };
   }, [bookmarks]);
 
+  /**
+   * Handles the click event on the edit icon for a bookmark or folder.
+   * Sets the `editingItem` state with the selected bookmark/folder and
+   * opens the edit dialog by setting `editDialogOpen` to true.
+   * @function
+   * @param {BookmarkEntity} bookmark - The bookmark or folder entity to edit.
+   * @param {boolean} isFolder - Flag indicating whether the item is a folder.
+   */
   const handleEditClick = (bookmark: BookmarkEntity, isFolder: boolean) => {
     setEditingItem({ bookmark, isFolder });
     setEditDialogOpen(true);
   };
 
+  /**
+   * Handles saving the extended data entered in the edit dialog.
+   * Saves the data to local storage using `localStorageService` and
+   * updates the `bookmarks` state with the new data using `updateBookmarkInTree`.
+   * Closes the edit dialog.
+   * @async
+   * @function
+   * @param {any} data - The extended data to save. The specific type depends on whether it's a bookmark or folder.
+   * @returns {Promise<void>}
+   */
   const handleSaveExtendedData = async (data: any) => {
     if (!editingItem) return;
     
@@ -288,6 +385,15 @@ export const BookmarkManagerApp: React.FC = () => {
     }
   };
 
+  /**
+   * Recursively finds and updates a bookmark or folder within the bookmark tree structure.
+   * Returns a new array with the updated item, maintaining immutability.
+   * @function
+   * @param {BookmarkEntity[]} bookmarks - The current array of bookmark entities.
+   * @param {string} id - The ID of the bookmark or folder to update.
+   * @param {any} newData - The new extended data to set for the item.
+   * @returns {BookmarkEntity[]} - A new array of bookmark entities with the specified item updated.
+   */
   const updateBookmarkInTree = (
     bookmarks: BookmarkEntity[],
     id: string,
@@ -310,162 +416,6 @@ export const BookmarkManagerApp: React.FC = () => {
     });
   };
 
-  const renderBookmarkTree = (
-    bookmark: BookmarkEntity,
-    parentPath: string = ''
-  ): React.ReactNode => {
-    if (!bookmark || !bookmark.id) return null;
-
-    const isFolder = !bookmark.url;
-    const nodePath = `${parentPath}/${bookmark.id}`;
-    const extended = bookmark.extended;
-
-    const label = (
-      <div style={{ 
-        display: 'flex', 
-        alignItems: 'flex-start',
-        justifyContent: 'space-between',
-        width: '100%',
-        padding: '4px 0',
-      }}>
-        <div style={{ 
-          display: 'flex', 
-          flexDirection: 'column',
-          flex: 1
-        }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
-            {isFolder ? (
-              <span>{bookmark.title || 'Folder'}</span>
-            ) : (
-              <>
-                <a 
-                  ref={(el) => {
-                    if (el && bookmark.url) {
-                      bookmarkLinksRef.current[bookmark.url] = el;
-                    }
-                  }}
-                  href={bookmark.url}
-                  style={{ 
-                    color: 'inherit', 
-                    textDecoration: 'none'
-                  }}
-                  onMouseOver={(e) => {
-                    e.currentTarget.style.textDecoration = 'underline';
-                  }}
-                  onMouseOut={(e) => {
-                    e.currentTarget.style.textDecoration = 'none';
-                  }}
-                >
-                  {bookmark.title || 'Bez tytułu'}
-                </a>
-                {bookmark.url && (
-                  <Typography variant="caption" color="textSecondary">
-                    {bookmark.url}
-                  </Typography>
-                )}
-              </>
-            )}
-          </div>
-          {extended && (
-            <div style={{ 
-              fontSize: '0.85em',
-              color: 'rgba(0, 0, 0, 0.6)',
-              marginTop: '4px'
-            }}>
-              {extended.description && (
-                <div style={{ marginBottom: '2px' }}>
-                  {extended.description}
-                </div>
-              )}
-              {extended.tags && extended.tags.length > 0 && (
-                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
-                  {extended.tags.map(tag => (
-                    <span
-                      key={tag}
-                      style={{
-                        backgroundColor: 'rgba(0, 0, 0, 0.08)',
-                        padding: '2px 6px',
-                        borderRadius: '4px',
-                        fontSize: '0.85em'
-                      }}
-                    >
-                      {tag}
-                    </span>
-                  ))}
-                </div>
-              )}
-              {isFolder && (extended as FolderExtendedData).purpose && (
-                <div style={{ fontStyle: 'italic', marginTop: '2px' }}>
-                  Cel: {(extended as FolderExtendedData).purpose}
-                </div>
-              )}
-              {!isFolder && (extended as BookmarkExtendedData).excerpt && (
-                <div style={{ marginTop: '2px' }}>
-                  {(extended as BookmarkExtendedData).excerpt}
-                </div>
-              )}
-            </div>
-          )}
-        </div>
-        <IconButton
-          size="small"
-          onClick={(e) => {
-            e.stopPropagation();
-            handleEditClick(bookmark, isFolder);
-          }}
-          style={{ alignSelf: 'flex-start' }}
-        >
-          <EditIcon fontSize="small" />
-        </IconButton>
-      </div>
-    );
-
-    return (
-      <TreeItem
-        key={nodePath}
-        nodeId={nodePath}
-        label={label}
-        expandIcon={isFolder ? <ChevronRightIcon /> : null}
-        collapseIcon={isFolder ? <ExpandMoreIcon /> : null}
-      >
-        {bookmark.children?.map((child) => renderBookmarkTree(child, nodePath))}
-      </TreeItem>
-    );
-  };
-
-  const countBookmarks = (nodes: BookmarkEntity[]): number => {
-    return nodes.reduce((count, node) => {
-      if (node.url) {
-        return count + 1;
-      }
-      if (node.children) {
-        return count + countBookmarks(node.children);
-      }
-      return count;
-    }, 0);
-  };
-
-  const handleChatCommand = (command: string) => {
-    const [cmd, ...args] = command.slice(1).split(' ');
-    
-    switch (cmd) {
-      case 'search':
-        // Implementacja wyszukiwania
-        break;
-        
-      case 'tag':
-        // Implementacja sugestii tagów
-        break;
-        
-      case 'organize':
-        // Implementacja reorganizacji
-        break;
-        
-      default:
-        console.warn('Nieznana komenda:', cmd);
-    }
-  };
-
   return (
     <div className={classes.root}>
       <AppBar position="static">
@@ -480,29 +430,15 @@ export const BookmarkManagerApp: React.FC = () => {
       </AppBar>
 
       <Box className={classes.contentContainer}>
-        <Box className={classes.chatContainer}>
-          <BookmarkChat 
-            bookmarks={bookmarks}
-            onCommandReceived={(command) => {
-              console.log('Received command:', command);
-            }}
-          />
-        </Box>
-        <Paper 
-          className={`${classes.paper} ${classes.treeContainer}`}
-        >
-          {viewMode === 'tree' ? (
-            <BookmarksTree 
-              bookmarks={bookmarks} 
-              onEditClick={handleEditClick}
-              bookmarkLinksRef={bookmarkLinksRef}
-            />
-          ) : (
-            <pre className={classes.jsonView}>
-              {JSON.stringify(bookmarks, null, 2)}
-            </pre>
-          )}
-        </Paper>
+        <BookmarksTree
+          bookmarks={bookmarks}
+          onEditClick={handleEditClick}
+          bookmarkLinksRef={bookmarkLinksRef}
+        />
+
+        <BookmarkChat
+          bookmarks={bookmarks}
+        />
       </Box>
 
       <SettingsDialog 

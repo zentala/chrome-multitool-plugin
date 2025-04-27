@@ -1,16 +1,25 @@
 {
   "manifest_version": 3,
   "name": "Zentala Chrome Multitool Plugin",
-  "version": "1.0",
+  "version": "1.0.0",
   "description": "Personal browser extension with custom shortcuts, automations, integrations and productivity tools",
   "permissions": [
-    "activeTab",
     "storage",
     "tabs",
-    "bookmarks"
+    "bookmarks",
+    "contextMenus",
+    "notifications"
+  ],
+  "host_permissions": [
+    "https://v6.exchangerate-api.com/*",
+    "https://*.aiplatform.googleapis.com/*"
   ],
   "action": {
-    "default_popup": "popup.html"
+    "default_popup": "popup.html",
+    "default_title": "Zentala Multitool"
+  },
+  "background": {
+    "service_worker": "background.js"
   },
   "web_accessible_resources": [{
     "resources": ["bookmarkManager.html", "bookmarkManager.js"],

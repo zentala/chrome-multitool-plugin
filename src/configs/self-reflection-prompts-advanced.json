@@ -1,0 +1,51 @@
+{
+  "meta": {
+    "title": "Daily Reflection Pulse - Question Bank",
+    "description": "Curated inspirational questions to help reconnect with self during the day.",
+    "version": "1.0",
+    "author": "zentala"
+  },
+  "instructions": "Pick a random question based on timing (morning, afternoon, evening) or emotional state (stress, joy, boredom).",
+  "categories": {
+    "timing": {
+      "morning": [
+        "What would make today meaningful, no matter what happens?",
+        "What gentle intention could guide me through this day?",
+        "What am I genuinely curious about today?",
+        "If I had no expectations, how would I want to start today?"
+      ],
+      "afternoon": [
+        "Am I still connected to what matters most today?",
+        "Is there a small joy I could allow myself right now?",
+        "Do I need a pause, or a push?",
+        "What would help me feel more grounded right now?"
+      ],
+      "evening": [
+        "What can I thank myself for today?",
+        "What did I feel most alive doing today?",
+        "Can I let go of any unfinished business for tonight?",
+        "What moment today made me smile, even for a second?"
+      ]
+    },
+    "emotion": {
+      "stress": [
+        "What can I let go of right now, just a little bit?",
+        "If I could offer myself comfort, what would it be?",
+        "Is it safe for me to breathe deeply and slow down?",
+        "What is one gentle thing I can do for myself now?"
+      ],
+      "joy": [
+        "How can I savor this feeling a little longer?",
+        "What am I grateful for at this very moment?",
+        "Where in my body do I feel this joy?",
+        "Who or what would I love to share this joy with?"
+      ],
+      "boredom": [
+        "What small experiment could make this moment more interesting?",
+        "What would I explore if there were no wrong answers?",
+        "Can I let boredom be an invitation to create, not to escape?",
+        "If I could play like a child right now, what would I do?"
+      ]
+    }
+  }
+}

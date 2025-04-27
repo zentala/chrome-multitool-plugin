@@ -1,5 +1,13 @@
 interface Settings {
-  [key: string]: string;
+  [key: string]: string | null;
+  openai_api_key: string | null;
+  anthropic_api_key: string | null;
+  selected_provider: 'openai' | 'anthropic';
+}
+
+interface ModelProviderToken {
+  provider: 'openai' | 'anthropic';
+  token: string | null;
 }
 
 class SettingsService {
@@ -15,7 +23,7 @@ class SettingsService {
     return settings[key] || null;
   }
 
-  async saveSetting(key: string, value: string): Promise<void> {
+  async saveSetting(key: string, value: string | null): Promise<void> {
     const settings = await this.getSettings();
     settings[key] = value;
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
@@ -25,6 +33,24 @@ class SettingsService {
     const settings = await this.getSettings();
     delete settings[key];
     localStorage.setItem(this.STORAGE_KEY, JSON.stringify(settings));
+  }
+
+  async getModelProviderTokenSetting(): Promise<ModelProviderToken> {
+    const [openaiApiKey, anthropicApiKey, selectedProvider] = await Promise.all([
+      this.getSetting('openai_api_key'),
+      this.getSetting('anthropic_api_key'),
+      this.getSetting('selected_provider')
+    ]);
+
+    const provider = (selectedProvider || 'openai') as 'openai' | 'anthropic';
+    const token = provider === 'openai' ? openaiApiKey : anthropicApiKey;
+
+    return { provider, token };
+  }
+
+  async validateModelProviderSettings(): Promise<boolean> {
+    const { provider, token } = await this.getModelProviderTokenSetting();
+    return !!token;
   }
 }
 

@@ -1,0 +1,16 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Always
+
+- Refer to `./.cursor/CURSOR.md` for instructions
+- Refer to `./.cursor/TODO.md` for next steps and save them too
+- create sub-todo files in `.cursor/TODO_<name>.md` for suprojects and link them from TODO
+- comment code with TSDocs like for junior devs
+- commit often using conventional commits and describing like for juniors devs what and why was implemented in commit
+- go in YOLO mode, work without confimation
+- try to aling with me saving arch decsions in this file (.cursor/rules/always.mdc)
+
+- 

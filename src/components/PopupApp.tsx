@@ -9,6 +9,7 @@ import {
 import BookmarksIcon from '@mui/icons-material/Bookmarks';
 import { makeStyles } from '@mui/styles';
 import { Theme } from '@mui/material/styles';
+import { CurrencyConverter } from './CurrencyConverter/CurrencyConverter';
 
 const useStyles = makeStyles((theme: Theme) => ({
   root: {
@@ -75,6 +76,7 @@ export const PopupApp: React.FC = () => {
           <ListItemText primary="Allegro Favourites" secondary="Coming soon" />
         </ListItem>
       </List>
+      <CurrencyConverter />
     </div>
   );
 }; 

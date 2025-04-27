@@ -1,2 +1,8 @@
 node_modules
 dist
+
+# Environment variables
+.env
+
+# Backup files
+*.bak
