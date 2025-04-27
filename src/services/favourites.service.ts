@@ -36,14 +36,14 @@ class FavouritesService {
       };
 
       // Zapisz
-      const result = await storageService.addToFavourites(favourite);
+      await storageService.addToFavourites(favourite);
       
       // Pokaż powiadomienie o sukcesie
       notificationService.success(
         `${favourite.name.substring(0, 50)}... dodano do ulubionych`
       );
 
-    } catch (error) {
+    } catch (_error) {
       notificationService.error('Wystąpił błąd podczas dodawania do ulubionych');
     }
   }

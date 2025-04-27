@@ -12,7 +12,6 @@ export interface SearchResult {
     description?: string;
     tags?: string[];
     lastModified?: number;
-    [key: string]: any;
   };
 }
 

@@ -30,40 +30,10 @@ export const EditDataDialog: React.FC<EditDataDialogProps> = ({
   const [data, setData] = useState<Partial<BookmarkExtendedData | FolderExtendedData>>(
     () => ({...initialData})
   );
-  const [tagInput, setTagInput] = useState('');
 
   useEffect(() => {
     setData({...initialData});
   }, [initialData]);
-
-  const handleAddTag = () => {
-    if (tagInput.trim()) {
-      setData(prev => {
-        const currentTags = Array.isArray(prev.tags) ? [...prev.tags] : [];
-        const newTag = tagInput.trim();
-        
-        if (!currentTags.includes(newTag)) {
-          currentTags.push(newTag);
-        }
-        
-        return {
-          ...prev,
-          tags: currentTags
-        };
-      });
-      setTagInput('');
-    }
-  };
-
-  const handleRemoveTag = (tagToRemove: string) => {
-    setData(prev => {
-      const currentTags = Array.isArray(prev.tags) ? [...prev.tags] : [];
-      return {
-        ...prev,
-        tags: currentTags.filter(tag => tag !== tagToRemove)
-      };
-    });
-  };
 
   const handleSave = () => {
     const dataToSave = {

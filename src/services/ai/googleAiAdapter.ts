@@ -166,7 +166,7 @@ JSON response:
       }
 
       // Parse the JSON text
-      let parsedJson: any;
+      let parsedJson: unknown;
       try {
         parsedJson = JSON.parse(jsonText);
       } catch (parseError) {
@@ -174,20 +174,27 @@ JSON response:
         throw new Error('LLM returned invalid JSON');
       }
 
-      // Validate the parsed JSON structure
-      if (parsedJson.error) {
-        console.log('GoogleAiAdapter: LLM reported parsing error:', parsedJson.error);
-        return { success: false, error: `LLM could not parse input: ${parsedJson.error}` };
-      } else if (typeof parsedJson.amount === 'number' && typeof parsedJson.currency === 'string') {
-        return {
-          success: true,
-          amount: parsedJson.amount,
-          currency: parsedJson.currency.toUpperCase(), // Ensure uppercase ISO code
-        };
-      } else {
-        console.error('GoogleAiAdapter: Unexpected JSON structure from LLM:', parsedJson);
-        throw new Error('LLM returned unexpected JSON structure');
-      }
+      // Validate the parsed JSON structure after type check
+      if (typeof parsedJson === 'object' && parsedJson !== null) {
+        // Check for error property
+        if ('error' in parsedJson && typeof parsedJson.error === 'string') {
+          console.log('GoogleAiAdapter: LLM reported parsing error:', parsedJson.error);
+          return { success: false, error: `LLM could not parse input: ${parsedJson.error}` };
+        } 
+        // Check for success properties
+        else if ('amount' in parsedJson && typeof parsedJson.amount === 'number' && 
+                 'currency' in parsedJson && typeof parsedJson.currency === 'string') {
+          return {
+            success: true,
+            amount: parsedJson.amount,
+            currency: parsedJson.currency.toUpperCase(), // Ensure uppercase ISO code
+          };
+        } 
+      } 
+        
+      // If structure is not as expected
+      console.error('GoogleAiAdapter: Unexpected JSON structure from LLM:', parsedJson);
+      throw new Error('LLM returned unexpected JSON structure');
 
     } catch (error) {
       console.error('GoogleAiAdapter: Error during API call or processing:', error);

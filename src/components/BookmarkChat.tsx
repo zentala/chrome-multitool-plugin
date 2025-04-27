@@ -58,7 +58,6 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
-  const [selectedProvider, setSelectedProvider] = useState<'openai' | 'anthropic'>('openai');
   const [chatModel, setChatModel] = useState<ChatOpenAI | ChatAnthropic | null>(null);
   const [confirmDialogData, setConfirmDialogData] = useState<{
     open: boolean;
@@ -76,7 +75,6 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
         console.log('Inicjalizacja chatu...');
         const provider = await settingsService.getSetting('selected_provider') || 'openai';
         const typedProvider = provider as 'openai' | 'anthropic';
-        setSelectedProvider(typedProvider);
 
         // Zawsze potrzebujemy klucza OpenAI do embeddingów
         const openAIApiKey = await settingsService.getSetting('openai_api_key') || '';
@@ -187,9 +185,13 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
           onCommandReceived?.(response.content.toString());
         }
       }
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('Błąd w chacie:', error);
-      addDebugMessage(`❌ Błąd: ${error.message}`);
+      if (error instanceof Error) {
+        addDebugMessage(`❌ Błąd: ${error.message}`);
+      } else {
+        addDebugMessage(`❌ Błąd: ${String(error)}`);
+      }
     } finally {
       setIsLoading(false);
     }

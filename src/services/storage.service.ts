@@ -11,7 +11,7 @@ export interface AllegroFavourite {
 export interface StorageResponse {
   success: boolean;
   message: string;
-  data?: any;
+  data?: AllegroFavourite;
 }
 
 class StorageService {
@@ -54,7 +54,7 @@ class StorageService {
         message: 'Dodano do ulubionych',
         data: item
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         message: 'Błąd podczas zapisywania'
@@ -76,7 +76,7 @@ class StorageService {
         success: true,
         message: 'Usunięto z ulubionych'
       };
-    } catch (error) {
+    } catch (_error) {
       return {
         success: false,
         message: 'Błąd podczas usuwania'

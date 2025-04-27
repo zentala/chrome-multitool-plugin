@@ -49,7 +49,7 @@ class SettingsService {
   }
 
   async validateModelProviderSettings(): Promise<boolean> {
-    const { provider, token } = await this.getModelProviderTokenSetting();
+    const { token } = await this.getModelProviderTokenSetting();
     return !!token;
   }
 }

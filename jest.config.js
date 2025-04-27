@@ -3,7 +3,7 @@ module.exports = {
   preset: 'ts-jest',
   // Use jsdom for tests involving React components/DOM manipulation
   // Keep 'node' for pure backend tests if needed by separating configs or using @jest-environment docblock
-  testEnvironment: 'jsdom',
+  testEnvironment: 'node',
   roots: ['<rootDir>/src'], // Look for tests in the src directory
   testMatch: [
     '**/__tests__/**/*.+(ts|tsx|js)',

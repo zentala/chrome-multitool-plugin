@@ -21,6 +21,7 @@ class LogViewer {
     const originalConsoleError = console.error;
     const originalConsoleWarn = console.warn;
     
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.log = (...args: any[]) => {
       const message = args.join(' ');
       if (this.logContainer) {
@@ -31,6 +32,7 @@ class LogViewer {
       originalConsoleLog.apply(console, args);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.error = (...args: any[]) => {
       const message = args.join(' ');
       if (this.logContainer) {
@@ -41,6 +43,7 @@ class LogViewer {
       originalConsoleError.apply(console, args);
     };
 
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     console.warn = (...args: any[]) => {
       const message = args.join(' ');
       if (this.logContainer) {

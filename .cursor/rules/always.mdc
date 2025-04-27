@@ -10,7 +10,11 @@ alwaysApply: true
 - create sub-todo files in `.cursor/TODO_<name>.md` for suprojects and link them from TODO
 - comment code with TSDocs like for junior devs
 - commit often using conventional commits and describing like for juniors devs what and why was implemented in commit
+- before commit lint and test code u want to commit
+- tests dont must be very strict if not possible, sometimes is good to skip testing hard things; but always comment what u ingored and skipped to testing and save in comments ur resoning why so in the future devs will undestand it and be albe to come back and fix it, u can also add TODO or FIXME in code to know what to do in the future
 - go in YOLO mode, work without confimation
 - try to aling with me saving arch decsions in this file (.cursor/rules/always.mdc)
-
+- we are working in powershell7 pwsh windows 11
+- if not able to edit file stop (pause) working and ask user to restart you (cursor app), it will help with editing issues, sometimes tools must be restated. after restart continue working
+- if fixing problem, duting working on this problem, feel free to add in comments apporaches u tried and didnt worked, u can create separaed file next to file u edit, with notes (eg same file like editing but with .md extneitona added), so u will have reference what workend and what not
 - 

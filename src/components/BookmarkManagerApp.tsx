@@ -4,24 +4,15 @@ import {
   AppBar,
   Toolbar,
   Typography,
-  Container,
-  Paper,
-  CircularProgress,
-  ToggleButton,
-  ToggleButtonGroup,
   IconButton,
   Box
 } from '@mui/material';
-import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import ChevronRightIcon from '@mui/icons-material/ChevronRight';
-import EditIcon from '@mui/icons-material/Edit';
 import SettingsIcon from '@mui/icons-material/Settings';
 import { BookmarkEntity, FolderEntity } from '../types/bookmarks.types';
 import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
 import { bookmarkExtensionService } from '../services';
 import { Theme } from '@mui/material/styles';
 import { makeStyles } from '@mui/styles';
-import { TreeItem } from '@mui/x-tree-view';
 import { EditDataDialog } from './EditDataDialog';
 import { localStorageService } from '../services/localStorage.service';
 import { BookmarkChat } from './BookmarkChat';
@@ -133,12 +124,6 @@ export const BookmarkManagerApp: React.FC = () => {
    * @type {BookmarkEntity[]}
    */
   const [bookmarks, setBookmarks] = useState<BookmarkEntity[]>([]);
-  /**
-   * State variable controlling the current view mode ('tree' or 'json').
-   * Currently, only 'tree' view is fully implemented.
-   * @type {'tree' | 'json'}
-   */
-  const [viewMode, setViewMode] = useState<'tree' | 'json'>('tree');
 
   /**
    * Ref object to store references to bookmark link elements (anchor tags).
@@ -151,13 +136,13 @@ export const BookmarkManagerApp: React.FC = () => {
    * Used for potentially attaching event listeners to the tree view.
    * @type {React.MutableRefObject<HTMLUListElement | null>}
    */
-  const treeViewRef = useRef<HTMLUListElement>(null);
+  // const treeViewRef = useRef<HTMLUListElement>(null); // Unused ref
   /**
    * Ref object to store references to view mode toggle buttons.
    * Used for attaching click handlers to switch between view modes.
    * @type {React.MutableRefObject<{[key: string]: HTMLButtonElement}>}
    */
-  const viewButtonsRef = useRef<{ [key: string]: HTMLButtonElement }>({});
+  // const viewButtonsRef = useRef<{ [key: string]: HTMLButtonElement }>({}); // Unused ref
 
   /**
    * State variable controlling the visibility of the edit dialog.
@@ -282,64 +267,6 @@ export const BookmarkManagerApp: React.FC = () => {
   };
 
   /**
-   * Handles changing the view mode between 'tree' and 'json'.
-   * Updates the `viewMode` state.
-   * @function
-   * @param {'tree' | 'json'} mode - The new view mode to set.
-   */
-  const handleViewModeChange = (mode: 'tree' | 'json') => {
-    setViewMode(mode);
-  };
-
-  /**
-   * useEffect hook to manage click events on view mode toggle buttons.
-   * Attaches event listeners to button elements stored in `viewButtonsRef`
-   * to call `handleViewModeChange` when clicked.
-   * Cleans up listeners on component unmount or when the ref changes.
-   */
-  useEffect(() => {
-    Object.entries(viewButtonsRef.current).forEach(([mode, button]) => {
-      button.addEventListener('click', () => handleViewModeChange(mode as 'tree' | 'json'));
-    });
-
-    return () => {
-      Object.entries(viewButtonsRef.current).forEach(([, button]) => {
-        button.removeEventListener('click', () => {});
-      });
-    };
-  }, []);
-
-  /**
-   * useEffect hook to potentially handle tree node toggle events.
-   * Currently logs the toggled node ID to the console.
-   * Attaches event listeners to TreeItem elements within the `treeViewRef`.
-   * Cleans up listeners on component unmount or when bookmarks change.
-   * @todo Implement actual node toggle handling if needed.
-   */
-  useEffect(() => {
-    const treeView = treeViewRef.current;
-    if (!treeView) return;
-
-    const handleNodeToggle = (nodeId: string) => {
-      console.log('Przełączono węzeł:', nodeId);
-    };
-
-    const treeItems = treeView.getElementsByClassName('MuiTreeItem-root');
-    Array.from(treeItems).forEach((item) => {
-      item.addEventListener('click', () => {
-        const nodeId = item.getAttribute('data-nodeid');
-        if (nodeId) handleNodeToggle(nodeId);
-      });
-    });
-
-    return () => {
-      Array.from(treeItems).forEach((item) => {
-        item.removeEventListener('click', () => {});
-      });
-    };
-  }, [bookmarks]);
-
-  /**
    * Handles the click event on the edit icon for a bookmark or folder.
    * Sets the `editingItem` state with the selected bookmark/folder and
    * opens the edit dialog by setting `editDialogOpen` to true.
@@ -359,10 +286,10 @@ export const BookmarkManagerApp: React.FC = () => {
    * Closes the edit dialog.
    * @async
    * @function
-   * @param {any} data - The extended data to save. The specific type depends on whether it's a bookmark or folder.
+   * @param {Partial<BookmarkExtendedData | FolderExtendedData>} data - The (potentially partial) extended data to save.
    * @returns {Promise<void>}
    */
-  const handleSaveExtendedData = async (data: any) => {
+  const handleSaveExtendedData = async (data: Partial<BookmarkExtendedData | FolderExtendedData>) => {
     if (!editingItem) return;
     
     try {
@@ -374,10 +301,7 @@ export const BookmarkManagerApp: React.FC = () => {
       
       // Odśwież dane zakładek
       setBookmarks(prevBookmarks => 
-        updateBookmarkInTree(prevBookmarks, editingItem.bookmark.id, {
-          ...data,
-          isFolder: editingItem.isFolder
-        })
+        updateBookmarkInTree(prevBookmarks, editingItem.bookmark.id, data)
       );
       setEditDialogOpen(false);
     } catch (error) {
@@ -391,19 +315,21 @@ export const BookmarkManagerApp: React.FC = () => {
    * @function
    * @param {BookmarkEntity[]} bookmarks - The current array of bookmark entities.
    * @param {string} id - The ID of the bookmark or folder to update.
-   * @param {any} newData - The new extended data to set for the item.
+   * @param {Partial<BookmarkExtendedData | FolderExtendedData>} newData - The new (potentially partial) extended data to merge.
    * @returns {BookmarkEntity[]} - A new array of bookmark entities with the specified item updated.
    */
   const updateBookmarkInTree = (
     bookmarks: BookmarkEntity[],
     id: string,
-    newData: any
+    newData: Partial<BookmarkExtendedData | FolderExtendedData>
   ): BookmarkEntity[] => {
     return bookmarks.map(bookmark => {
       if (bookmark.id === id) {
+        // Merge existing extended data with new partial data
+        const existingExtended = bookmark.extended || {}; 
         return {
           ...bookmark,
-          extended: newData
+          extended: { ...existingExtended, ...newData }
         };
       }
       if (bookmark.children) {

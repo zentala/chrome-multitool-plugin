@@ -19,14 +19,23 @@ import FolderIcon from '@mui/icons-material/Folder';
 import DownloadIcon from '@mui/icons-material/Download';
 import BugReportIcon from '@mui/icons-material/BugReport';
 
+// Define a specific type for sample documents
+interface SampleDocument {
+  title?: string;
+  url?: string;
+  folderPath?: string;
+  tags?: string[];
+  // Add other relevant fields if needed
+}
+
 interface DebugInfo {
   isInitialized: boolean;
   provider: string;
   embeddingsStatus: boolean;
   vectorStoreStatus: boolean;
   documentsCount: number;
-  sampleDocuments: any[];
-  folderStructure: Record<string, any>;
+  sampleDocuments: SampleDocument[]; // Use the specific type
+  folderStructure: Record<string, unknown>; // Use unknown instead of any
 }
 
 interface DebugPanelProps {

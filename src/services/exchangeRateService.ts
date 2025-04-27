@@ -93,7 +93,7 @@ class ExchangeRateService {
         return null; // Fetch failed and no stale data available
       }
     } catch (error) {
-      console.error(`ExchangeRateService: Unhandled error getting rate for ${pairKey}:`, error);
+      console.error(`ExchangeRateService: Unhandled error getting rate for ${pairKey}:`, error instanceof Error ? error.message : error);
        // Attempt to return stale cache data on any unexpected error
        if (cachedData) {
         console.warn(`ExchangeRateService: Unhandled error occurred for ${pairKey}, returning stale cached rate:`, cachedData.rate);
@@ -129,7 +129,7 @@ class ExchangeRateService {
           console.error(
             `ExchangeRateService: API error response for ${fromCurrency}/${toCurrency}:`, errorBody
           );
-        } catch (e) {
+        } catch (_e) {
             // If parsing error body fails, use text
             errorInfo += `: ${await response.text()}`;
             console.error(`ExchangeRateService: Non-JSON API error for ${fromCurrency}/${toCurrency}: Status ${response.status}`, errorInfo);
