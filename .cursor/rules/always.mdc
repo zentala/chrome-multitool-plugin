@@ -13,19 +13,18 @@ alwaysApply: true
   - save tasks like [ ] and mark done as [x] to track progress
   - update TODO files after finishing changes
 
-
-
 - commits: 
   - commit every done task
-  - check git status before commit
   - use conventional commits 
-  - describe like for juniors devs: not only why but also and WHY was implementeded
-- before commit lint and test code u want to commit
+  - check `git status` before commit and try to commit most possible files
+  - describe commits like for juniors devs: not only why but also and WHY was implementeded
+  - lint and test code before commiting
 
 - terminal
    - powershell 7 pwsh windows 11
+   - dont use `| cat` beacuse pwsh have problems with it
    - use non-interactive mode when possible
-     - add non-intearcive flag to `npm test`
+
 
 - write code and docs for junior devs:
   - comment with TSDocs

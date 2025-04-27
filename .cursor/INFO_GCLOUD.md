@@ -1,5 +1,3 @@
-<!-- eslint-disable markdown/no-missing-label-refs -->
-
 # Google Cloud & Gemini API Information
 
 Okay, I can help you with integrating Google APIs into your Chrome extension, focusing on currency conversion and AI functionalities like using Gemini 2.5 and vector databases. Here's a comprehensive guide in Markdown format that you can adapt for your local LLM agent (like Cursor):

@@ -1,10 +1,16 @@
 import { describe, it, expect, vi, beforeEach, Mock, beforeAll } from 'vitest';
 // Usuń statyczny import: import { exchangeRateService } from './exchangeRateService';
 
+// --- Define a type for globalThis to allow process.env --- //
+type GlobalWithProcess = typeof globalThis & {
+  process?: { env: Record<string, string | undefined> }
+}
+
 // --- Mock process.env --- //
 // Upewnij się, że process i process.env istnieją
 if (typeof process === 'undefined') {
-  (globalThis as any).process = { env: {} }; // Stwórz, jeśli nie istnieje
+  // Use the defined type here
+  (globalThis as GlobalWithProcess).process = { env: {} }; // Stwórz, jeśli nie istnieje
 } else if (!process.env) {
   process.env = {};
 }
