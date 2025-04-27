@@ -22,18 +22,15 @@ interface ExchangeRateApiResponse {
  * Service for fetching and caching currency exchange rates from exchangerate-api.com.
  */
 class ExchangeRateService {
-  private apiKey: string;
   private readonly apiUrl = 'https://v6.exchangerate-api.com/v6';
 
   constructor() {
-    this.apiKey = process.env.EXCHANGERATE_API_KEY || '';
-    if (!this.apiKey) {
-      console.error(
-        'ExchangeRateService: EXCHANGERATE_API_KEY is not set!'
-      );
-      // Service will fail silently if key is missing, returning null for rates.
-      // Consider throwing an error or having an isConfigured() method.
-    }
+    // No need to read API key here anymore
+    // const key = process.env.EXCHANGERATE_API_KEY || '';
+    // if (!key) {
+    //   console.error('ExchangeRateService: EXCHANGERATE_API_KEY is not set at construction!');
+    // }
+    // this.apiKey = key;
   }
 
   /**
@@ -45,7 +42,11 @@ class ExchangeRateService {
    * @returns A promise resolving to the rate (number) or null if an error occurs and no stale cache exists.
    */
   async getRate(fromCurrency: string, toCurrency: string): Promise<number | null> {
-    if (!this.apiKey) {
+    // Read API key directly from process.env inside the method
+    const apiKey = process.env.EXCHANGERATE_API_KEY || '';
+
+    // Check for API key existence and valid currencies FIRST
+    if (!apiKey) {
       console.error('ExchangeRateService: Cannot get rate, API Key is missing.');
       return null;
     }
@@ -73,28 +74,25 @@ class ExchangeRateService {
       return cachedData.rate;
     }
 
+    // Check only needed if cache is invalid or missing
     console.log(`ExchangeRateService: Cache miss or expired for ${pairKey}. Fetching from API.`);
 
     try {
-      // Fetching rate for a specific pair using the /pair endpoint
-      const rate = await this.fetchRateFromApi(from, to);
-
+      // Pass the apiKey read within this method call
+      const rate = await this.fetchRateFromApi(from, to, apiKey);
       if (rate !== null) {
-        // Successfully fetched new rate, update cache
         await this.setCachedRate(pairKey, rate);
         return rate;
       } else {
-        // API fetch failed, return stale cache data if it exists
         if (cachedData) {
           console.warn(`ExchangeRateService: API fetch failed for ${pairKey}, returning stale cached rate:`, cachedData.rate);
           return cachedData.rate;
         }
         console.error(`ExchangeRateService: API fetch failed for ${pairKey} and no stale cache available.`);
-        return null; // Fetch failed and no stale data available
+        return null;
       }
     } catch (error) {
       console.error(`ExchangeRateService: Unhandled error getting rate for ${pairKey}:`, error instanceof Error ? error.message : error);
-       // Attempt to return stale cache data on any unexpected error
        if (cachedData) {
         console.warn(`ExchangeRateService: Unhandled error occurred for ${pairKey}, returning stale cached rate:`, cachedData.rate);
         return cachedData.rate;
@@ -112,9 +110,11 @@ class ExchangeRateService {
    */
   private async fetchRateFromApi(
     fromCurrency: string,
-    toCurrency: string
+    toCurrency: string,
+    apiKey: string // Accept apiKey as parameter
   ): Promise<number | null> {
-    const url = `${this.apiUrl}/${this.apiKey}/pair/${fromCurrency}/${toCurrency}`;
+    // Use the passed apiKey
+    const url = `${this.apiUrl}/${apiKey}/pair/${fromCurrency}/${toCurrency}`;
     console.log(`ExchangeRateService: Fetching URL: ${url}`);
 
     try {
