@@ -10,7 +10,6 @@ module.exports = {
     '**/?(*.)+(spec|test).+(ts|tsx|js)'
   ],
   transform: {
-    // eslint-disable-next-line no-useless-escape
     '^.+\\.(ts|tsx)$': 'ts-jest',
   },
   moduleNameMapper: {

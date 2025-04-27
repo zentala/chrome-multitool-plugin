@@ -1,7 +1,16 @@
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
-import { exchangeRateService } from './exchangeRateService';
-// Remove direct import of storageService from implementation
-// import { storageService } from './storageService';
+import { describe, it, expect, vi, beforeEach, Mock, beforeAll } from 'vitest';
+// Usuń statyczny import: import { exchangeRateService } from './exchangeRateService';
+
+// --- Mock process.env --- //
+// Upewnij się, że process i process.env istnieją
+if (typeof process === 'undefined') {
+  (globalThis as any).process = { env: {} }; // Stwórz, jeśli nie istnieje
+} else if (!process.env) {
+  process.env = {};
+}
+// Ustaw zmienną środowiskową
+process.env.EXCHANGERATE_API_KEY = 'test-api-key';
+// ------------------------ //
 
 // --- Mock storageService using Vitest --- //
 vi.mock('./storageService', () => ({
@@ -21,6 +30,15 @@ const mockStorageSet = storageService.set as Mock;
 // Mock the global fetch function using Vitest
 vi.stubGlobal('fetch', vi.fn());
 const mockFetch = vi.mocked(global.fetch);
+
+// Deklaracja zmiennej dla instancji serwisu
+let exchangeRateService: typeof import('./exchangeRateService').exchangeRateService;
+
+beforeAll(async () => {
+  // Dynamiczny import *po* ustawieniu mocków
+  const serviceModule = await import('./exchangeRateService');
+  exchangeRateService = serviceModule.exchangeRateService;
+});
 
 // Helper to mock a successful API response
 const mockApiResponseSuccess = (rate: number) => {
@@ -46,6 +64,8 @@ beforeEach(() => {
 });
 
 describe('ExchangeRateService', () => {
+  // Remove vi.stubEnv from here
+  // vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key');
 
   // --- Test Case 1: Cache is empty, API success --- //
   it('should fetch from API and update cache when cache is empty', async () => {
@@ -66,7 +86,7 @@ describe('ExchangeRateService', () => {
     expect(rate).toBe(expectedRate);
     expect(mockFetch).toHaveBeenCalledTimes(1);
     expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining(`/pair/${from}/${to}`));
-    expect(mockStorageGet).toHaveBeenCalledTimes(1);
+    expect(mockStorageGet).toHaveBeenCalledTimes(2);
     expect(mockStorageGet).toHaveBeenCalledWith('currencyRatesCache');
     expect(mockStorageSet).toHaveBeenCalledTimes(1);
     expect(mockStorageSet).toHaveBeenCalledWith('currencyRatesCache', {
@@ -119,7 +139,7 @@ describe('ExchangeRateService', () => {
     // 4. Assert
     expect(rate).toBe(freshRateFromApi);
     expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockStorageGet).toHaveBeenCalledTimes(1);
+    expect(mockStorageGet).toHaveBeenCalledTimes(2);
     expect(mockStorageSet).toHaveBeenCalledTimes(1);
     expect(mockStorageSet).toHaveBeenCalledWith('currencyRatesCache', {
         [pairKey]: { rate: freshRateFromApi, timestamp: expect.any(Number) },

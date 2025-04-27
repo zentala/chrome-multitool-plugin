@@ -1,34 +1,41 @@
+/// <reference types="chrome" />
+
 import React from 'react';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
-import { describe, it, expect, vi, beforeEach, MockInstance } from 'vitest'; // Import vitest functions explicitly
-import '@testing-library/jest-dom/vitest'; // Import vitest extensions for jest-dom
+import { describe, it, expect, vi, beforeEach, Mock, MockInstance } from 'vitest'; // Dodaj Mock
+import '@testing-library/jest-dom/vitest';
 
 import { CurrencyConverter } from './CurrencyConverter';
 
-// --- Mock chrome.runtime.sendMessage --- //
-// Define the mock function first
+// --- Mock chrome API globalnie dla tego pliku testowego --- //
 const mockSendMessageFn = vi.fn();
+const mockStorage = {
+  local: {
+    get: vi.fn().mockResolvedValue({}),
+    set: vi.fn().mockResolvedValue(undefined),
+  }
+};
 
-// Mock the chrome API - this needs to be outside describe typically
-vi.mock('../../../chrome', () => { // Adjust path if needed, assuming chrome is available globally
-  // This mock might be tricky if chrome isn't treated as a standard module.
-  // Alternative: Mock directly on globalThis if needed, but vi.mock is preferred.
-  return {
-    runtime: {
-      sendMessage: mockSendMessageFn
-    }
-    // Mock other chrome properties if necessary within the test file scope
-  };
+vi.stubGlobal('chrome', {
+  runtime: {
+    sendMessage: mockSendMessageFn,
+    // Mock inne potrzebne części runtime, jeśli są używane
+  },
+  storage: mockStorage,
+  // Mock inne potrzebne API chrome
 });
 
-// Now TypeScript should recognize mockSendMessageFn as MockInstance
-const mockSendMessage: MockInstance = mockSendMessageFn; 
-// -------------------------------------- //
+// --- Uzyskanie dostępu do zamockowanej funkcji --- //
+// Teraz TypeScript powinien "widzieć" chrome dzięki stubGlobal i @types/chrome
+const mockSendMessage = chrome.runtime.sendMessage as Mock; // Użyj Mock zamiast MockInstance dla kompatybilności
 
 describe('CurrencyConverter Component', () => {
   beforeEach(() => {
-    // Reset the local mock
+    // Reset mocka przed każdym testem
     mockSendMessage.mockReset();
+    // Możesz też zresetować inne mocki, np. storage
+    vi.mocked(chrome.storage.local.get).mockClear();
+    vi.mocked(chrome.storage.local.set).mockClear();
   });
 
   it('renders initial state correctly', () => {

@@ -43,7 +43,7 @@ class FavouritesService {
         `${favourite.name.substring(0, 50)}... dodano do ulubionych`
       );
 
-    } catch (_error) {
+    } catch {
       notificationService.error('Wystąpił błąd podczas dodawania do ulubionych');
     }
   }

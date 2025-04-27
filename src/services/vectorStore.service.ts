@@ -117,7 +117,7 @@ class VectorStoreService {
       
       request.onsuccess = () => {
         console.log(`Załadowano ${request.result.length} embeddingów`);
-        resolve(request.result);
+        resolve(request.result as StoredEmbedding[]);
       };
     });
   }
@@ -661,7 +661,10 @@ class VectorStoreService {
         console.log('Folder:', doc.metadata.folderPath);
       });
 
-      const uniqueResults = new Map<string, any>();
+      // Define the type for the map values
+      type ResultValue = { pageContent: string; metadata: BookmarkMetadataWithId };
+      const uniqueResults = new Map<string, ResultValue>();
+
       finalResults.forEach(res => {
           if (!uniqueResults.has(res.doc.metadata.bookmarkId)) {
               uniqueResults.set(res.doc.metadata.bookmarkId, { pageContent: res.doc.pageContent, metadata: res.doc.metadata as BookmarkMetadataWithId });

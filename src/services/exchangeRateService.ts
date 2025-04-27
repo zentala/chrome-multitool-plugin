@@ -129,7 +129,7 @@ class ExchangeRateService {
           console.error(
             `ExchangeRateService: API error response for ${fromCurrency}/${toCurrency}:`, errorBody
           );
-        } catch (_e) {
+        } catch {
             // If parsing error body fails, use text
             errorInfo += `: ${await response.text()}`;
             console.error(`ExchangeRateService: Non-JSON API error for ${fromCurrency}/${toCurrency}: Status ${response.status}`, errorInfo);

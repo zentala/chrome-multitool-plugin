@@ -54,7 +54,7 @@ class StorageService {
         message: 'Dodano do ulubionych',
         data: item
       };
-    } catch (_error) {
+    } catch {
       return {
         success: false,
         message: 'Błąd podczas zapisywania'
@@ -76,7 +76,7 @@ class StorageService {
         success: true,
         message: 'Usunięto z ulubionych'
       };
-    } catch (_error) {
+    } catch {
       return {
         success: false,
         message: 'Błąd podczas usuwania'
