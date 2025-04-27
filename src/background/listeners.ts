@@ -22,60 +22,63 @@ export function initializeContextMenu() {
   });
 }
 
-/**
- * Handles clicks on the context menu items.
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-chrome.contextMenus.onClicked.addListener((info, _tab) => {
-  if (info.menuItemId === CONTEXT_MENU_ID && info.selectionText) {
-    const selectedText = info.selectionText.trim();
-    console.log(`Context menu: Clicked! Selected text: "${selectedText}"`);
+// Wrap the listener logic in an exported function
+export function setupContextMenuOnClickListener() {
+  console.log('Setting up context menu onClicked listener...');
+  chrome.contextMenus.onClicked.addListener((info, _tab) => {
+    if (info.menuItemId === CONTEXT_MENU_ID && info.selectionText) {
+      const selectedText = info.selectionText.trim();
+      console.log(`Context menu: Clicked! Selected text: "${selectedText}"`);
 
-    // Call the reusable conversion handler
-    handleCurrencyConversionRequest(selectedText)
-      .then(result => {
-        console.log("Context menu conversion result:", result);
-        
-        if (result.success && result.originalAmount && result.originalCurrency && result.convertedAmount && result.targetCurrency) {
-          // Options for successful conversion
-          const successOptions: chrome.notifications.NotificationOptions = {
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: 'ZNTL Konwerter Walut',
-            message: `${result.originalAmount} ${result.originalCurrency} = ${result.convertedAmount.toFixed(2)} ${result.targetCurrency}`,
-            priority: 0
-          };
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore // TODO: Investigate NotificationOptions typing issue
-          chrome.notifications.create(successOptions);
-        } else {
-          // Options for error
-          const errorOptions: chrome.notifications.NotificationOptions = {
+      // Call the reusable conversion handler
+      handleCurrencyConversionRequest(selectedText)
+        .then(result => {
+          console.log("Context menu conversion result:", result);
+          
+          if (result.success && result.originalAmount && result.originalCurrency && result.convertedAmount && result.targetCurrency) {
+            // Options for successful conversion
+            const successOptions: chrome.notifications.NotificationOptions = {
+              type: 'basic',
+              iconUrl: 'icons/icon128.png',
+              title: 'ZNTL Konwerter Walut',
+              message: `${result.originalAmount} ${result.originalCurrency} = ${result.convertedAmount.toFixed(2)} ${result.targetCurrency}`,
+              priority: 0
+            };
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore // TODO: Investigate NotificationOptions typing issue
+            chrome.notifications.create(successOptions);
+          } else {
+            // Options for error
+            const errorOptions: chrome.notifications.NotificationOptions = {
+              type: 'basic',
+              iconUrl: 'icons/icon128.png',
+              title: 'Błąd Konwersji ZNTL',
+              message: result.error || 'Nie udało się przeliczyć waluty.',
+              priority: 0
+            };
+             // TODO: Handle result.needsClarification - maybe open popup?
+            // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+            // @ts-ignore // TODO: Investigate NotificationOptions typing issue
+            chrome.notifications.create(errorOptions);
+          }
+        })
+        .catch(error => {
+          // Catch unexpected errors from handleCurrencyConversionRequest itself
+          console.error("Context menu: Unexpected error during conversion:", error);
+          chrome.notifications.create({
             type: 'basic',
             iconUrl: 'icons/icon128.png',
             title: 'Błąd Konwersji ZNTL',
-            message: result.error || 'Nie udało się przeliczyć waluty.',
+            message: 'Wystąpił nieoczekiwany błąd systemowy.',
             priority: 0
-          };
-           // TODO: Handle result.needsClarification - maybe open popup?
-          // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-          // @ts-ignore // TODO: Investigate NotificationOptions typing issue
-          chrome.notifications.create(errorOptions);
-        }
-      })
-      .catch(error => {
-        // Catch unexpected errors from handleCurrencyConversionRequest itself
-        console.error("Context menu: Unexpected error during conversion:", error);
-        chrome.notifications.create({
-          type: 'basic',
-          iconUrl: 'icons/icon128.png',
-          title: 'Błąd Konwersji ZNTL',
-          message: 'Wystąpił nieoczekiwany błąd systemowy.',
-          priority: 0
+          });
         });
-      });
-  } else if (info.menuItemId === CONTEXT_MENU_ID) {
-      console.log('Context menu: Clicked, but no text selected?');
-      // Optionally show a notification that text needs to be selected
-  }
-}); 
+    } else if (info.menuItemId === CONTEXT_MENU_ID) {
+        console.log('Context menu: Clicked, but no text selected?');
+        // Optionally show a notification that text needs to be selected
+    }
+  });
+}
+
+// DO NOT add the listener at the top level anymore
+// setupContextMenuOnClickListener(); // Call this explicitly where needed (e.g., in index.ts or tests) 

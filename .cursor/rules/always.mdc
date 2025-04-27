@@ -5,37 +5,98 @@ alwaysApply: true
 ---
 # Always
 
-- Refer to `./.cursor/CURSOR.md` for project context but also update it when decided with user
+## General
 
-- create and follow tasks to track and manage working progreess:
-  - Refer to `./.cursor/TODO.md` for next steps and save them too
-  - create sub-todo files in `.cursor/TODO_<name>.md` for suprojects and link them from TODO
-  - save tasks like [ ] and mark done as [x] to track progress
-  - update TODO files after finishing changes
+- **Work in YOLO mode:**  
+  Trust your judgment. I have aligned with you on this — **DO NOT ask for permission**.  
+  If unsure, follow tasks from `TODO.md`.
 
-- commits: 
-  - commit every done task
-  - use conventional commits 
-  - check `git status` before commit and try to commit most possible files
-  - describe commits like for juniors devs: not only why but also and WHY was implementeded
-  - lint and test code before commiting
+- **Context awareness:**  
+  Always refer to `./.cursor/CURSOR.md` for project overview and context.  
+  Update it when significant decisions are made.
 
-- terminal
-   - powershell 7 pwsh windows 11
-   - use `pnpm`
-   - note all problems with pwsh do `.cursor/PWSH_ISSUS.md` provinding info about working and not working practices and what u recomend to improve in its configuration to make our work smooth
-   - dont use `| cat` beacuse pwsh have problems with it
-   - use non-interactive mode when possible
+- **Task tracking:**  
+  - Maintain and follow `./.cursor/TODO.md`.
+  - Create subtodo files: `./.cursor/TODO_<name>.md` for subprojects and link them in the main TODO.
+  - Use `[ ]` for open tasks and `[x]` for completed ones.
+  - Refactor old TODOs to this checkbox format.
+  - Update TODOs immediately after completing changes.
 
+- **Metadata and documentation:**  
+  - Each important folder must have a `.meta.md` file describing its purpose and structure.
+  - Maintain a `.cursor/WHY.md` explaining key architectural decisions.
+  - Log major decisions in `.cursor/DECISIONS_<date>.md`.
+  - Log all failed technical experiments in `.cursor/FAILED_EXPERIMENTS.md`.
+  - Maintain a `.cursor/ERRORS.md` for known issues and solutions.
+  - Document typical mistakes in `.cursor/CODE_SMELLS.md`.
+  - Maintain a weekly developer mood log in `.cursor/DEV_MOOD_TRACKER.md`.
+  - Capture project values and philosophy in `.cursor/PHILOSOPHY.md`.
+  - Collect programming wisdom and reminders in `.cursor/RANDOM_WISDOM.md`.
+  - For important modules, create `.usage.md` files explaining usage examples.
+  - Create lightweight diagrams for complex logic in `.cursor/DIAGRAMS/`.
 
-- write code and docs for junior devs:
-  - comment with TSDocs
-  - add TODO and FIXME in code for the future refactors
-  - if fixing problem, duting working on this problem, feel free to add in comments apporaches u tried and didnt worked, u can create separaed file next to file u edit, with notes (eg same file like editing but with .md extneitona added), so u will have reference what workend and what not
+---
 
-- tests
-  - tests dont must be very strict if not possible, sometimes is good to skip testing hard things; but always comment what u ingored and skipped to testing and save in comments ur resoning why so in the future devs will undestand it and be albe to come back and fix it, u can also add TODO or FIXME in code to know what to do in the future
+## Commits
 
-- cursor and avaliable tools:
-  - if not able to edit file stop (pause) working and ask user to restart you (cursor app), it will help with editing issues, sometimes tools must be restated. after restart continue working
+- Commit **after every completed task**.
+- Use **Conventional Commits** format.
+- Always `git status` before commit and **try to commit all relevant changes** together.
+- Write commit messages **for junior developers**:
+  - Explain **what** was done.
+  - Explain **why** it was done.
+- Lint and test code before committing.
 
+---
+
+## Terminal
+
+- Use **PowerShell 7** (`pwsh`) on **Windows 11**.
+- Use **pnpm** as the package manager.
+- Log any terminal problems into `./.cursor/PWSH_ISSUES.md`, providing:
+  - Problem description
+  - Workarounds that work
+  - Best practices you recommend
+- Prefer **non-interactive mode** for commands when possible.
+
+---
+
+## Code and Documentation Style
+
+- Write **junior-friendly code and documentation**:
+  - Use **TSDoc comments** on exported functions, classes, complex logic.
+  - Add **TODO** and **FIXME** in code to mark future improvements or known issues.
+  - If fixing a problem:
+    - Document **which approaches were tried and failed**.
+    - Optionally create a `.md` notes file next to the code (`<filename>.ts.md`).
+
+- Maintain folder cleanliness:
+  - After major changes, **remove or archive outdated files**.
+  - Update related `.meta.md` and `TODO.md` if structure or plans change.
+
+---
+
+## Testing
+
+- Tests don't have to cover everything initially.
+- If skipping a hard-to-test part:
+  - Leave a **comment** explaining what was skipped and why.
+  - Add `TODO` or `FIXME` for future improvement.
+- Prioritize testing core logic over minor UI behaviors unless critical.
+
+---
+
+## Cursor and Tools Behavior
+
+- If you experience editing issues (e.g., file won't update):
+  - **Pause work immediately** and **ask the user to restart Cursor**.
+  - After restart, continue work.
+
+---
+
+# ✨ Notes for Better Context Maintenance
+
+- Regularly refresh all files under `.cursor/`.
+- Enforce Stale Checks to ensure documentation, diagrams, and TODOs are up-to-date.
+- Prefer lightweight but accurate diagrams (`.puml` or simple `.md`) for non-trivial flows.
+- Document what didn't work, not only what did — build context over time.

@@ -1,6 +1,6 @@
 import { aiFacade } from '../services/aiFacade';
 import { exchangeRateService } from '../services/exchangeRateService';
-import { initializeContextMenu } from './listeners';
+import { initializeContextMenu, setupContextMenuOnClickListener } from './listeners';
 import { ConversionResult } from '../interfaces';
 
 console.log('Background script loaded.');
@@ -10,6 +10,9 @@ chrome.runtime.onInstalled.addListener(() => {
   console.log('Extension installed/updated. Initializing context menu...');
   initializeContextMenu();
 });
+
+// Setup the listener for context menu clicks
+setupContextMenuOnClickListener();
 
 /**
  * Handles messages sent from other parts of the extension (e.g., popup).

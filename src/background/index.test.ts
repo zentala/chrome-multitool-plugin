@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, Mock, afterEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock, afterEach, beforeAll } from 'vitest';
 
 // --- Mock Dependencies --- //
 
@@ -18,17 +18,23 @@ vi.mock('../services/exchangeRateService', () => ({
   },
 }));
 
+// Mock the listeners module to prevent its auto-execution on import, if needed
+// Or ensure its functions are only called when intended within tests.
+vi.mock('./listeners', async (importOriginal) => {
+  const original = await importOriginal() as typeof import('./listeners');
+  return { ...original }; // Keep original exports, but allow listener spying
+});
+
 // --- Import Mocks and Tested Module --- //
 import { aiFacade } from '../services/aiFacade';
 import { exchangeRateService } from '../services/exchangeRateService';
-// Import the functions/listeners we want to test from background script
-// Note: Directly importing index.ts might execute top-level code like addListener calls.
-// It might be better to export specific handlers if possible, or structure tests carefully.
-// For now, let's assume importing index is okay and we can trigger listeners manually.
-// We might need to spy on the `addListener` methods.
-
-// Import the function to test directly
+// Import specific things needed, avoid top-level import of './index' for now
 import { handleCurrencyConversionRequest } from './index'; 
+import * as listeners from './listeners'; // Import the actual module to call its functions
+
+// Import background scripts AFTER mocks are defined to allow capturing addListener calls
+import './index';
+import './listeners';
 
 // --- Get Typed Mock Functions --- //
 const mockParseCurrencyInput = aiFacade.parseCurrencyInput as Mock;
@@ -44,17 +50,24 @@ const mockOnInstalledAddListener = chrome.runtime.onInstalled.addListener as Moc
 const mockContextMenusOnClickedAddListener = chrome.contextMenus.onClicked.addListener as Mock;
 
 describe('Background Script Integration Tests', () => {
-
   beforeEach(() => {
+    // Clear all mocks, including addListener calls from previous tests if any
     vi.clearAllMocks();
-    // Reset specific mocks if needed
+    // Re-run listener setup IF it was conditional or needs resetting. 
+    // Assuming the top-level imports already added listeners via mocks once.
     mockParseCurrencyInput.mockReset();
     mockGetRate.mockReset();
+    mockRemoveContextMenu.mockReset();
+    mockCreateContextMenu.mockReset();
+    mockCreateNotification.mockReset();
+    // Reset addListener mocks to check calls within specific tests
+    mockOnInstalledAddListener.mockReset();
+    mockContextMenusOnClickedAddListener.mockReset();
+    mockOnMessageAddListener.mockReset();
   });
 
   afterEach(() => {
-    // Ensure any stray timeouts or promises resolve if necessary
-    vi.useRealTimers(); // Reset timers if vi.useFakeTimers() was used
+    vi.useRealTimers();
   });
 
   // --- Test handleCurrencyConversionRequest (Core Logic) --- //
@@ -134,9 +147,104 @@ describe('Background Script Integration Tests', () => {
     // TODO: Test unexpected error handling within the try-catch block
   });
 
-  // --- Tests for Listeners (Need careful setup) --- //
-  // describe('onInstalled Listener', () => { ... });
-  // describe('onMessage Listener', () => { ... });
-  // describe('contextMenus.onClicked Listener', () => { ... });
+  // --- Tests for Listeners --- //
 
+  describe('chrome.runtime.onInstalled Listener', () => {
+    it('should setup context menu via initializeContextMenu on install', async () => {
+      // 1. Trigger the onInstalled event listener setup code again manually
+      // This is needed because mocks are cleared in beforeEach.
+      // Ideally, the module import would be managed within the test or describe.
+      // Let's directly call the logic that should be triggered by onInstalled.
+      // We need to simulate the execution context of the imported background script.
+      // Re-importing or re-executing the script's top level is complex.
+      
+      // Alternative: Test the exported initializer function directly
+      mockRemoveContextMenu.mockImplementation((_, cb) => { if(cb) cb(); });
+      await listeners.initializeContextMenu(); // Call the exported function directly
+
+      // Verify the effects
+      expect(mockRemoveContextMenu).toHaveBeenCalledWith('ZNTL_CONVERT_CURRENCY', expect.any(Function));
+      expect(mockCreateContextMenu).toHaveBeenCalledTimes(1);
+      expect(mockCreateContextMenu).toHaveBeenCalledWith({
+        id: 'ZNTL_CONVERT_CURRENCY',
+        title: 'ZNTL: Przelicz walutę na PLN',
+        contexts: ['selection'],
+      });
+    });
+  });
+
+  describe('chrome.contextMenus.onClicked Listener', () => {
+    let onClickedCallback: ((info: chrome.contextMenus.OnClickData, tab?: chrome.tabs.Tab) => void) | undefined;
+
+    beforeEach(async () => {
+      // Reset the mock before capturing
+      mockContextMenusOnClickedAddListener.mockReset();
+      // Manually setup the listener and capture the callback
+      await listeners.setupContextMenuOnClickListener();
+      if (mockContextMenusOnClickedAddListener.mock.calls.length > 0) {
+         onClickedCallback = mockContextMenusOnClickedAddListener.mock.calls[0][0];
+      } else {
+         // Throw an error if listener wasn't added as expected
+         throw new Error('setupContextMenuOnClickListener did not call chrome.contextMenus.onClicked.addListener');
+      }
+    });
+
+    it('should call handleCurrencyConversionRequest and show success notification on valid click', async () => {
+       expect(onClickedCallback).toBeDefined(); // Ensure callback was captured
+       if (!onClickedCallback) return; // Add check
+       const selectionText = '50 USD';
+       const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'ZNTL_CONVERT_CURRENCY', selectionText: selectionText, editable: false, pageUrl: 'some_url' };
+       mockParseCurrencyInput.mockResolvedValue({ success: true, amount: 50, currency: 'USD' });
+       mockGetRate.mockResolvedValue(4.0);
+       await onClickedCallback(mockInfo, undefined);
+       expect(mockParseCurrencyInput).toHaveBeenCalledWith(selectionText);
+       expect(mockGetRate).toHaveBeenCalledWith('USD', 'PLN');
+       expect(mockCreateNotification).toHaveBeenCalledTimes(1);
+       expect(mockCreateNotification).toHaveBeenCalledWith(expect.objectContaining({ title: 'ZNTL Konwerter Walut', message: '50 USD = 200.00 PLN' }));
+     });
+
+     it('should call handleCurrencyConversionRequest and show error notification on failed conversion', async () => {
+        expect(onClickedCallback).toBeDefined();
+        if (!onClickedCallback) return; // Ensure the check is present and correct
+       const selectionText = 'invalid text';
+       const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'ZNTL_CONVERT_CURRENCY', selectionText: selectionText, editable: false, pageUrl: 'some_url' };
+       // Mock should return the raw error from the AI service
+       const rawAiErrorMessage = 'Could not parse'; 
+       mockParseCurrencyInput.mockResolvedValue({ success: false, error: rawAiErrorMessage });
+       
+       await onClickedCallback(mockInfo, undefined);
+       
+       await vi.waitFor(() => {
+         expect(mockCreateNotification).toHaveBeenCalledTimes(1);
+       });
+       // Expect the error message *after* being processed by handleCurrencyConversionRequest
+       const expectedFormattedErrorMessage = `AI parsing failed: ${rawAiErrorMessage}`;
+       expect(mockCreateNotification).toHaveBeenCalledWith(expect.objectContaining({
+         title: 'Błąd Konwersji ZNTL',
+         message: expectedFormattedErrorMessage 
+       }));
+       expect(mockParseCurrencyInput).toHaveBeenCalledWith(selectionText);
+       expect(mockGetRate).not.toHaveBeenCalled();
+     });
+
+     it('should not call handleCurrencyConversionRequest if wrong menu item ID', async () => {
+        expect(onClickedCallback).toBeDefined();
+        if (!onClickedCallback) return; // Add check
+        const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'WRONG_ID', selectionText: '100 EUR', editable: false, pageUrl: 'some_url' };
+        await onClickedCallback(mockInfo, undefined);
+        expect(mockParseCurrencyInput).not.toHaveBeenCalled();
+        expect(mockCreateNotification).not.toHaveBeenCalled();
+     });
+
+     it('should not call handleCurrencyConversionRequest if no text selected', async () => {
+         expect(onClickedCallback).toBeDefined();
+         if (!onClickedCallback) return; // Add check
+         const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'ZNTL_CONVERT_CURRENCY', editable: false, pageUrl: 'some_url' }; 
+         await onClickedCallback(mockInfo, undefined);
+         expect(mockParseCurrencyInput).not.toHaveBeenCalled();
+         expect(mockCreateNotification).not.toHaveBeenCalled();
+     });
+  });
+
+  // describe('chrome.runtime.onMessage Listener', () => { ... }); // TODO: Add tests for onMessage
 }); 
