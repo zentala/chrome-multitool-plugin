@@ -5,7 +5,7 @@ alwaysApply: true
 ---
 # Always
 
-- Refer to `./.cursor/CURSOR.md` for instructions
+- Refer to `./.cursor/CURSOR.md` for project context but also update it when decided with user
 
 - create and follow tasks to track and manage working progreess:
   - Refer to `./.cursor/TODO.md` for next steps and save them too
@@ -22,6 +22,8 @@ alwaysApply: true
 
 - terminal
    - powershell 7 pwsh windows 11
+   - use `pnpm`
+   - note all problems with pwsh do `.cursor/PWSH_ISSUS.md` provinding info about working and not working practices and what u recomend to improve in its configuration to make our work smooth
    - dont use `| cat` beacuse pwsh have problems with it
    - use non-interactive mode when possible
 
