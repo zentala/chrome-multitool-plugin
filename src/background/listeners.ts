@@ -34,48 +34,66 @@ export function setupContextMenuOnClickListener() {
       handleCurrencyConversionRequest(selectedText)
         .then(result => {
           console.log("Context menu conversion result:", result);
-          
+
+          // Initialize with common required fields
+          const notificationOptions: chrome.notifications.NotificationOptions = {
+            type: 'basic',
+            iconUrl: 'icons/icon128.png', // Ensure this path is correct relative to manifest.json
+            title: '', // Will be set below
+            message: '', // Will be set below
+            priority: 0
+          };
+
           if (result.success && result.originalAmount && result.originalCurrency && result.convertedAmount && result.targetCurrency) {
             // Options for successful conversion
-            const successOptions: chrome.notifications.NotificationOptions = {
-              type: 'basic',
-              iconUrl: 'icons/icon128.png',
-              title: 'ZNTL Konwerter Walut',
-              message: `${result.originalAmount} ${result.originalCurrency} = ${result.convertedAmount.toFixed(2)} ${result.targetCurrency}`,
-              priority: 0
-            };
+            notificationOptions.title = 'ZNTL Konwerter Walut';
+            notificationOptions.message = `${result.originalAmount} ${result.originalCurrency} = ${result.convertedAmount.toFixed(2)} ${result.targetCurrency}`;
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore // TODO: Investigate NotificationOptions typing issue
-            chrome.notifications.create(successOptions);
+            // chrome.notifications.create(successOptions);
           } else {
             // Options for error
-            const errorOptions: chrome.notifications.NotificationOptions = {
-              type: 'basic',
-              iconUrl: 'icons/icon128.png',
-              title: 'Błąd Konwersji ZNTL',
-              message: result.error || 'Nie udało się przeliczyć waluty.',
-              priority: 0
-            };
+             // TODO: Handle result.needsClarification - maybe open popup? Needs decision.
+            notificationOptions.title = 'Błąd Konwersji ZNTL';
+            notificationOptions.message = result.error || 'Nie udało się przeliczyć waluty. Zaznacz dokładniejszą kwotę i walutę.'; // Improved error message
              // TODO: Handle result.needsClarification - maybe open popup?
             // eslint-disable-next-line @typescript-eslint/ban-ts-comment
             // @ts-ignore // TODO: Investigate NotificationOptions typing issue
-            chrome.notifications.create(errorOptions);
+            // chrome.notifications.create(errorOptions);
           }
+
+          // Provide a unique ID to prevent notifications stacking unnecessarily
+          // Or leave empty string/undefined for Chrome to generate one
+          const notificationId = `zntl-conversion-${Date.now()}`;
+          // Now call create - TS should be happier as the structure is defined upfront
+          chrome.notifications.create(notificationId, notificationOptions);
+
         })
         .catch(error => {
           // Catch unexpected errors from handleCurrencyConversionRequest itself
           console.error("Context menu: Unexpected error during conversion:", error);
-          chrome.notifications.create({
-            type: 'basic',
-            iconUrl: 'icons/icon128.png',
-            title: 'Błąd Konwersji ZNTL',
-            message: 'Wystąpił nieoczekiwany błąd systemowy.',
-            priority: 0
-          });
+          // Use a similar structure for consistency, although less critical here
+          const errorOptions: chrome.notifications.NotificationOptions = {
+              type: 'basic',
+              iconUrl: 'icons/icon128.png', // Ensure path is correct
+              title: 'Błąd Systemowy ZNTL',
+              message: 'Wystąpił nieoczekiwany błąd systemowy podczas konwersji.',
+              priority: 1 // Higher priority for system errors
+          };
+          chrome.notifications.create(`zntl-error-${Date.now()}`, errorOptions); // Unique ID here too
         });
     } else if (info.menuItemId === CONTEXT_MENU_ID) {
         console.log('Context menu: Clicked, but no text selected?');
-        // Optionally show a notification that text needs to be selected
+        // Optional: Show notification if no text selected
+        // Use a similar structure here too
+        const noSelectionOptions: chrome.notifications.NotificationOptions = {
+            type: 'basic',
+            iconUrl: 'icons/icon128.png',
+            title: 'ZNTL Konwerter Walut',
+            message: 'Zaznacz tekst zawierający kwotę i walutę, aby dokonać konwersji.',
+            priority: 0
+        };
+        chrome.notifications.create(`zntl-noselection-${Date.now()}`, noSelectionOptions);
     }
   });
 }
