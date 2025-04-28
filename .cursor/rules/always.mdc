@@ -39,12 +39,12 @@ alwaysApply: true
 ## Commits
 
 - Commit **after every completed task**.
+- Lint and test code before committing.
+  - `pnpm run test >> test.log`
+  - `pnpm run lint >> lint.log`
+  - then fix them all, then commit
 - Use **Conventional Commits** format.
 - Always `git status` before commit and **try to commit all relevant changes** together.
-- Write commit messages **for junior developers**:
-  - Explain **what** was done.
-  - Explain **why** it was done.
-- Lint and test code before committing.
 - sometimes ammend commit if it makes more sense
 
 ## Terminal

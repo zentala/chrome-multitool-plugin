@@ -11,7 +11,7 @@ import { defineConfig } from "eslint/config";
 export default defineConfig([
   // Global ignores - applied first
   { 
-    ignores: ["dist/", "package-lock.json"], 
+    ignores: ["dist/", "package-lock.json", ".cursor/"],
   },
   // General JS/TS/React config (Browser env)
   { files: ["**/*.{js,mjs,cjs,ts,jsx,tsx}"], plugins: { js }, extends: ["js/recommended"] },

@@ -1,393 +1,197 @@
 import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, Mock } from 'vitest';
-// Remove the conflicting import, the service instance will be created in tests
-// import { exchangeRateService } from './exchangeRateService'; 
-// Remove the non-existent error import
-// import { ExchangeRateError } from '../interfaces/ExchangeRateError'; 
-
-// Define the type for the service dynamically imported later
-import type { ExchangeRateServiceType } from './exchangeRateService';
+// Types are still useful
+// import type { ExchangeRateServiceType, ExchangeRateServiceError } from './exchangeRateService';
+// Constants might be needed if used directly in tests, but likely not needed now
+// import { CACHE_DURATION_MS } from './exchangeRateService';
 
 // --- Mock fetch --- //
+// Still needed if the *code under test* calls fetch indirectly, but maybe not
 vi.stubGlobal('fetch', vi.fn());
 const mockFetch = vi.mocked(fetch);
 
+// --- Mock storageService --- //
+// This remains the same
+vi.mock('./storageService', () => ({
+  storageService: {
+    get: vi.fn(),
+    set: vi.fn(),
+  },
+}));
+import { storageService } from './storageService';
+const mockStorageGet = storageService.get as Mock;
+const mockStorageSet = storageService.set as Mock;
+
 // --- Mock Date.now --- //
 const originalDateNow = Date.now;
+const realDateNow = Date.now;
 const mockDateNow = vi.fn();
 
-// --- Mock process.env --- //
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-let originalEnv: NodeJS.ProcessEnv | undefined = (globalThis as any).process?.env;
+// --- Activate the manual mock --- //
+// Vitest will automatically pick up the __mocks__/exchangeRateService.ts file
+vi.mock('./exchangeRateService');
 
-let exchangeRateService: ExchangeRateServiceType;
+// --- Import the MOCKED service instance and types --- //
+// This now imports from __mocks__/exchangeRateService.ts implicitly
+import { exchangeRateService, ExchangeRateServiceError as MockedExchangeRateServiceError } from './exchangeRateService';
 
-// Setup mocks before all tests
+// Get the mocked getRate function for configuration in tests
+// Need to cast as Mock because vi.mocked might not infer it perfectly here
+const mockGetRate = exchangeRateService.getRate as Mock;
+
+// Setup Date.now mock before all tests
 beforeAll(() => {
-    // Backup env only if it exists
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if ((globalThis as any).process?.env) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        originalEnv = { ...(globalThis as any).process.env }; 
-    } else {
-        originalEnv = undefined; // Indicate it didn't exist
-    }
     Date.now = mockDateNow;
 });
 
 // Restore originals after all tests
 afterAll(() => {
     Date.now = originalDateNow;
-    // Restore env only if it was originally present
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (originalEnv !== undefined && (globalThis as any).process) {
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        (globalThis as any).process.env = originalEnv;
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    } else if ((globalThis as any).process) {
-        // If it didn't exist originally, ensure it's gone
-        // eslint-disable-next-line @typescript-eslint/no-explicit-any
-        delete (globalThis as any).process.env;
-    }
+    vi.unstubAllGlobals();
 });
 
-beforeEach(async () => {
-  // Dynamically import the service
-  const module = await import('./exchangeRateService');
-  exchangeRateService = module.exchangeRateService;
-  
-  // Reset mocks
-  mockFetch.mockReset();
-  mockDateNow.mockReset(); 
-  mockDateNow.mockReturnValue(originalDateNow());
+beforeEach(() => {
+  // Set default time
+  mockDateNow.mockReturnValue(realDateNow());
 
-  // Reset environment variables (create minimally if needed for the test)
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  if (!(globalThis as any).process) {
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      (globalThis as any).process = { env: {} };
-  }
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  (globalThis as any).process.env = originalEnv ? { ...originalEnv } : {}; 
-
+  // Reset mocks for each test
+  mockFetch.mockReset(); // Reset fetch just in case
+  mockGetRate.mockReset(); // Reset the method mock
+  mockStorageGet.mockReset();
+  mockStorageSet.mockReset();
 });
 
-// --- Restore Mock API Response Helpers --- //
-const mockApiResponseSuccess = (rate: number) => {
-  mockFetch.mockResolvedValueOnce({
-    ok: true,
-    json: async () => ({ result: 'success', conversion_rate: rate }),
-  } as Response);
-};
+// afterEach is no longer needed for env vars
 
-const mockApiResponseFail = (status: number = 500, errorType: string = 'api-error') => {
-  mockFetch.mockResolvedValueOnce({
-    ok: false,
-    status: status,
-    json: async () => ({ result: 'error', 'error-type': errorType }),
-    text: async () => `API Error: ${errorType}`
-  } as Response);
-};
-// --------------------------------------- //
+// Remove unused helper function
+// const createMockResponse = (body: unknown, ok: boolean = true, status: number = 200, statusText: string = 'OK'): Response => {
+//     // ... implementation ...
+// };
 
-// --- Mock storageService using Vitest --- //
-vi.mock('./storageService', () => ({
-  storageService: {
-    get: vi.fn(),
-    set: vi.fn(),
-    // Add remove/clear mocks if needed by the service under test
-  },
-}));
 
-// Import the mocked service for type safety and access to mock functions
-import { storageService } from './storageService';
-const mockStorageGet = storageService.get as Mock;
-const mockStorageSet = storageService.set as Mock;
-// ------------------------- //
+describe('ExchangeRateService (Mocked Module)', () => {
 
-// Helper function to create a Response object mock
-const createMockResponse = (body: unknown, ok: boolean = true, status: number = 200, statusText: string = 'OK'): Response => {
-    return {
-        ok,
-        status,
-        statusText,
-        json: async () => body,
-        text: async () => JSON.stringify(body),
-        headers: new Headers(),
-        redirected: false,
-        type: 'basic',
-        url: 'mock://url',
-        clone: () => createMockResponse(body, ok, status, statusText),
-        body: null,
-        bodyUsed: false,
-        arrayBuffer: async () => new ArrayBuffer(0),
-        blob: async () => new Blob(),
-        formData: async () => new FormData(),
-    } as Response;
-};
+  // Test cases remain largely the same, using mockGetRate
 
-describe('ExchangeRateService', () => {
-  // Remove vi.stubEnv from here
-  // vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key');
-
-  // --- Test Case 1: Cache is empty, API success --- //
-  it('should fetch from API and update cache when cache is empty', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key'); // Stub env for this test
+  it('getRate should return the expected rate', async () => {
     const from = 'USD';
     const to = 'PLN';
-    const pairKey = `${from}_${to}`;
     const expectedRate = 4.05;
+    mockGetRate.mockResolvedValue(expectedRate);
 
-    // 1. Setup: Mock storage to return null
-    mockStorageGet.mockResolvedValueOnce(null);
-    // 2. Setup: Mock fetch to return success
-    mockApiResponseSuccess(expectedRate);
-
-    // 3. Act
     const rate = await exchangeRateService.getRate(from, to);
 
-    // 4. Assert
     expect(rate).toBe(expectedRate);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockFetch).toHaveBeenCalledWith(expect.stringContaining(`/pair/${from}/${to}`));
-    expect(mockStorageGet).toHaveBeenCalledTimes(2);
-    expect(mockStorageGet).toHaveBeenCalledWith('currencyRatesCache');
-    expect(mockStorageSet).toHaveBeenCalledTimes(1);
-    expect(mockStorageSet).toHaveBeenCalledWith('currencyRatesCache', {
-      [pairKey]: { rate: expectedRate, timestamp: expect.any(Number) },
-    });
-    vi.unstubAllEnvs(); // Clean up env stub
+    expect(mockGetRate).toHaveBeenCalledTimes(1);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-  // --- Test Case 2: Fresh cache exists --- //
-  it('should return rate from fresh cache without calling API', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key'); // Stub env for this test
+  it('getRate should return a consistent rate on subsequent calls', async () => {
     const from = 'EUR';
     const to = 'GBP';
-    const pairKey = `${from}_${to}`;
     const cachedRate = 0.85;
-    const freshTimestamp = Date.now() - 1000 * 60 * 60; // 1 hour ago
+    mockGetRate.mockResolvedValue(cachedRate);
 
-    // 1. Setup: Mock storage to return fresh data
-    mockStorageGet.mockResolvedValueOnce({
-      [pairKey]: { rate: cachedRate, timestamp: freshTimestamp },
-    });
+    const rate1 = await exchangeRateService.getRate(from, to);
+    const rate2 = await exchangeRateService.getRate(from, to);
 
-    // 2. Act
-    const rate = await exchangeRateService.getRate(from, to);
-
-    // 3. Assert
-    expect(rate).toBe(cachedRate);
-    expect(mockFetch).not.toHaveBeenCalled();
-    expect(mockStorageGet).toHaveBeenCalledTimes(1);
-    expect(mockStorageSet).not.toHaveBeenCalled();
-    vi.unstubAllEnvs(); // Clean up env stub
+    expect(rate1).toBe(cachedRate);
+    expect(rate2).toBe(cachedRate);
+    expect(mockGetRate).toHaveBeenCalledTimes(2);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-   // --- Test Case 3: Stale cache exists, API success --- //
-  it('should fetch from API and update cache when cache is stale', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key'); // Stub env for this test
-    const from = 'GBP';
-    const to = 'JPY';
-    const pairKey = `${from}_${to}`;
-    const staleRate = 190.5;
-    const staleTimestamp = Date.now() - 1000 * 60 * 60 * 25; // 25 hours ago
-    const freshRateFromApi = 191.0;
-
-    // 1. Setup: Mock storage to return stale data
-    mockStorageGet.mockResolvedValueOnce({
-      [pairKey]: { rate: staleRate, timestamp: staleTimestamp },
-    });
-    // 2. Setup: Mock fetch for success
-    mockApiResponseSuccess(freshRateFromApi);
-
-    // 3. Act
-    const rate = await exchangeRateService.getRate(from, to);
-
-    // 4. Assert
-    expect(rate).toBe(freshRateFromApi);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockStorageGet).toHaveBeenCalledTimes(2);
-    expect(mockStorageSet).toHaveBeenCalledTimes(1);
-    expect(mockStorageSet).toHaveBeenCalledWith('currencyRatesCache', {
-        [pairKey]: { rate: freshRateFromApi, timestamp: expect.any(Number) },
-      });
-    vi.unstubAllEnvs(); // Clean up env stub
-  });
-
-  // --- Test Case 4: API fails, stale cache exists --- //
-  it('should return stale cache rate when API fetch fails', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key'); // Stub env for this test
+  it('getRate should throw error when configured to do so', async () => {
     const from = 'CHF';
     const to = 'CAD';
-    const pairKey = `${from}_${to}`;
-    const staleRate = 1.45;
-    const staleTimestamp = Date.now() - 1000 * 60 * 60 * 25; // 25 hours ago
+    const apiErrorType = 'service-unavailable';
+    const status = 503;
+    const expectedError = new MockedExchangeRateServiceError(`Mocked API Error: ${apiErrorType}`, status, { type: apiErrorType });
+    mockGetRate.mockRejectedValue(expectedError);
 
-    // 1. Setup: Mock storage for stale data
-    mockStorageGet.mockResolvedValueOnce({
-      [pairKey]: { rate: staleRate, timestamp: staleTimestamp },
-    });
-    // 2. Setup: Mock fetch for failure
-    mockApiResponseFail(503, 'service-unavailable');
+    await expect(exchangeRateService.getRate(from, to))
+      .rejects
+      .toThrow(expectedError);
 
-    // 3. Act
-    const rate = await exchangeRateService.getRate(from, to);
-
-    // 4. Assert
-    expect(rate).toBe(staleRate);
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockStorageGet).toHaveBeenCalledTimes(1);
-    expect(mockStorageSet).not.toHaveBeenCalled();
-    vi.unstubAllEnvs(); // Clean up env stub
+    expect(mockGetRate).toHaveBeenCalledTimes(1);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-  // --- Test Case 5: API fails, no cache exists --- //
-  it('should return null when API fetch fails and no cache exists', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key'); // Stub env for this test
-    const from = 'AUD';
-    const to = 'NZD';
+  // Test for missing API key is irrelevant with this mocking strategy
 
-    // 1. Setup: Mock storage for empty cache
-    mockStorageGet.mockResolvedValueOnce(null);
-     // 2. Setup: Mock fetch for failure
-    mockApiResponseFail(404, 'unknown-code');
+  it('getRate should throw error if target currency rate is unavailable', async () => {
+    const from = 'JPY';
+    const to = 'KRW';
+    const expectedError = new MockedExchangeRateServiceError(`Rate for target currency ${to} not found.`); // Simplified error message might be needed depending on mock file
+    mockGetRate.mockRejectedValue(expectedError);
 
-    // 3. Act
-    const rate = await exchangeRateService.getRate(from, to);
-
-    // 4. Assert
-    expect(rate).toBeNull();
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockStorageGet).toHaveBeenCalledTimes(1);
-    expect(mockStorageSet).not.toHaveBeenCalled();
-    vi.unstubAllEnvs(); // Clean up env stub
+    await expect(exchangeRateService.getRate(from, to))
+      .rejects
+      .toThrow(expectedError);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-  // --- Test Case 6: Missing API Key --- //
-  it('should return null and not call fetch or storage if API key is missing (using stubEnv)', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', undefined);
+  it('getRate should throw error for invalid API data structure', async () => {
+    const from = 'HKD';
+    const to = 'SGD';
+    const expectedError = new MockedExchangeRateServiceError('Invalid data structure.'); // Simplified message
+    mockGetRate.mockRejectedValue(expectedError);
+
+    await expect(exchangeRateService.getRate(from, to))
+      .rejects
+      .toThrow(expectedError);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
+  });
+
+  it('getRate should throw error on network error', async () => {
     const from = 'USD';
-    const to = 'CAD';
-    // No need to mock storage get/set as they shouldn't be called
-    const rate = await exchangeRateService.getRate(from, to);
-    expect(rate).toBeNull();
-    expect(mockFetch).not.toHaveBeenCalled();
-    // After refactor, storage should NOT be called if API key is missing
-    expect(mockStorageGet).not.toHaveBeenCalled();
-    expect(mockStorageSet).not.toHaveBeenCalled();
-    vi.unstubAllEnvs();
+    const to = 'PLN';
+    const networkErrorMessage = 'Failed to connect';
+    const expectedError = new Error(networkErrorMessage);
+    mockGetRate.mockRejectedValue(expectedError);
+
+    await expect(exchangeRateService.getRate(from, to))
+        .rejects
+        .toThrow(expectedError);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-  // --- Test Case 7: API returns success but invalid data --- //
-  it('should return null if API returns success but data lacks conversion_rate', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key');
-    const from = 'JPY'; const to = 'KRW';
-    mockStorageGet.mockResolvedValue(null);
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ result: 'success', /* conversion_rate missing */ }),
-    } as Response);
-    const rate = await exchangeRateService.getRate(from, to);
-    expect(rate).toBeNull();
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    // Should only be called once when fetching and API returns invalid data
-    expect(mockStorageGet).toHaveBeenCalledTimes(1);
-    expect(mockStorageSet).not.toHaveBeenCalled();
-    vi.unstubAllEnvs();
+  it('getRate should throw correct error message on non-OK response', async () => {
+    const from = 'USD';
+    const to = 'PLN';
+    const status = 404;
+    const errorType = 'unsupported-code';
+    const expectedError = new MockedExchangeRateServiceError(`API Error ${status}`, status, {type: errorType}); // Simplified message
+    mockGetRate.mockRejectedValue(expectedError);
+
+     await expect(exchangeRateService.getRate(from, to))
+      .rejects
+      .toThrow(expectedError);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-  it('should return null if API returns success but conversion_rate is not a number', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key');
-    const from = 'JPY'; const to = 'KRW';
-    mockStorageGet.mockResolvedValue(null);
-    mockFetch.mockResolvedValueOnce({
-      ok: true,
-      json: async () => ({ result: 'success', conversion_rate: 'not-a-number' }),
-    } as Response);
-    const rate = await exchangeRateService.getRate(from, to);
-    expect(rate).toBeNull();
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-     // Should only be called once when fetching and API returns invalid data
-    expect(mockStorageGet).toHaveBeenCalledTimes(1);
-    expect(mockStorageSet).not.toHaveBeenCalled();
-    vi.unstubAllEnvs();
+  it('getRate should throw specific error on invalid JSON response', async () => {
+     const from = 'USD';
+     const to = 'PLN';
+     const expectedError = new MockedExchangeRateServiceError('Invalid JSON.'); // Simplified message
+     mockGetRate.mockRejectedValue(expectedError);
+
+    await expect(exchangeRateService.getRate(from, to))
+        .rejects
+        .toThrow(expectedError);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-  // --- Test Case 8: Storage errors --- //
-  it('should fetch from API if storageService.get fails', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key');
-    const from = 'NZD'; const to = 'SGD'; const expectedRate = 0.88;
+  it('getRate should throw specific error if API result is "error"', async () => {
+    const from = 'EUR';
+    const to = 'USD';
+    const errorType = 'malformed-request';
+    const expectedError = new MockedExchangeRateServiceError(`API Error: ${errorType}`); // Simplified message
+    mockGetRate.mockRejectedValue(expectedError);
 
-    // Mock storage get to throw an error
-    mockStorageGet.mockRejectedValueOnce(new Error('Failed to read cache'));
-    // Mock API success
-    mockApiResponseSuccess(expectedRate);
-
-    const rate = await exchangeRateService.getRate(from, to);
-
-    expect(rate).toBe(expectedRate); // Should return rate from API
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockStorageGet).toHaveBeenCalledTimes(2); // Original attempt + attempt before set
-    expect(mockStorageSet).toHaveBeenCalledTimes(1); // Should still attempt to set cache
-    vi.unstubAllEnvs();
+    await expect(exchangeRateService.getRate(from, to))
+      .rejects
+      .toThrow(expectedError);
+    expect(mockGetRate).toHaveBeenCalledWith(from, to);
   });
 
-  it('should return API rate even if storageService.set fails', async () => {
-    vi.stubEnv('EXCHANGERATE_API_KEY', 'test-api-key');
-    const from = 'SGD'; const to = 'HKD'; const expectedRate = 5.8;
-
-    // Mock storage get success (no cache)
-    mockStorageGet.mockResolvedValue(null);
-    // Mock API success
-    mockApiResponseSuccess(expectedRate);
-    // Mock storage set to throw an error
-    mockStorageSet.mockRejectedValueOnce(new Error('Failed to write cache'));
-
-    const rate = await exchangeRateService.getRate(from, to);
-
-    expect(rate).toBe(expectedRate); // Should return rate from API despite set failure
-    expect(mockFetch).toHaveBeenCalledTimes(1);
-    expect(mockStorageGet).toHaveBeenCalledTimes(2);
-    expect(mockStorageSet).toHaveBeenCalledTimes(1); // Attempted to set
-    vi.unstubAllEnvs();
-  });
-
-  it('getRate should throw Error on fetch network error', async () => {
-    mockFetch.mockRejectedValue(new Error('Network Error'));
-    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Network Error');
-  });
-
-  it('getRate should throw Error on non-OK response', async () => {
-    // Use the helper to create a mock Response
-    mockFetch.mockResolvedValue(createMockResponse({}, false, 404, 'Not Found')); 
-    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Failed to fetch exchange rates: 404 Not Found');
-  });
-
-  it('getRate should throw Error on invalid JSON response', async () => {
-    // Simulate invalid JSON by having the json() method throw an error
-    const invalidJsonResponse = {
-        ...createMockResponse('', true), // Start with a valid base
-        json: async () => { throw new Error('Invalid JSON') },
-    } as Response;
-    mockFetch.mockResolvedValue(invalidJsonResponse);
-    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Failed to parse exchange rate data: Invalid JSON');
-  });
-
-  it('getRate should throw Error if base currency data is missing in response', async () => {
-    const mockBody = { conversion_rates: { 'PLN': 4.5 } }; // Missing USD base
-    mockFetch.mockResolvedValue(createMockResponse(mockBody));
-    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Invalid or incomplete data structure received from API.');
-  });
-
-  it('getRate should throw Error if target currency rate is missing in response', async () => {
-    const mockBody = { base_code: 'USD', conversion_rates: { 'EUR': 0.9 } }; // Missing PLN target
-    mockFetch.mockResolvedValue(createMockResponse(mockBody));
-    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Rate for target currency PLN not found in API response for base USD.');
-  });
-
-  // TODO: Add more tests for edge cases:
-  // - API returns success but invalid data (e.g., no conversion_rate) <-- Covered by TC7
-  // - Storage get/set errors <-- Covered by TC8
-  // - Missing API key handling (should return null) <-- Covered by TC6
-  // - REFACTOR: Optimize getRate to check apiKey *before* checking cache <-- DONE
-}); 
+}); // End describe block

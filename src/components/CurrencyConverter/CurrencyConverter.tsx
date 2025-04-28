@@ -145,7 +145,7 @@ export const CurrencyConverter: React.FC = () => {
           className={styles.inputField}
         />
         <button onClick={handleConvertClick} disabled={isLoading || isClarifying || showClarificationInput} className={styles.button}>
-          {isLoading && !isClarifying ? <span className={styles.spinner}></span> : 'Convert to PLN'}
+          {isLoading && !isClarifying ? <span className={styles.spinner} data-testid="spinner"></span> : 'Convert to PLN'}
         </button>
       </div>
 
@@ -187,7 +187,7 @@ export const CurrencyConverter: React.FC = () => {
                     autoFocus // Focus clarification input when it appears
                 />
                 <button onClick={handleClarificationSubmit} disabled={isLoading || isClarifying || !clarificationValue.trim()} className={styles.button}>
-                    {isClarifying ? <span className={styles.spinner}></span> : 'Retry'}
+                    {isClarifying ? <span className={styles.spinner} data-testid="spinner"></span> : 'Retry'}
                 </button>
              </div>
           </div>

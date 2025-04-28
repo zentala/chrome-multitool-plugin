@@ -1,69 +1,106 @@
 /**
- * A simple wrapper around chrome.storage.local for type safety
- * and easier usage with async/await.
+ * @file Provides a simple service for interacting with Chrome's storage API.
  */
-class StorageService {
+
+// Define a generic type for storage areas
+type StorageArea = 'local' | 'sync';
+
+// Interface for the storage service
+export interface IStorageService {
   /**
-   * Gets a value from chrome.storage.local.
+   * Retrieves an item from the specified storage area.
    * @param key The key of the item to retrieve.
-   * @returns A promise resolving to the value, or null if not found or an error occurs.
+   * @param area The storage area to use ('local' or 'sync'). Defaults to 'local'.
+   * @returns A promise resolving to the retrieved item, or null if not found.
    */
-  async get<T>(key: string): Promise<T | null> {
-    try {
-      const result = await chrome.storage.local.get(key);
-      return (result[key] as T) || null;
-    } catch (error) {
-      console.error(`StorageService: Error getting item with key '${key}':`, error);
-      return null;
-    }
-  }
+  get<T>(key: string, area?: StorageArea): Promise<T | null>;
 
   /**
-   * Sets a value in chrome.storage.local.
-   * @param key The key of the item to set.
-   * @param value The value to set.
-   * @returns A promise that resolves when the operation is complete, or rejects on error.
+   * Stores an item in the specified storage area.
+   * @param key The key to store the item under.
+   * @param value The value to store.
+   * @param area The storage area to use ('local' or 'sync'). Defaults to 'local'.
+   * @returns A promise resolving when the item is stored.
    */
-  async set<T>(key: string, value: T): Promise<void> {
-    try {
-      await chrome.storage.local.set({ [key]: value });
-    } catch (error) {
-      console.error(`StorageService: Error setting item with key '${key}':`, error);
-      // Optional: rethrow the error if the caller needs to handle it
-      // throw error;
-    }
-  }
+  set<T>(key: string, value: T, area?: StorageArea): Promise<void>;
 
   /**
-   * Removes an item from chrome.storage.local.
+   * Removes an item from the specified storage area.
    * @param key The key of the item to remove.
-   * @returns A promise that resolves when the operation is complete, or rejects on error.
+   * @param area The storage area to use ('local' or 'sync'). Defaults to 'local'.
+   * @returns A promise resolving when the item is removed.
    */
-  async remove(key: string): Promise<void> {
-    try {
-      await chrome.storage.local.remove(key);
-    } catch (error) {
-      console.error(`StorageService: Error removing item with key '${key}':`, error);
-      // Optional: rethrow the error
-      // throw error;
-    }
-  }
+  remove(key: string, area?: StorageArea): Promise<void>;
 
   /**
-   * Clears all items from chrome.storage.local.
-   * Use with caution!
-   * @returns A promise that resolves when the operation is complete, or rejects on error.
+   * Clears all items from the specified storage area.
+   * @param area The storage area to clear ('local' or 'sync'). Defaults to 'local'.
+   * @returns A promise resolving when the storage is cleared.
    */
-  async clear(): Promise<void> {
-    try {
-      await chrome.storage.local.clear();
-    } catch (error) {
-      console.error('StorageService: Error clearing storage:', error);
-      // Optional: rethrow the error
-      // throw error;
-    }
+  clear(area?: StorageArea): Promise<void>;
+}
+
+/**
+ * Implementation of the storage service using chrome.storage.
+ */
+class StorageService implements IStorageService {
+  
+  private getStorage(area: StorageArea = 'local'): chrome.storage.StorageArea {
+    return area === 'sync' ? chrome.storage.sync : chrome.storage.local;
+  }
+
+  async get<T>(key: string, area: StorageArea = 'local'): Promise<T | null> {
+    return new Promise((resolve, reject) => {
+      this.getStorage(area).get(key, (result) => {
+        if (chrome.runtime.lastError) {
+          console.error(`StorageService Error getting key "${key}" from ${area}:`, chrome.runtime.lastError.message);
+          return reject(chrome.runtime.lastError);
+        }
+        // Check if the key exists in the result and return its value, otherwise null
+        resolve(result && key in result ? (result[key] as T) : null);
+      });
+    });
+  }
+
+  async set<T>(key: string, value: T, area: StorageArea = 'local'): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.getStorage(area).set({ [key]: value }, () => {
+        if (chrome.runtime.lastError) {
+          console.error(`StorageService Error setting key "${key}" in ${area}:`, chrome.runtime.lastError.message);
+          return reject(chrome.runtime.lastError);
+        }
+        console.debug(`StorageService: Key "${key}" set in ${area}.`);
+        resolve();
+      });
+    });
+  }
+
+  async remove(key: string, area: StorageArea = 'local'): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.getStorage(area).remove(key, () => {
+        if (chrome.runtime.lastError) {
+          console.error(`StorageService Error removing key "${key}" from ${area}:`, chrome.runtime.lastError.message);
+          return reject(chrome.runtime.lastError);
+        }
+        console.debug(`StorageService: Key "${key}" removed from ${area}.`);
+        resolve();
+      });
+    });
+  }
+
+  async clear(area: StorageArea = 'local'): Promise<void> {
+    return new Promise((resolve, reject) => {
+      this.getStorage(area).clear(() => {
+        if (chrome.runtime.lastError) {
+          console.error(`StorageService Error clearing ${area}:`, chrome.runtime.lastError.message);
+          return reject(chrome.runtime.lastError);
+        }
+        console.debug(`StorageService: Storage area "${area}" cleared.`);
+        resolve();
+      });
+    });
   }
 }
 
-// Export a singleton instance
+// Export a singleton instance of the service
 export const storageService = new StorageService(); 
