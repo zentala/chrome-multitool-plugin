@@ -1,14 +1,20 @@
 import { storageService } from './storageService';
-import { ExchangeRates, CurrencyRate } from '../interfaces/Currency';
 import { RateLimiter } from 'limiter';
+
+// Define a simple type for RateLimiter options
+interface RateLimiterOptions {
+  tokensPerInterval: number;
+  interval: number | 'second' | 'minute' | 'hour' | 'day';
+  fireImmediately?: boolean;
+}
 
 // --- Custom Error Type --- //
 
 export class ExchangeRateServiceError extends Error {
     public readonly status?: number; // Optional HTTP status code from API
-    public readonly details?: any;   // Optional details (e.g., API error type)
+    public readonly details?: unknown;   // Optional details (e.g., API error type)
 
-    constructor(message: string, status?: number, details?: any) {
+    constructor(message: string, status?: number, details?: unknown) {
         super(message);
         this.name = 'ExchangeRateServiceError';
         this.status = status;
@@ -22,7 +28,6 @@ export class ExchangeRateServiceError extends Error {
 
 // --- Constants --- //
 
-const CACHE_KEY = 'currencyRatesCache';
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
 // Define structure for API response (adjust based on actual API)
@@ -47,8 +52,7 @@ class ExchangeRateService {
   private readonly apiUrl = 'https://v6.exchangerate-api.com/v6';
   private apiKey: string; // Add apiKey property
   private readonly cacheDurationMs = CACHE_DURATION_MS; // Add cacheDurationMs property
-  // Use 'any' for limiter type for now as @types/limiter is unavailable
-  private readonly limiter: any; 
+  private readonly limiter: RateLimiter; 
 
   constructor() {
     // Initialize apiKey from environment or throw error
@@ -58,8 +62,9 @@ class ExchangeRateService {
       // Optionally throw an error to prevent service usage without API key
       // throw new Error('ExchangeRate API Key not configured.');
     }
-    // Initialize the limiter
-    this.limiter = new RateLimiter({ tokensPerInterval: 15, interval: 'minute' }); // Example: 15 requests per minute
+    // Initialize the limiter with typed options
+    const limiterOptions: RateLimiterOptions = { tokensPerInterval: 15, interval: 'minute' };
+    this.limiter = new RateLimiter(limiterOptions);
   }
 
   /**
@@ -111,7 +116,8 @@ class ExchangeRateService {
         try {
           const errorText = await response.text();
           errorDetails += `, Body: ${errorText}`;
-        } catch (textError) {
+          // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        } catch (_textError: unknown) { // Disable lint rule for this line
           // Ignore error reading body
         }
         throw new Error(`Failed to fetch exchange rates: ${response.statusText} (${errorDetails})`);
