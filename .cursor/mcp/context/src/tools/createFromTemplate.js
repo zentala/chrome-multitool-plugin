@@ -108,12 +108,11 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
            // 6. Prepare final metadata 
            const nowISO = new Date().toISOString();
            const finalMetadata = {
-               ...processedMetadata, // Use processed metadata
-               ...(variables || {}), // Merge variables again? Decide if needed or if processedMetadata is enough
+               ...processedMetadata, // Use processed metadata (template metadata after variable substitution)
                createdAt: nowISO,    
                updatedAt: nowISO,
            };
-           delete finalMetadata.parseError; 
+           delete finalMetadata.parseError; // Ensure no parseError field from template remains
 
           // 7. Format and write the new file (check for existence)
           const fileContent = formatWithFrontMatter(finalMetadata, processedContent);

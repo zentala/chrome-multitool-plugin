@@ -59,7 +59,7 @@ describe('createFromTemplate Tool', () => {
 
         const templateContent = `---
 title: Template for {{project_name}}
-status: {{initial_status}}
+status: "{{initial_status}}"
 tags: 
   - template
   - project-{{project_name}}
@@ -100,7 +100,7 @@ Unused: {{unused_placeholder}}`;
 
         // Check metadata substitution
         expect(writtenContent).toContain(`title: Template for ${variables.project_name}`);
-        expect(writtenContent).toContain(`status: ${variables.initial_status}`);
+        expect(writtenContent).toMatch(/^status:\s*pending$/m);
         expect(writtenContent).toContain(`- project-${variables.project_name}`); // Check array substitution
         expect(writtenContent).toContain(`value: Pre-${variables.nested_val}-Post`); // Check nested substitution
 
