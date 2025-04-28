@@ -38,11 +38,9 @@ const __dirname = path.dirname(__filename);
 const contextToolRoot = path.resolve(__dirname, '..');
 
 if (providedContextPath) {
-  // Resolve the provided path relative to the current working directory
-  // This behavior might be debatable, perhaps it should be relative to project root?
-  // For now, keeping it relative to CWD as it was.
-  contextDataPath = path.resolve(process.cwd(), providedContextPath);
-  usingPathSource = `provided via --context-data-path ('${providedContextPath}')`;
+  // Resolve the provided path relative to the context tool's root directory
+  contextDataPath = path.resolve(contextToolRoot, providedContextPath);
+  usingPathSource = `provided via --context-data-path ('${providedContextPath}' relative to tool root: ${contextToolRoot})`;
 } else {
   // Resolve the default path relative to the context tool's root directory
   contextDataPath = path.resolve(contextToolRoot, defaultContextDirName);
