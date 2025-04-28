@@ -105,25 +105,24 @@ const mockStorageSet = storageService.set as Mock;
 // ------------------------- //
 
 // Helper function to create a Response object mock
-const createMockResponse = (body: any, ok: boolean = true, status: number = 200, statusText: string = 'OK'): Response => {
+const createMockResponse = (body: unknown, ok: boolean = true, status: number = 200, statusText: string = 'OK'): Response => {
     return {
         ok,
         status,
         statusText,
         json: async () => body,
-        text: async () => JSON.stringify(body), // Simple text representation
-        // Add other necessary Response properties/methods if needed by the service
+        text: async () => JSON.stringify(body),
         headers: new Headers(),
         redirected: false,
         type: 'basic',
         url: 'mock://url',
-        clone: () => createMockResponse(body, ok, status, statusText), // Basic clone
+        clone: () => createMockResponse(body, ok, status, statusText),
         body: null,
         bodyUsed: false,
         arrayBuffer: async () => new ArrayBuffer(0),
         blob: async () => new Blob(),
         formData: async () => new FormData(),
-    } as Response; // Cast to Response type
+    } as Response;
 };
 
 describe('ExchangeRateService', () => {
