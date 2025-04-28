@@ -12,14 +12,12 @@ import { ParseCurrencyInput, ParseCurrencyOutput } from "./IAIAdapter";
  */
 export interface IAiFacade {
     /**
-     * Parses the given text to extract currency amount and code using an AI model.
+     * Parses currency information from a given text string.
      *
-     * @param input The input object containing the text to parse.
-     * @returns A promise that resolves to a ParseCurrencyOutput object, which includes the parsed data
-     *          or information about why parsing failed (e.g., needs clarification, error).
-     * @throws {AIAdapterError} If the underlying adapter fails.
+     * @param text The text string to parse.
+     * @returns A Promise resolving to a ParseCurrencyOutput.
      */
-    parseCurrency(input: ParseCurrencyInput): Promise<ParseCurrencyOutput>;
+    parseCurrency(text: string): Promise<ParseCurrencyOutput>;
 
     /**
      * Attempts to clarify a previous parsing attempt based on user input.

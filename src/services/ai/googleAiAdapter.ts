@@ -1,5 +1,6 @@
-import { ParsedCurrencyResult } from '../../interfaces/AI';
+// import { ParsedCurrencyResult } from '../../interfaces/AI'; // Remove unused import
 import { IAIAdapter, ParseCurrencyInput, ParseCurrencyOutput, AIAdapterError } from '../../interfaces/IAIAdapter';
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold, GenerativeModel } from '@google/generative-ai';
 import { CURRENCY_PARSING_PROMPT } from './prompts';
 
 // Placeholder for the actual Gemini API response structure
@@ -25,6 +26,8 @@ interface GeminiApiResponse {
  */
 export class GoogleAIAdapter implements IAIAdapter {
   private apiKey: string;
+  private genAI: GoogleGenerativeAI; // Add instance of the main AI client
+  private model: GenerativeModel; // Add property for the specific model
   private readonly apiUrl = 'https://generativelanguage.googleapis.com/v1beta'; // Using generativelanguage endpoint as it's simpler with API key
   private modelName: string = 'gemini-1.5-flash'; // Use modelName consistently
   // Default generation configuration
@@ -35,137 +38,115 @@ export class GoogleAIAdapter implements IAIAdapter {
     maxOutputTokens: 150, // Limit output size
     responseMimeType: "application/json", // Request JSON directly
   };
-
+  private safetySettings = [
+    { category: HarmCategory.HARM_CATEGORY_HARASSMENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_MEDIUM_AND_ABOVE },
+  ];
 
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY || '';
     if (!this.apiKey) {
       console.error('GoogleAIAdapter: GEMINI_API_KEY is not set in environment variables!');
-      // Potentially throw an error or set a state indicating misconfiguration
+      // Throw an error or handle appropriately to prevent usage without API key
+      throw new AIAdapterError('Google AI API Key not configured.', 500, 'Missing API Key');
     }
+    // Initialize the GoogleGenerativeAI client
+    this.genAI = new GoogleGenerativeAI(this.apiKey);
+    // Get the specific model instance
+    this.model = this.genAI.getGenerativeModel({ 
+        model: this.modelName, 
+        generationConfig: this.generationConfig, 
+        safetySettings: this.safetySettings 
+    });
   }
 
   /**
-   * Calls the Gemini API to parse currency from text.
-   * @param input The ParseCurrencyInput object containing the text to parse.
+   * Parses the input text to extract currency information.
+   *
+   * @param input The input object containing the text to parse.
    * @returns A promise resolving to the parsed currency result.
-   * @throws {AIAdapterError} If there is an API error or parsing issue.
    */
   async parseCurrency(input: ParseCurrencyInput): Promise<ParseCurrencyOutput> {
-    if (!this.apiKey) {
-      console.error('GoogleAIAdapter: GEMINI_API_KEY is not set!');
-      // Throw specific error for missing configuration
-      throw new AIAdapterError('Google AI API Key not configured.', 400, 'Missing API Key'); 
+    const { text } = input;
+    if (!text) {
+      // Return a failed output directly if text is empty
+      return { success: false, error: 'Input text is empty.' };
     }
 
-    const prompt = CURRENCY_PARSING_PROMPT.replace('{TEXT_TO_PARSE}', input.text);
-
-    // Use the generativelanguage endpoint which typically works directly with API Key
-    const endpoint = `${this.apiUrl}/models/${this.modelName}:generateContent?key=${this.apiKey}`;
-    
-    const requestBody = {
-      contents: [
-        {
-          parts: [
-            { text: prompt },
-          ],
-        },
-      ],
-      generationConfig: this.generationConfig,
-      // TODO: Add safety settings if necessary
-      // safetySettings: [...]
-    };
-
-    console.log('GoogleAIAdapter: Sending request to Gemini...', { model: this.modelName }); // Log model name
+    console.log('GoogleAIAdapter: Parsing text:', text);
+    const fullPrompt = CURRENCY_PARSING_PROMPT.replace('{TEXT}', text);
+    // console.log('GoogleAIAdapter: Full prompt:', fullPrompt); // DEBUG
 
     try {
-      const response = await fetch(endpoint, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(requestBody),
-      });
+      const result = await this.model.generateContent(fullPrompt);
+      const response = await result.response;
+      const responseText = response.text();
+      console.log('GoogleAIAdapter: Raw response:', responseText);
 
-      console.log('GoogleAIAdapter: Received response status:', response.status);
-
-      if (!response.ok) {
-        const errorBody = await response.text();
-        console.error('GoogleAIAdapter: API error response:', errorBody);
-        // Throw specific error type
-        throw new AIAdapterError(`API request failed with status ${response.status}`, response.status, errorBody);
-      }
-
-      const responseData: GeminiApiResponse = await response.json();
-      // console.log('GoogleAIAdapter: Received data:', responseData); // Log raw data only if needed for debugging
-
-      // Extract the JSON text from the response
-      // When responseMimeType: "application/json" is used, the result *should* be directly in text
-      // However, structure might still be nested based on API version/behavior.
-      const jsonText = responseData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
-
-      if (!jsonText) {
-        console.error('GoogleAIAdapter: Could not extract JSON text from response', responseData);
-        throw new AIAdapterError('Invalid response structure from AI API: Missing text part');
-      }
-
-      // Parse the JSON text
-      let parsedJson: any; // Use any initially for flexible parsing
+      // --- Basic JSON Parsing (Needs Robust Error Handling) ---
       try {
-        // The API might return the JSON string *or* already parsed JSON if mime type is respected
-        if (typeof jsonText === 'string') {
-             // Remove potential markdown code fences if present
-            const cleanedJsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
-            parsedJson = JSON.parse(cleanedJsonText);
-        } else {
-            console.warn("GoogleAIAdapter: Response part was not a string, assuming pre-parsed JSON:", jsonText);
-            parsedJson = jsonText; // Assume it's already an object/json
-        }
+        // Attempt to parse the JSON response
+        const parsedJson = JSON.parse(responseText);
+        console.log('GoogleAIAdapter: Parsed JSON:', parsedJson);
 
-      } catch (parseError) {
-        console.error('GoogleAIAdapter: Failed to parse JSON response from LLM:', jsonText, parseError);
-        throw new AIAdapterError('LLM returned invalid JSON', undefined, jsonText);
-      }
-
-      // console.log('GoogleAIAdapter: Parsed JSON:', parsedJson); // Log parsed JSON for debugging
-
-      // Validate the parsed JSON structure based on the prompt requirements
-      if (typeof parsedJson === 'object' && parsedJson !== null) {
-        // Check for error property
-        if ('error' in parsedJson && typeof parsedJson.error === 'string') {
-          console.log('GoogleAIAdapter: LLM reported parsing error:', parsedJson.error);
-          // Return structured error according to ParseCurrencyOutput
-          return { success: false, error: `LLM Error: ${parsedJson.error}` };
-        }
-        // Check for needsClarification property
-        else if ('needsClarification' in parsedJson && typeof parsedJson.needsClarification === 'string') {
-             console.log('GoogleAIAdapter: LLM needs clarification:', parsedJson.needsClarification);
-             return { success: false, needsClarification: parsedJson.needsClarification };
-        }
-        // Check for success properties (using currencyCode)
-        else if ('amount' in parsedJson && typeof parsedJson.amount === 'number' &&
-                 'currencyCode' in parsedJson && typeof parsedJson.currencyCode === 'string') {
-          // Return success structure according to ParseCurrencyOutput
-          return {
-            success: true,
-            amount: parsedJson.amount,
-            currencyCode: parsedJson.currencyCode.toUpperCase(), // Ensure uppercase ISO code
+        // Validate the parsed structure based on expected output
+        if (parsedJson.success === true && typeof parsedJson.amount === 'number' && typeof parsedJson.currencyCode === 'string') {
+          // Successfully parsed and matches expected structure
+          return { 
+            success: true, 
+            amount: parsedJson.amount, 
+            currencyCode: parsedJson.currencyCode.toUpperCase() // Ensure uppercase ISO code
           };
+        } else if (parsedJson.success === false) {
+           // AI indicated failure or need for clarification
+           console.log('AI indicated failure/clarification:', parsedJson.error || parsedJson.needsClarification);
+          return { 
+             success: false, 
+             error: parsedJson.error, // Pass through the error from AI
+             needsClarification: parsedJson.needsClarification // Pass through clarification needs
+           }; 
+        } else {
+          // Unexpected JSON structure
+          console.error('GoogleAIAdapter: Unexpected JSON structure:', parsedJson);
+          return { success: false, error: 'AI returned unexpected JSON structure.' };
         }
-      }
 
-      // If structure is not as expected
-      console.error('GoogleAIAdapter: Unexpected JSON structure from LLM:', parsedJson);
-      throw new AIAdapterError('LLM returned unexpected JSON structure', undefined, parsedJson);
-
-    } catch (error) {
-      console.error('GoogleAIAdapter: Error during API call or processing:', error);
-      // If it's already our specific error, rethrow it
-      if (error instanceof AIAdapterError) {
-        throw error;
+      } catch (jsonError) {
+        console.error('GoogleAIAdapter: Failed to parse JSON response:', jsonError);
+        console.error('GoogleAIAdapter: Raw text that failed parsing:', responseText);
+        // Attempt to provide a more specific error if possible
+        let errorMessage = 'AI response was not valid JSON.';
+        if (responseText.trim().startsWith('{') === false || responseText.trim().endsWith('}') === false) {
+          errorMessage += ' Missing braces?';
+        }
+        // TODO: Add more specific checks if needed (e.g., detect common Gemini error messages)
+        return { success: false, error: errorMessage };
       }
-      // Otherwise, wrap it
-      throw new AIAdapterError('Network or processing error', undefined, error instanceof Error ? error.message : String(error));
+      // --- End Basic JSON Parsing ---
+
+    } catch (error: any) { // Catch any error during API call or response processing
+      console.error('GoogleAIAdapter: Error during generateContent:', error);
+      // Check if it's a Google AI specific error (needs library inspection for exact types)
+      if (error && error.message) {
+        // Basic error message extraction
+        return { success: false, error: `Gemini API Error: ${error.message}` };
+      } else {
+        // Generic fallback
+        return { success: false, error: 'Unknown error communicating with Gemini API.' };
+      }
     }
   }
+
+  // TODO: Implement clarify method if needed in IAIAdapter
+  /*
+  async clarifyInput(originalInput: any, clarification: any): Promise<ParseCurrencyOutput> {
+      console.warn('clarifyInput not implemented in GoogleAIAdapter');
+      throw new Error('Method not implemented.'); // Or return a specific error structure
+      // If implemented, this would take the original input and clarification,
+      // formulate a new prompt, call the API, and parse the result similarly to parseCurrency.
+  }
+  */
+
 } 

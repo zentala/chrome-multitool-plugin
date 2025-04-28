@@ -1,5 +1,6 @@
 import { storageService } from './storageService';
 import { ExchangeRates, CurrencyRate } from '../interfaces/Currency';
+import { RateLimiter } from 'limiter';
 
 // --- Custom Error Type --- //
 
@@ -24,18 +25,19 @@ export class ExchangeRateServiceError extends Error {
 const CACHE_KEY = 'currencyRatesCache';
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
+// Define structure for API response (adjust based on actual API)
 interface ExchangeRateApiResponse {
-  result: string; // "success" or "error"
-  documentation?: string;
-  terms_of_use?: string;
-  time_last_update_unix?: number;
-  time_last_update_utc?: string;
-  time_next_update_unix?: number;
-  time_next_update_utc?: string;
   base_code?: string;
-  target_code?: string;
-  conversion_rate?: number;
-  error_type?: string; // e.g., "invalid-key", "unknown-code"
+  conversion_rates?: { [currencyCode: string]: number };
+  // Add other potential fields like 'result', 'error-type' if applicable
+  result?: string;
+  'error-type'?: string;
+}
+
+// Define structure for cached data
+interface CachedRateData {
+  timestamp: number;
+  data: ExchangeRateApiResponse;
 }
 
 /**
@@ -43,208 +45,152 @@ interface ExchangeRateApiResponse {
  */
 class ExchangeRateService {
   private readonly apiUrl = 'https://v6.exchangerate-api.com/v6';
+  private apiKey: string; // Add apiKey property
+  private readonly cacheDurationMs = CACHE_DURATION_MS; // Add cacheDurationMs property
+  // Use 'any' for limiter type for now as @types/limiter is unavailable
+  private readonly limiter: any; 
 
   constructor() {
-    // No need to read API key here anymore
-    // const key = process.env.EXCHANGERATE_API_KEY || '';
-    // if (!key) {
-    //   console.error('ExchangeRateService: EXCHANGERATE_API_KEY is not set at construction!');
-    // }
-    // this.apiKey = key;
+    // Initialize apiKey from environment or throw error
+    this.apiKey = process.env.EXCHANGERATE_API_KEY || '';
+    if (!this.apiKey) {
+      console.error('ExchangeRateService Error: EXCHANGERATE_API_KEY environment variable is not set.');
+      // Optionally throw an error to prevent service usage without API key
+      // throw new Error('ExchangeRate API Key not configured.');
+    }
+    // Initialize the limiter
+    this.limiter = new RateLimiter({ tokensPerInterval: 15, interval: 'minute' }); // Example: 15 requests per minute
   }
 
   /**
-   * Gets the exchange rate for a specific currency pair (e.g., USD to PLN).
-   * Uses cache if available and not expired, otherwise fetches from API.
-   *
-   * @param fromCurrency - ISO 4217 code of the base currency.
-   * @param toCurrency - ISO 4217 code of the target currency.
-   * @returns A promise resolving to the rate (number) or null if an error occurs and no stale cache exists.
-   * @throws {ExchangeRateServiceError} If fetching fails and no stale cache is available.
+   * Retrieves the exchange rate between two currencies.
+   * @param baseCurrency The base currency code (e.g., 'USD').
+   * @param targetCurrency The target currency code (e.g., 'PLN').
+   * @returns A promise resolving to the exchange rate number.
+   * @throws {Error} If the rate cannot be retrieved.
    */
-  async getRate(fromCurrency: string, toCurrency: string): Promise<number | null> {
-    // Read API key directly from process.env inside the method
-    const apiKey = process.env.EXCHANGERATE_API_KEY || '';
+  async getRate(baseCurrency: string, targetCurrency: string): Promise<number> {
+    const cacheKey = `rate_${baseCurrency}_${targetCurrency}`;
+    const cachedData = await this.getFromCache(cacheKey);
 
-    // Check for API key existence and valid currencies FIRST
-    if (!apiKey) {
-      console.error('ExchangeRateService: Cannot get rate, API Key is missing.');
-      // Throw error if API key is missing
-      throw new ExchangeRateServiceError('ExchangeRate API Key is missing.', 400, 'Missing API Key');
-    }
-    if (!fromCurrency || !toCurrency) {
-      console.error('ExchangeRateService: fromCurrency and toCurrency must be provided.');
-      // Throw error for invalid input
-      throw new ExchangeRateServiceError('Base and target currency codes must be provided.', 400, 'Invalid Input');
+    if (cachedData && cachedData.conversion_rates && cachedData.conversion_rates[targetCurrency]) {
+      return cachedData.conversion_rates[targetCurrency];
     }
 
-    const from = fromCurrency.toUpperCase();
-    const to = toCurrency.toUpperCase();
-    const pairKey = `${from}_${to}`;
-    console.log(`ExchangeRateService: Getting rate for ${pairKey}`);
+    console.log(`ExchangeRateService: Cache miss or invalid for ${baseCurrency} -> ${targetCurrency}, fetching from API.`);
+    const apiData = await this.fetchFromApi(baseCurrency);
 
-    let cachedData: CurrencyRate | null = null;
-    try {
-       cachedData = await this.getCachedRate(pairKey);
-    } catch (cacheError) {
-        console.error(`ExchangeRateService: Failed to read cache for ${pairKey}:`, cacheError);
-        // Continue without cache if read fails
-    }
+    // Store the full response in cache for potential future use of other rates
+    const baseCacheKey = `rates_${baseCurrency}`;
+    await this.storeInCache(baseCacheKey, apiData);
 
-    // Check if cache is valid
-    if (cachedData && Date.now() - cachedData.timestamp < CACHE_DURATION_MS) {
-      console.log(`ExchangeRateService: Using fresh cached rate for ${pairKey}:`, cachedData.rate);
-      return cachedData.rate;
-    }
-
-    // Check only needed if cache is invalid or missing
-    console.log(`ExchangeRateService: Cache miss or expired for ${pairKey}. Fetching from API.`);
-
-    try {
-      // Pass the apiKey read within this method call
-      const rate = await this.fetchRateFromApi(from, to, apiKey);
-      if (rate !== null) {
-        await this.setCachedRate(pairKey, rate);
+    // Also cache the specific requested pair for faster access next time
+    if (apiData.conversion_rates && apiData.conversion_rates[targetCurrency]) {
+        const rate = apiData.conversion_rates[targetCurrency];
+        const pairCacheData: ExchangeRateApiResponse = { 
+            base_code: baseCurrency,
+            conversion_rates: { [targetCurrency]: rate }
+        };
+        await this.storeInCache(cacheKey, pairCacheData); 
         return rate;
-      } else {
-        // Error occurred during fetchRateFromApi (it now throws)
-        // This path should theoretically not be reached if fetchRateFromApi throws
-        // Kept for safety, but should rely on catch block primarily
-        if (cachedData) {
-          console.warn(`ExchangeRateService: API fetch failed for ${pairKey}, returning stale cached rate:`, cachedData.rate);
-          return cachedData.rate;
-        }
-        console.error(`ExchangeRateService: API fetch failed for ${pairKey} and no stale cache available.`);
-        // If fetch failed and no cache, re-throw or throw a new specific error
-        // Re-throwing the original error might be better if fetchRateFromApi adds details
-        // For now, throw a generic error indicating failure without cache
-        throw new ExchangeRateServiceError(`Failed to get rate for ${pairKey} and no cache available.`, 500, 'Fetch Failed No Cache');
-      }
-    } catch (error) {
-      console.error(`ExchangeRateService: Unhandled error getting rate for ${pairKey}:`, error instanceof Error ? error.message : error);
-       if (cachedData) {
-        console.warn(`ExchangeRateService: Unhandled error occurred for ${pairKey}, returning stale cached rate:`, cachedData.rate);
-        return cachedData.rate;
-       }
-      // If an error occurred (including from fetchRateFromApi) and there's no stale cache, throw.
-      // If it's already our custom error, re-throw it. Otherwise, wrap it.
-      if (error instanceof ExchangeRateServiceError) {
-          throw error;
-      } else {
-          throw new ExchangeRateServiceError(`Failed to process rate for ${pairKey}: ${error instanceof Error ? error.message : String(error)}`, undefined, error);
-      }
+    } else {
+      console.error('Target currency rate not found in API response:', { baseCurrency, targetCurrency, apiData });
+      throw new Error(`Rate for target currency ${targetCurrency} not found in API response for base ${baseCurrency}.`);
     }
   }
 
-  /**
-   * Fetches the conversion rate for a specific pair directly from the API.
-   *
-   * @param fromCurrency Uppercase base currency code.
-   * @param toCurrency Uppercase target currency code.
-   * @returns The conversion rate, or null if an error occurs.
-   */
-  private async fetchRateFromApi(
-    fromCurrency: string,
-    toCurrency: string,
-    apiKey: string // Accept apiKey as parameter
-  ): Promise<number> { // Return number or throw
-    const url = `${this.apiUrl}/${apiKey}/pair/${fromCurrency}/${toCurrency}`;
-    console.log(`ExchangeRateService: Fetching URL: ${url}`);
-    let response: Response | null = null; // Define response variable here to access status in catch
+  private async fetchFromApi(baseCurrency: string): Promise<ExchangeRateApiResponse> {
+    await this.limiter.removeTokens(1);
+    console.log(`ExchangeRateService: Fetching rates from API for base: ${baseCurrency}`);
 
+    const url = `${this.apiUrl}/${this.apiKey}/latest/${baseCurrency.toUpperCase()}`;
     try {
-      response = await fetch(url);
-
-      // Check for network errors or non-OK status codes
+      const response = await fetch(url);
       if (!response.ok) {
-         // Throw a generic error to be caught below, status will be available on response object
-        throw new Error(`API request failed`); 
+        let errorDetails = `Status: ${response.status}`;
+        try {
+          const errorText = await response.text();
+          errorDetails += `, Body: ${errorText}`;
+        } catch (textError) {
+          // Ignore error reading body
+        }
+        throw new Error(`Failed to fetch exchange rates: ${response.statusText} (${errorDetails})`);
       }
 
-      // Parse the successful response
-      const data: ExchangeRateApiResponse = await response.json();
-      console.log(`ExchangeRateService: API response for ${fromCurrency}/${toCurrency}:`, data);
-
-      // Check the structure and result field of the successful response
-      if (data.result === 'success' && typeof data.conversion_rate === 'number') {
-        return data.conversion_rate;
+      const data: unknown = await response.json();
+      if (this.isValidApiResponse(data)) {
+        if (data.result === 'error') {
+          // Use bracket notation for property name with hyphen
+          throw new Error(`Exchange Rate API Error: ${data['error-type'] || 'Unknown error'}`);
+        }
+        return data;
       } else {
-        console.error(
-          `ExchangeRateService: API returned 'success' but missing/invalid rate for ${fromCurrency}/${toCurrency}:`, data
-        );
-        // Throw custom error for invalid success response structure
-        throw new ExchangeRateServiceError(`API returned success but rate was invalid for ${fromCurrency}/${toCurrency}`, 500, 'Invalid Success Response');
+        console.error("Invalid API response structure:", data);
+        throw new Error('Invalid or incomplete data structure received from API.');
       }
     } catch (error) {
-       // Handle all errors (fetch, non-ok status, JSON parsing, invalid success structure)
-      const status = response?.status; // Get status if response object exists
-      let details: any = error instanceof Error ? error.message : String(error);
-      let message = `Failed to fetch or process rate for ${fromCurrency}/${toCurrency}`;
-
-      // Try to get more specific details if it was an API error (non-ok status)
-      if (!response?.ok && response?.text) { 
-          try {
-              // Try parsing as JSON first
-              const errorBody: ExchangeRateApiResponse = await response.json();
-              details = errorBody?.error_type || 'Unknown API Error Structure';
-              message = `API request failed with status ${status}`; 
-          } catch (jsonError) {
-              // If parsing error body as JSON fails, try reading as text
-              try { 
-                const textBody = await response.text(); 
-                details = textBody;
-                message = `API request failed with status ${status}`; 
-              } catch (textError) {
-                  // If reading text also fails
-                  details = "Failed to read error response body";
-              }
-          }
-      }
-      
-      console.error(
-        `ExchangeRateService: ${message}:`, details
-      );
-
-      // If it's already our custom error (e.g., from invalid success structure), re-throw it.
-      if (error instanceof ExchangeRateServiceError) {
-          throw error;
-      } else {
-          // Otherwise, wrap the error with collected info.
-          throw new ExchangeRateServiceError(message, status, details);
-      }
+      console.error(`ExchangeRateService: Error fetching from API: ${error}`);
+      throw error instanceof Error ? error : new Error('Failed to fetch or parse API response');
     }
   }
 
-  // --- Cache Management --- //
-
-  private async getCache(): Promise<ExchangeRates | null> {
-    return storageService.get<ExchangeRates>(CACHE_KEY);
+  private isValidApiResponse(data: unknown): data is ExchangeRateApiResponse {
+      if (typeof data !== 'object' || data === null) return false;
+      const potentialResponse = data as Partial<ExchangeRateApiResponse>;
+      if (potentialResponse.result !== 'error' && typeof potentialResponse.conversion_rates === 'object' && potentialResponse.conversion_rates !== null) {
+          return true;
+      }
+      if (potentialResponse.result === 'error') {
+          return true;
+      }
+      return false;
   }
 
-  private async setCache(cache: ExchangeRates): Promise<void> {
-    // Add error handling for set operation
+  private async getFromCache(cacheKey: string): Promise<ExchangeRateApiResponse | null> {
     try {
-        await storageService.set(CACHE_KEY, cache);
-    } catch(error) {
-        console.error('ExchangeRateService: Failed to write to cache:', error);
+      const cachedResult: unknown = await storageService.get(cacheKey);
+      if (this.isValidCachedData(cachedResult)) {
+        const now = Date.now();
+        if (now - cachedResult.timestamp < this.cacheDurationMs) { // Use class property
+          console.log(`ExchangeRateService: Cache hit for key: ${cacheKey}`);
+          return cachedResult.data;
+        } else {
+          console.log(`ExchangeRateService: Cache expired for key: ${cacheKey}`);
+        }
+      } else if (cachedResult) {
+        console.warn(`ExchangeRateService: Invalid data structure in cache for key ${cacheKey}:`, cachedResult);
+      }
+    } catch (error) {
+      console.error(`ExchangeRateService: Error reading from cache for key ${cacheKey}:`, error);
     }
+    return null;
   }
 
-  private async getCachedRate(pairKey: string): Promise<CurrencyRate | null> {
-    const cache = await this.getCache();
-    return cache?.[pairKey] || null;
+  private isValidCachedData(data: unknown): data is CachedRateData {
+    if (typeof data !== 'object' || data === null) return false;
+    const potentialCache = data as Partial<CachedRateData>;
+    return typeof potentialCache.timestamp === 'number' && this.isValidApiResponse(potentialCache.data);
   }
 
-  private async setCachedRate(pairKey: string, rate: number): Promise<void> {
-    const cache = (await this.getCache()) || {};
-    cache[pairKey] = {
-      rate: rate,
+  private async storeInCache(cacheKey: string, data: ExchangeRateApiResponse): Promise<void> {
+    const cacheEntry: CachedRateData = {
       timestamp: Date.now(),
+      data: data,
     };
-    await this.setCache(cache);
-    console.log(`ExchangeRateService: Updated cache for ${pairKey}`);
+    try {
+      await storageService.set(cacheKey, cacheEntry);
+      console.log(`ExchangeRateService: Stored data in cache for key: ${cacheKey}`);
+    } catch (error) {
+      console.error(`ExchangeRateService: Error writing to cache for key ${cacheKey}:`, error);
+    }
   }
 }
 
 // Export a singleton instance
-export const exchangeRateService = new ExchangeRateService(); 
+export const exchangeRateService = new ExchangeRateService();
+
+/**
+ * Type definition for the ExchangeRateService class.
+ * Used for dynamic imports in tests.
+ */
+export type ExchangeRateServiceType = typeof exchangeRateService; 

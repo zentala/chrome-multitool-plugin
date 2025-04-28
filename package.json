@@ -49,6 +49,7 @@
     "@anthropic-ai/sdk": "^0.18.0",
     "@emotion/react": "^11.14.0",
     "@emotion/styled": "^11.14.0",
+    "@google/generative-ai": "^0.24.0",
     "@langchain/anthropic": "^0.3.9",
     "@langchain/core": "^0.3.23",
     "@langchain/openai": "^0.3.14",
@@ -58,6 +59,7 @@
     "@mui/system": "^6.2.0",
     "@mui/x-tree-view": "^8.1.0",
     "langchain": "^0.3.7",
+    "limiter": "^3.0.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0"
   }

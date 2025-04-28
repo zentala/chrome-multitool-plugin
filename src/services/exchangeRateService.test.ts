@@ -1,59 +1,64 @@
-import { describe, it, expect, vi, beforeEach, Mock, beforeAll } from 'vitest';
-// Usuń statyczny import: import { exchangeRateService } from './exchangeRateService';
+import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+// Remove the conflicting import, the service instance will be created in tests
+// import { exchangeRateService } from './exchangeRateService'; 
+// Remove the non-existent error import
+// import { ExchangeRateError } from '../interfaces/ExchangeRateError'; 
 
-// --- Define a type for globalThis to allow process.env --- //
-type GlobalWithProcess = typeof globalThis & {
-  process?: {
-    env: Record<string, string | undefined>;
-    // Add other process properties if needed by the code, though unlikely here
-  };
-};
+// Define the type for the service dynamically imported later
+import type { ExchangeRateServiceType } from './exchangeRateService';
 
-// --- Backup and Mock process.env --- //
-const originalEnv = (globalThis as GlobalWithProcess).process?.env;
-// Ensure process.env exists for mocking, creating minimally if needed
-if ((globalThis as GlobalWithProcess).process && !(globalThis as GlobalWithProcess).process!.env) {
-  (globalThis as GlobalWithProcess).process!.env = {}; // Create env object if process exists but env doesn't
-}
-
-// Set the test API key only if process.env exists
-if ((globalThis as GlobalWithProcess).process?.env) {
-  (globalThis as GlobalWithProcess).process!.env.EXCHANGERATE_API_KEY = 'test-api-key';
-}
-// --------------------------------- //
-
-// --- Mock storageService using Vitest --- //
-vi.mock('./storageService', () => ({
-  storageService: {
-    get: vi.fn(),
-    set: vi.fn(),
-    // Add remove/clear mocks if needed by the service under test
-  },
-}));
-
-// Import the mocked service for type safety and access to mock functions
-import { storageService } from './storageService';
-const mockStorageGet = storageService.get as Mock;
-const mockStorageSet = storageService.set as Mock;
-// ------------------------- //
-
-// Mock the global fetch function using Vitest
+// --- Mock fetch --- //
 vi.stubGlobal('fetch', vi.fn());
-const mockFetch = vi.mocked(global.fetch);
+const mockFetch = vi.mocked(fetch);
 
-// Deklaracja zmiennej dla instancji serwisu
-let exchangeRateService: typeof import('./exchangeRateService').exchangeRateService;
+// --- Mock Date.now --- //
+const originalDateNow = Date.now;
+const mockDateNow = vi.fn();
 
-beforeAll(async () => {
-  // Import service - assumes env might be read here or later
-  const serviceModule = await import('./exchangeRateService');
-  exchangeRateService = serviceModule.exchangeRateService;
+// --- Mock process.env --- //
+let originalEnv: NodeJS.ProcessEnv | undefined = (globalThis as any).process?.env;
+
+let exchangeRateService: ExchangeRateServiceType;
+
+// Setup mocks before all tests
+beforeAll(() => {
+    // Backup env only if it exists
+    if ((globalThis as any).process?.env) {
+        originalEnv = { ...(globalThis as any).process.env }; 
+    } else {
+        originalEnv = undefined; // Indicate it didn't exist
+    }
+    Date.now = mockDateNow;
 });
 
-beforeEach(() => {
-  vi.clearAllMocks();
-  vi.unstubAllEnvs(); // Clear environment stubs before each test
-  mockStorageGet.mockResolvedValue(null); // Reset storage mock
+// Restore originals after all tests
+afterAll(() => {
+    Date.now = originalDateNow;
+    // Restore env only if it was originally present
+    if (originalEnv !== undefined && (globalThis as any).process) {
+        (globalThis as any).process.env = originalEnv;
+    } else if ((globalThis as any).process) {
+        // If it didn't exist originally, ensure it's gone
+        delete (globalThis as any).process.env;
+    }
+});
+
+beforeEach(async () => {
+  // Dynamically import the service
+  const module = await import('./exchangeRateService');
+  exchangeRateService = module.exchangeRateService;
+  
+  // Reset mocks
+  mockFetch.mockReset();
+  mockDateNow.mockReset(); 
+  mockDateNow.mockReturnValue(originalDateNow());
+
+  // Reset environment variables (create minimally if needed for the test)
+  if (!(globalThis as any).process) {
+      (globalThis as any).process = { env: {} };
+  }
+  (globalThis as any).process.env = originalEnv ? { ...originalEnv } : {}; 
+
 });
 
 // --- Restore Mock API Response Helpers --- //
@@ -73,6 +78,43 @@ const mockApiResponseFail = (status: number = 500, errorType: string = 'api-erro
   } as Response);
 };
 // --------------------------------------- //
+
+// --- Mock storageService using Vitest --- //
+vi.mock('./storageService', () => ({
+  storageService: {
+    get: vi.fn(),
+    set: vi.fn(),
+    // Add remove/clear mocks if needed by the service under test
+  },
+}));
+
+// Import the mocked service for type safety and access to mock functions
+import { storageService } from './storageService';
+const mockStorageGet = storageService.get as Mock;
+const mockStorageSet = storageService.set as Mock;
+// ------------------------- //
+
+// Helper function to create a Response object mock
+const createMockResponse = (body: any, ok: boolean = true, status: number = 200, statusText: string = 'OK'): Response => {
+    return {
+        ok,
+        status,
+        statusText,
+        json: async () => body,
+        text: async () => JSON.stringify(body), // Simple text representation
+        // Add other necessary Response properties/methods if needed by the service
+        headers: new Headers(),
+        redirected: false,
+        type: 'basic',
+        url: 'mock://url',
+        clone: () => createMockResponse(body, ok, status, statusText), // Basic clone
+        body: null,
+        bodyUsed: false,
+        arrayBuffer: async () => new ArrayBuffer(0),
+        blob: async () => new Blob(),
+        formData: async () => new FormData(),
+    } as Response; // Cast to Response type
+};
 
 describe('ExchangeRateService', () => {
   // Remove vi.stubEnv from here
@@ -299,6 +341,39 @@ describe('ExchangeRateService', () => {
     expect(mockStorageGet).toHaveBeenCalledTimes(2);
     expect(mockStorageSet).toHaveBeenCalledTimes(1); // Attempted to set
     vi.unstubAllEnvs();
+  });
+
+  it('getRate should throw Error on fetch network error', async () => {
+    mockFetch.mockRejectedValue(new Error('Network Error'));
+    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Network Error');
+  });
+
+  it('getRate should throw Error on non-OK response', async () => {
+    // Use the helper to create a mock Response
+    mockFetch.mockResolvedValue(createMockResponse({}, false, 404, 'Not Found')); 
+    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Failed to fetch exchange rates: 404 Not Found');
+  });
+
+  it('getRate should throw Error on invalid JSON response', async () => {
+    // Simulate invalid JSON by having the json() method throw an error
+    const invalidJsonResponse = {
+        ...createMockResponse('', true), // Start with a valid base
+        json: async () => { throw new Error('Invalid JSON') },
+    } as Response;
+    mockFetch.mockResolvedValue(invalidJsonResponse);
+    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Failed to parse exchange rate data: Invalid JSON');
+  });
+
+  it('getRate should throw Error if base currency data is missing in response', async () => {
+    const mockBody = { conversion_rates: { 'PLN': 4.5 } }; // Missing USD base
+    mockFetch.mockResolvedValue(createMockResponse(mockBody));
+    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Invalid or incomplete data structure received from API.');
+  });
+
+  it('getRate should throw Error if target currency rate is missing in response', async () => {
+    const mockBody = { base_code: 'USD', conversion_rates: { 'EUR': 0.9 } }; // Missing PLN target
+    mockFetch.mockResolvedValue(createMockResponse(mockBody));
+    await expect(exchangeRateService.getRate('USD', 'PLN')).rejects.toThrow('Rate for target currency PLN not found in API response for base USD.');
   });
 
   // TODO: Add more tests for edge cases:

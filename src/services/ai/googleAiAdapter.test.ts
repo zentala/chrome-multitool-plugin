@@ -1,7 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ParsedCurrencyResult } from '../../interfaces/AI';
 import { GoogleAIAdapter } from './GoogleAIAdapter';
-import { AIAdapterError } from '../interfaces/IAIAdapter';
+import { IAIAdapter } from '../../interfaces/IAIAdapter';
 
 // Mock fetch using Vitest
 vi.stubGlobal('fetch', vi.fn());
