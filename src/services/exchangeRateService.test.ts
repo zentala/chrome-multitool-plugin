@@ -16,6 +16,7 @@ const originalDateNow = Date.now;
 const mockDateNow = vi.fn();
 
 // --- Mock process.env --- //
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
 let originalEnv: NodeJS.ProcessEnv | undefined = (globalThis as any).process?.env;
 
 let exchangeRateService: ExchangeRateServiceType;
@@ -23,7 +24,9 @@ let exchangeRateService: ExchangeRateServiceType;
 // Setup mocks before all tests
 beforeAll(() => {
     // Backup env only if it exists
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if ((globalThis as any).process?.env) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         originalEnv = { ...(globalThis as any).process.env }; 
     } else {
         originalEnv = undefined; // Indicate it didn't exist
@@ -35,10 +38,14 @@ beforeAll(() => {
 afterAll(() => {
     Date.now = originalDateNow;
     // Restore env only if it was originally present
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     if (originalEnv !== undefined && (globalThis as any).process) {
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         (globalThis as any).process.env = originalEnv;
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     } else if ((globalThis as any).process) {
         // If it didn't exist originally, ensure it's gone
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
         delete (globalThis as any).process.env;
     }
 });
@@ -54,9 +61,12 @@ beforeEach(async () => {
   mockDateNow.mockReturnValue(originalDateNow());
 
   // Reset environment variables (create minimally if needed for the test)
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   if (!(globalThis as any).process) {
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       (globalThis as any).process = { env: {} };
   }
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (globalThis as any).process.env = originalEnv ? { ...originalEnv } : {}; 
 
 });
