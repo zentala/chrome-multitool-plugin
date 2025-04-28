@@ -40,7 +40,7 @@
 
 ## Dokumentacja i Metadane
 
-- [ ] [Implementacja generowania dokumentacji](.cursor/TODO_docs_generation.md)
+- [x] [Implementacja generowania dokumentacji](.cursor/TODO_docs_generation.md)
 - [x] Utworzyć `.meta.md` dla głównych folderów (`src`, `background`, `components`, `services` itp.).
 - [ ] Regularnie aktualizować `.cursor/CURSOR.md`, `.cursor/WHY.md`.
 - [ ] Prowadzić log decyzji w `.cursor/DECISIONS_<date>.md`.
@@ -50,6 +50,7 @@
 - [ ] Cotygodniowy log nastroju w `.cursor/DEV_MOOD_TRACKER.md`.
 - [ ] Zdefiniować filozofię projektu w `.cursor/PHILOSOPHY.md`.
 - [ ] Zapisywać mądrości programistyczne w `.cursor/RANDOM_WISDOM.md`.
+- [ ] **[Nowe Narzędzie]** Zaimplementować narzędzie do generowania odznak technologii (shields.io + simple icons) dla plików README.
 
 ## Poprawki i Refaktoryzacja
 
