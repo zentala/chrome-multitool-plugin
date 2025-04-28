@@ -9,19 +9,29 @@ export function registerSearchEntriesTool(server, contextDataPath) {
       "search_entries",
       "Searches within context entries, optionally filtering by metadata (tags, status).",
       {
-        query: z.string().min(1).describe("Text to search for in content (case-insensitive)."),
+        query: z.string().min(1).describe("Text to search for in content (case-insensitive or regex)."),
         type: z.string().optional().describe("Optional context type to limit search."),
         filterTags: z.string().optional().describe("Comma-separated tags; entry must have ALL."),
         filterStatus: z.string().optional().describe("Filter by specific status."),
+        isRegex: z.boolean().optional().default(false).describe("Treat the query as a regular expression."),
       },
-      async ({ query, type, filterTags, filterStatus }) => {
+      async ({ query, type, filterTags, filterStatus, isRegex }) => {
         const results = [];
-        const queryLower = query.toLowerCase();
+        const queryLower = isRegex ? null : query.toLowerCase();
+        let regexQuery = null;
+        if (isRegex) {
+            try {
+                // Attempt to create the regex, assuming case-insensitive for now
+                regexQuery = new RegExp(query, 'i'); 
+            } catch (e) {
+                 return { content: [{ type: "text", text: `Invalid regular expression provided: ${e.message}` }] };
+            }
+        }
         const requiredTags = filterTags ? filterTags.split(',').map(t => t.trim().toLowerCase()).filter(t => t) : [];
         const requiredStatus = filterStatus ? filterStatus.trim().toLowerCase() : null;
         const CONTEXT_LINES = 2; // Increase context lines
         let searchDirs = [];
-        let searchCriteriaDescription = `matching "${query}"`;
+        let searchCriteriaDescription = isRegex ? `matching regex /${query}/i` : `matching "${query}"`;
         if (requiredTags.length > 0) searchCriteriaDescription += ` with tags [${requiredTags.join(', ')}]`;
         if (requiredStatus) searchCriteriaDescription += ` with status "${requiredStatus}"`;
         if (type) searchCriteriaDescription += ` in type '${type}'`;
@@ -85,75 +95,77 @@ export function registerSearchEntriesTool(server, contextDataPath) {
                     // If metadata filters don't match, skip this file entirely
                     if (!metadataMatch) continue; 
 
-                    // Metadata filters passed, now search content and rawContent (for metadata match fallback)
+                    // Metadata filters passed, now search content
                     let contentMatchFound = false;
                     const snippets = [];
-                    if (mainContent.toLowerCase().includes(queryLower)) { 
+                    // Check if content matches the query (either regex or simple text)
+                    const contentMatches = isRegex ? regexQuery.test(mainContent) : mainContent.toLowerCase().includes(queryLower);
+
+                    if (contentMatches) { 
                        contentMatchFound = true;
                        const lines = mainContent.split('\n');
                        for (let i = 0; i < lines.length; i++) {
-                            const lineLower = lines[i].toLowerCase();
-                            if (lineLower.includes(queryLower)) {
+                            const line = lines[i];
+                            // Check if the current line matches the query
+                            const lineMatches = isRegex ? regexQuery.test(line) : line.toLowerCase().includes(queryLower);
+
+                            if (lineMatches) {
                                 const start = Math.max(0, i - CONTEXT_LINES);
                                 const end = Math.min(lines.length, i + CONTEXT_LINES + 1);
                                 // Add line numbers and highlight matching line
                                 let snippetLines = [];
                                 for (let j = start; j < end; j++) {
-                                    const linePrefix = (j === i) ? `> ${j + 1}: ` : `  ${j + 1}: `;
-                                    snippetLines.push(linePrefix + lines[j]);
+                                    // Ensure line numbers are correct and highlight the matching line
+                                    const lineNum = j + 1; // Line numbers are 1-based
+                                    const isMatchingLine = (j === i);
+                                    const linePrefix = isMatchingLine ? " >>" : "   "; // Indicate matching line
+                                    snippetLines.push(`${linePrefix}${lineNum}: ${lines[j]}`); 
                                 }
-                                const snippet = snippetLines.join('\n');
-                                // Check if this snippet overlaps significantly with the previous one
-                                const lastSnippet = snippets.length > 0 ? snippets[snippets.length - 1] : null;
-                                // Simple overlap check (could be more sophisticated)
-                                if (!lastSnippet || !lastSnippet.includes(lines[i])) {
-                                    snippets.push(snippet); 
-                                }
-                                // Jump ahead to avoid immediately re-matching context lines
-                                i = i + CONTEXT_LINES; 
+                                snippets.push({
+                                    line: i,
+                                    snippet: snippetLines.join('\n')
+                                });
                             }
                        }
                     }
 
-                    // If content matched, add with snippets
-                    if (contentMatchFound && snippets.length > 0) {
-                        results.push({ id: entryId, snippets });
-                    } 
-                    // If no content match BUT rawContent matches (metadata filters already passed)
-                    else if (!contentMatchFound && rawContent.toLowerCase().includes(queryLower)) {
-                        results.push({ id: entryId, snippets: ["(Match found in metadata)"] });
+                    if (contentMatchFound) {
+                        results.push({
+                            id: entryId,
+                            title: metadata.title || file.name.replace(/\.md$/, ''),
+                            content: snippets,
+                            metadata: metadata
+                        });
                     }
-                    // Otherwise, no match found in this file respecting filters (already handled by initial metadata check)
-
-                  } catch (readError) {
-                     if (readError.code !== 'ENOENT') console.error(`Error reading ${filePath} during search:`, readError);
+                  } catch (parseError) {
+                    results.push({
+                        id: entryId,
+                        title: metadata.title || file.name.replace(/\.md$/, ''),
+                        content: [{ type: "text", text: `Error parsing file: ${parseError.message}` }],
+                        metadata: metadata
+                    });
                   }
                 }
               }
-            } catch (dirReadError) {
-              if (dirReadError.code !== 'ENOENT') console.error(`Error reading dir ${dir.path} during search:`, dirReadError);
+            } catch (readError) {
+              results.push({
+                  id: dir.name,
+                  title: dir.name,
+                  content: [{ type: "text", text: `Error reading directory: ${readError.message}` }],
+                  metadata: {}
+              });
             }
           }
-
-          // Format results
-          if (results.length === 0) return { content: [{ type: "text", text: `No entries found ${searchCriteriaDescription}.` }] };
-          
-          // Return structured results instead of just text
-          return {
-             content: [
-                 { type: "text", text: `Found ${results.length} entr${results.length === 1 ? 'y' : 'ies'} ${searchCriteriaDescription}:` },
-                 ...results.map(res => ({
-                     type: "search_result", // Use a specific type for structured result
-                     id: res.id,
-                     snippets: res.snippets
-                 }))
-             ]
-          };
-
-        } catch (error) {
-          console.error(`Error during search for "${query}":`, error);
-          return { content: [{ type: "text", text: `Error during search: ${error.message}` }] };
+        } catch (searchError) {
+          results.push({
+              id: "search_error",
+              title: "Search Error",
+              content: [{ type: "text", text: `Error searching: ${searchError.message}` }],
+              metadata: {}
+          });
         }
+
+        return { content: results };
       }
     );
-} 
+}
