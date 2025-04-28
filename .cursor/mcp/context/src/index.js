@@ -18,7 +18,8 @@ import {
   registerDeleteEntryTool,
   registerGetRelatedEntriesTool,
   registerCreateFromTemplateTool,
-  registerCreateTypeWithTemplateTool
+  registerCreateTypeWithTemplateTool,
+  registerOverviewTool
 } from './tools/index.js';
 
 // --- MCP Server Setup ---
@@ -39,6 +40,7 @@ registerDeleteEntryTool(server, contextDataPath);
 registerGetRelatedEntriesTool(server, contextDataPath);
 registerCreateFromTemplateTool(server, contextDataPath);
 registerCreateTypeWithTemplateTool(server, contextDataPath);
+registerOverviewTool(server, contextDataPath);
 
 // --- Server Startup ---
 async function main() {
