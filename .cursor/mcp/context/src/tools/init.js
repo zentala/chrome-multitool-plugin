@@ -1,92 +1,39 @@
 import { z } from "zod";
 import fs from 'fs/promises';
 import path from 'path';
-import { contextToolRoot } from '../config.js'; // Needed to find default templates
 
 /**
  * Registers the init tool with the MCP server.
- * This tool initializes the context directory by creating the base folders
- * and default type directories based on templates found in example/templates.
+ * This tool ensures the main context data directory exists.
+ * Specific type directories within the context path will be created by other tools as needed.
  */
 export function registerInitTool(server, contextDataPath) {
     server.tool(
       "init",
-      "Initializes the context directory structure, creating default type folders if they don't exist.",
-      {},
+      "Ensures the main context data directory exists.",
+      {}, // No input schema needed for init
       async () => {
         const messages = [];
         const errors = [];
-        const defaultTemplateDir = path.join(contextToolRoot, 'example', 'templates');
-        const templatesDir = path.join(contextDataPath, '_templates');
 
         try {
-          // 1. Ensure base context path and _templates exist
-          try {
-            await fs.mkdir(contextDataPath, { recursive: true });
-            messages.push(`Ensured context directory exists: ${contextDataPath}`);
-            await fs.mkdir(templatesDir, { recursive: true });
-            messages.push(`Ensured _templates directory exists: ${templatesDir}`);
-          } catch (mkdirError) {
-            // If base directories cannot be created, it's a fatal error for init
-            console.error("Fatal error ensuring base directories:", mkdirError);
-            return { content: [{ type: "text", text: `Failed to initialize base directories: ${mkdirError.message}` }] };
+          // Ensure the main context data directory exists
+          await fs.mkdir(contextDataPath, { recursive: true });
+          messages.push(`Ensured context data directory exists: ${contextDataPath}`);
+
+          // Construct result message
+          let resultText = "Context directory check complete.\n" + messages.join('\n');
+          if (errors.length > 0) { // Although no errors are currently pushed, keep structure for future
+              resultText += "\n\nErrors encountered:\n" + errors.join('\n');
           }
 
-          // 2. Read default template names
-          let templateFiles = [];
-          try {
-             templateFiles = await fs.readdir(defaultTemplateDir);
-          } catch (readTemplatesError) {
-             // If we can't read the default templates, we can still proceed but warn
-             const errorMsg = `Could not read default templates from ${defaultTemplateDir}: ${readTemplatesError.message}. Default type directories will not be created.`;
-             console.error(errorMsg);
-             errors.push(errorMsg);
-             // Continue without creating type dirs based on templates
-          }
-          
-          // 3. Create type directories based on template names
-          const createdTypeDirs = [];
-          const existedTypeDirs = [];
-
-          for (const templateFile of templateFiles) {
-            if (templateFile.endsWith('.md')) {
-              const typeName = templateFile.replace(/\.md$/i, '').toLowerCase(); // Use lowercase name for dir
-              const typePath = path.join(contextDataPath, typeName);
-              try {
-                await fs.mkdir(typePath); // Fails if exists
-                createdTypeDirs.push(typeName);
-              } catch (typeMkdirError) {
-                if (typeMkdirError.code === 'EEXIST') {
-                  existedTypeDirs.push(typeName);
-                  // It already exists, which is fine for init
-                } else {
-                  // Other error creating directory
-                  const errorMsg = `Failed to create directory for type '${typeName}': ${typeMkdirError.message}`;
-                  console.error(errorMsg);
-                  errors.push(errorMsg);
-                }
-              }
-            }
-          }
-          
-          if (createdTypeDirs.length > 0) {
-             messages.push(`Created default type directories: ${createdTypeDirs.join(', ')}.`);
-          }
-          if (existedTypeDirs.length > 0) {
-             messages.push(`Default type directories already existed: ${existedTypeDirs.join(', ')}.`);
-          }
-
-          let resultText = "Context initialization complete.\n" + messages.join('\n');
-          if (errors.length > 0) {
-              resultText += "\n\nWarnings encountered:\n" + errors.join('\n');
-          }
-          
           return { content: [{ type: "text", text: resultText }] };
 
         } catch (error) {
-          // Catch unexpected errors during the process
-          console.error("Unexpected error during context initialization:", error);
-          return { content: [{ type: "text", text: `Failed to initialize context: ${error.message}` }] };
+          // Catch errors during directory creation
+          const errorMsg = `Failed to ensure context data directory: ${error.message}`;
+          console.error(errorMsg, error);
+          return { content: [{ type: "text", text: errorMsg }] };
         }
       }
     );
