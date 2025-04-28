@@ -34,6 +34,7 @@ alwaysApply: true
   - Collect programming wisdom and reminders in `.cursor/RANDOM_WISDOM.md`.
   - For important modules, create `.usage.md` files explaining usage examples.
   - Create lightweight diagrams for complex logic in `.cursor/DIAGRAMS/`.
+  - stworzyony plik z szalbonem musisz jeszcze uzupelnic recznie
 
 ---
 
@@ -46,6 +47,7 @@ alwaysApply: true
   - Explain **what** was done.
   - Explain **why** it was done.
 - Lint and test code before committing.
+- sometimes ammend commit if it makes more sense
 
 ---
 
