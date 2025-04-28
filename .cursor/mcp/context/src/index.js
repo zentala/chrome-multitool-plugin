@@ -3,6 +3,7 @@ import { McpServer } from "@modelcontextprotocol/sdk/server/mcp.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
 import path from 'path';
 import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
 
 // Import tool registration functions
 import { registerListContextTypesTool } from './tools/listContextTypes.js';
@@ -30,14 +31,22 @@ const defaultContextDirName = '.cursor/context'; // Default directory name
 let contextDataPath;
 let usingPathSource;
 
+// Determine the directory of the current module using import.meta.url
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+// contextToolRoot is the directory containing the 'src' folder (e.g., .cursor/mcp/context/)
+const contextToolRoot = path.resolve(__dirname, '..');
+
 if (providedContextPath) {
   // Resolve the provided path relative to the current working directory
+  // This behavior might be debatable, perhaps it should be relative to project root?
+  // For now, keeping it relative to CWD as it was.
   contextDataPath = path.resolve(process.cwd(), providedContextPath);
   usingPathSource = `provided via --context-data-path ('${providedContextPath}')`;
 } else {
-  // Resolve the default path relative to the current working directory
-  contextDataPath = path.resolve(process.cwd(), defaultContextDirName);
-  usingPathSource = `default ('${defaultContextDirName}' relative to CWD)`;
+  // Resolve the default path relative to the context tool's root directory
+  contextDataPath = path.resolve(contextToolRoot, defaultContextDirName);
+  usingPathSource = `default ('${defaultContextDirName}' relative to tool root: ${contextToolRoot})`;
 }
 
 const serverVersion = "0.3.1"; // Incremented version
