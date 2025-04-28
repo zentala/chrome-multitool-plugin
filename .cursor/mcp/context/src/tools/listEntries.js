@@ -45,12 +45,10 @@ export function registerListEntriesTool(server, contextDataPath) {
               const filePath = path.join(typePath, file.name);
               try {
                 const rawContent = await fs.readFile(filePath, 'utf8');
-                const { metadata, parseError } = parseFrontMatter(rawContent, filePath);
-                
-                if (parseError) {
-                    entryResult.metadataError = `Failed to parse YAML front matter: ${parseError}`;
-                    // Optionally include the raw metadata string if needed
-                    // entryResult.rawMetadata = metadata; // Assuming parseFrontMatter returns raw on error
+                const { metadata } = parseFrontMatter(rawContent, filePath); 
+
+                if (metadata && metadata.parseError) { 
+                    entryResult.metadataError = `Failed to parse YAML front matter: ${metadata.parseError}`; 
                 } else {
                     entryResult.metadata = metadata; // Add the parsed metadata object
                 }

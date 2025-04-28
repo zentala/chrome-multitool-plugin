@@ -82,12 +82,13 @@ export function registerSearchEntriesTool(server, contextDataPath) {
                   const entryId = `${dir.name}/${file.name.replace(/\.md$/, '')}`;
                   try {
                     const rawContent = await fs.readFile(filePath, 'utf8');
-                    const { metadata, mainContent, parseError } = parseFrontMatter(rawContent, filePath);
+                    const { metadata, mainContent } = parseFrontMatter(rawContent, filePath);
 
-                    // If metadata parsing failed, log it as an error and skip filtering/searching this file
-                    if (parseError) {
-                        console.warn(`Skipping entry '${entryId}' due to YAML parse error: ${parseError}`);
-                        processingErrors.push({ id: entryId, error: `YAML parse error: ${parseError}` });
+                    // Check for parseError within the metadata object
+                    if (metadata && metadata.parseError) {
+                        // Log and report using the error message from metadata.parseError
+                        console.warn(`Skipping entry '${entryId}' due to YAML parse error: ${metadata.parseError}`); 
+                        processingErrors.push({ id: entryId, error: `YAML parse error: ${metadata.parseError}` });
                         continue; // Skip to the next file
                     }
                     
