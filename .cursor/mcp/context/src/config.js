@@ -3,6 +3,7 @@
 
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs/promises'; // Needed for reading package.json
 
 // --- Helper function to parse command line arguments ---
 /**
@@ -69,11 +70,32 @@ if (providedContextPath) {
 }
 
 /**
- * The version of the @context MCP server. Should be kept in sync with package.json potentially.
- * @type {string}
- * @todo Consider reading version from package.json
+ * Reads the version from the package.json located in the tool's root directory.
+ * Provides a fallback version if reading or parsing fails.
+ * @returns {Promise<string>} The server version.
  */
-const serverVersion = "0.3.1"; // TODO: Consider reading from package.json
+async function readServerVersion() {
+  const packageJsonPath = path.join(contextToolRoot, 'package.json');
+  try {
+    const packageJsonContent = await fs.readFile(packageJsonPath, 'utf-8');
+    const packageJson = JSON.parse(packageJsonContent);
+    if (packageJson.version) {
+      return packageJson.version;
+    } else {
+      console.error(`Warning: package.json at ${packageJsonPath} found but missing "version" field. Using fallback.`);
+      return '0.0.0-missing-version';
+    }
+  } catch (error) {
+    console.error(`Warning: Could not read version from ${packageJsonPath}. Using fallback. Error: ${error.message}`);
+    return '0.0.0-read-error'; // Fallback version on error
+  }
+}
+
+/**
+ * The version of the @context MCP server, read from package.json.
+ * @type {string}
+ */
+const serverVersion = await readServerVersion();
 
 export {
   contextDataPath,
