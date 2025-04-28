@@ -7,16 +7,18 @@ import fs from 'fs/promises';
 // Import configuration
 import { contextDataPath, usingPathSource, serverVersion } from './config.js';
 
-// Import tool registration functions
-import { registerListContextTypesTool } from './tools/listContextTypes.js';
-import { registerCreateEntryTool } from './tools/createEntry.js';
-import { registerListEntriesTool } from './tools/listEntries.js';
-import { registerReadEntryTool } from './tools/readEntry.js';
-import { registerSearchEntriesTool } from './tools/searchEntries.js';
-import { registerUpdateEntryTool } from './tools/updateEntry.js';
-import { registerDeleteEntryTool } from './tools/deleteEntry.js';
-import { registerGetRelatedEntriesTool } from './tools/getRelatedEntries.js';
-import { registerCreateFromTemplateTool } from './tools/createFromTemplate.js';
+// Import tool registration functions from the central index file
+import {
+  registerListContextTypesTool,
+  registerCreateEntryTool,
+  registerListEntriesTool,
+  registerReadEntryTool,
+  registerSearchEntriesTool,
+  registerUpdateEntryTool,
+  registerDeleteEntryTool,
+  registerGetRelatedEntriesTool,
+  registerCreateFromTemplateTool
+} from './tools/index.js';
 
 // --- MCP Server Setup ---
 const server = new McpServer({
