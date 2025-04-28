@@ -4,6 +4,19 @@ import { vi } from 'vitest'; // Import vi
 // Import original jest-dom matchers
 import '@testing-library/jest-dom';
 
+// --- Workaround for Vitest/React 18 act warning --- //
+if (typeof globalThis !== 'undefined') {
+  // Use a more specific type than any if possible, or leave as any if necessary
+  // For browser environments, globalThis often corresponds to Window
+  (globalThis as Window & typeof globalThis).IS_REACT_ACT_ENVIRONMENT = true;
+}
+// Also ensure it's set on self/window if they exist in jsdom
+if (typeof self !== 'undefined') {
+  // self often corresponds to Window or WorkerGlobalScope
+  (self as Window & typeof globalThis).IS_REACT_ACT_ENVIRONMENT = true;
+}
+// ---------------------------------------------------- //
+
 // --- Manual Chrome API Mocks using Vitest --- //
 
 // Mock implementation for chrome.runtime.sendMessage

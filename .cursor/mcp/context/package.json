@@ -1,5 +1,5 @@
 {
-  "name": "test",
+  "name": "context",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
@@ -10,8 +10,8 @@
   "author": "",
   "license": "ISC",
   "packageManager": "pnpm@10.9.0",
-  "type": "module",
   "dependencies": {
     "@modelcontextprotocol/sdk": "^1.10.2"
-  }
+  },
+  "type": "module"
 }

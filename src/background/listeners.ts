@@ -1,107 +1,136 @@
-import { handleCurrencyConversionRequest } from './index'; // Import the refactored function
+import { handleCurrencyConversionRequest } from './index'; // Import the main handler
+// Import the new handler (will be created)
+import { handleCurrencyClarificationRequest } from './index';
 
 const CONTEXT_MENU_ID = 'ZNTL_CONVERT_CURRENCY';
 const DEFAULT_ICON_URL = 'icons/icon128.png'; // Default icon for notifications
 
 /**
- * Initializes the context menu item for currency conversion.
+ * Initializes the context menu for currency conversion.
  */
 export function initializeContextMenu() {
-  // Remove existing menu item first to avoid duplicates during development hot-reloading
+  // Remove existing menu item first (if any) to avoid duplicates during development
   chrome.contextMenus.remove(CONTEXT_MENU_ID, () => {
-    // Check for errors, e.g., if the menu item didn't exist
     if (chrome.runtime.lastError) {
-      // console.log("Context menu item didn't exist, creating new one.");
+      // Ignore the error "Cannot find context menu item" which means it didn't exist
+      // console.debug('Context menu item did not exist, creating new one.');
     }
-    // Create the new menu item
     chrome.contextMenus.create({
       id: CONTEXT_MENU_ID,
       title: 'ZNTL: Przelicz walutę na PLN',
-      contexts: ['selection'], // Show only when text is selected
+      contexts: ['selection'],
     });
-    console.log('Context menu initialized.');
+    console.log('Context menu created.');
   });
-}
-
-/**
- * @param {chrome.contextMenus.OnClickData} info - Information about the clicked menu item.
- */
-export async function handleContextMenuClick(info: chrome.contextMenus.OnClickData): Promise<void> {
-  if (info.menuItemId === CONTEXT_MENU_ID && info.selectionText) {
-    const selectedText = info.selectionText.trim();
-    console.log(`Context menu: Clicked! Selected text: "${selectedText}"`);
-
-    // Call the reusable conversion handler
-    handleCurrencyConversionRequest(selectedText)
-      .then(result => {
-        console.log("Context menu conversion result:", result);
-        const notificationId = `zntl-conversion-${Date.now()}`;
-
-        if (result.success && result.originalAmount && result.originalCurrency && result.convertedAmount && result.targetCurrency) {
-          // Create success notification directly
-          chrome.notifications.create(notificationId, {
-            type: 'basic',
-            iconUrl: DEFAULT_ICON_URL, // Directly use constant
-            title: 'ZNTL Konwerter Walut',
-            message: `${result.originalAmount} ${result.originalCurrency} = ${result.convertedAmount.toFixed(2)} ${result.targetCurrency}`,
-            priority: 0
-          });
-        } else {
-          // Create error notification directly
-           // TODO: Handle result.needsClarification - maybe open popup? Needs decision.
-          chrome.notifications.create(notificationId, {
-            type: 'basic',
-            iconUrl: DEFAULT_ICON_URL, // Directly use constant
-            title: 'Błąd Konwersji ZNTL',
-            message: result.error || 'Nie udało się przeliczyć waluty. Zaznacz dokładniejszą kwotę i walutę.',
-            priority: 0
-          });
-        }
-      })
-      .catch(error => {
-        // Catch unexpected errors from handleCurrencyConversionRequest itself
-        console.error("Context menu: Unexpected error during conversion:", error);
-        // Create system error notification directly
-        chrome.notifications.create(`zntl-error-${Date.now()}`, {
-            type: 'basic',
-            iconUrl: DEFAULT_ICON_URL, // Directly use constant
-            title: 'Błąd Systemowy ZNTL',
-            message: 'Wystąpił nieoczekiwany błąd systemowy podczas konwersji.',
-            priority: 1
-        });
-      });
-  } else if (info.menuItemId === CONTEXT_MENU_ID) {
-      console.log('Context menu: Clicked, but no text selected?');
-      // Create no-selection notification directly
-      chrome.notifications.create(`zntl-noselection-${Date.now()}`, {
-          type: 'basic',
-          iconUrl: DEFAULT_ICON_URL, // Directly use constant
-          title: 'ZNTL Konwerter Walut',
-          message: 'Zaznacz tekst zawierający kwotę i walutę, aby dokonać konwersji.',
-          priority: 0
-      });
-  }
 }
 
 /**
  * Sets up the listener for context menu clicks.
  */
-export function setupContextMenuOnClickListener(): void {
-  if (chrome.contextMenus && chrome.contextMenus.onClicked) {
-    chrome.contextMenus.onClicked.addListener(handleContextMenuClick); // Pass the function directly
-  } else {
-    console.error("chrome.contextMenus.onClicked API is not available.");
-  }
+export function setupContextMenuOnClickListener() {
+  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+    console.log('Context menu clicked:', info);
+    if (info.menuItemId === CONTEXT_MENU_ID) {
+      const selectedText = info.selectionText;
+      if (selectedText) {
+        try {
+          const result = await handleCurrencyConversionRequest(selectedText);
+          if (result.success) {
+            chrome.notifications.create(`zntl-conversion-${Date.now()}`, {
+              type: 'basic',
+              iconUrl: DEFAULT_ICON_URL,
+              title: 'ZNTL Konwerter Walut',
+              message: `${selectedText} = ${result.convertedAmount?.toFixed(2)} PLN`,
+            });
+          } else {
+            chrome.notifications.create(`zntl-error-${Date.now()}`, {
+              type: 'basic',
+              iconUrl: DEFAULT_ICON_URL,
+              title: 'Błąd Konwersji ZNTL',
+              message: result.error || 'Nie udało się przeliczyć waluty.',
+            });
+          }
+        } catch (error) {
+          console.error('Error handling context menu click:', error);
+          chrome.notifications.create(`zntl-generic-error-${Date.now()}`, {
+            type: 'basic',
+            iconUrl: DEFAULT_ICON_URL,
+            title: 'Błąd Rozszerzenia ZNTL',
+            message: 'Wystąpił nieoczekiwany błąd.',
+          });
+        }
+      } else {
+        chrome.notifications.create(`zntl-noselection-${Date.now()}`, {
+          type: 'basic',
+          iconUrl: DEFAULT_ICON_URL,
+          title: 'ZNTL Konwerter Walut',
+          message: 'Zaznacz tekst zawierający kwotę i walutę, aby dokonać konwersji.',
+        });
+      }
+    }
+  });
+  console.log('Context menu click listener added.');
 }
 
-// --- Direct Execution ---
+/**
+ * Sets up the listener for messages from the popup or other parts of the extension.
+ */
+export function setupRuntimeMessageListener() {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    console.log('Message received in background:', message);
 
-// Initialize context menu immediately when this script is loaded.
-initializeContextMenu();
+    if (message.action === 'parseAndConvertCurrency') {
+      // Handle the conversion request asynchronously
+      handleCurrencyConversionRequest(message.text)
+        .then(result => {
+          console.log('Sending response back for parseAndConvertCurrency:', result);
+          sendResponse(result);
+        })
+        .catch(error => {
+          console.error('Error in handleCurrencyConversionRequest:', error);
+          // Send back a generic error response
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error handling request.'
+          });
+        });
+      // Return true to indicate you wish to send a response asynchronously
+      return true;
+    } else if (message.action === 'clarifyAndConvertCurrency') {
+      // Handle the clarification request asynchronously
+      handleCurrencyClarificationRequest(message.originalText, message.clarification)
+        .then(result => {
+          console.log('Sending response back for clarifyAndConvertCurrency:', result);
+          sendResponse(result);
+        })
+        .catch(error => {
+          console.error('Error in handleCurrencyClarificationRequest:', error);
+          sendResponse({
+            success: false,
+            error: error instanceof Error ? error.message : 'Unknown error handling clarification request.'
+          });
+        });
+      // Return true for async response
+      return true;
+    }
 
-// Setup the listener for context menu clicks immediately.
+    // If the action is not recognized, you might want to send a default response or do nothing
+    // console.log('Unknown message action:', message.action);
+    // sendResponse({ success: false, error: 'Unknown action' }); // Optional
+    // Or return false / undefined if not handling this message type
+    return false; 
+  });
+  console.log('Runtime message listener added.');
+}
+
+// --- Initialization --- //
+
+// Initialize context menu when the extension is installed or updated
+chrome.runtime.onInstalled.addListener(initializeContextMenu);
+
+// Setup listeners
 setupContextMenuOnClickListener();
-
+setupRuntimeMessageListener();
 
 // NOTE: Potentially unused functions below. Review and remove if confirmed.
 // Example unused function (kept for illustration if needed later, but should be removed if truly unused)

@@ -6,3 +6,4 @@ dist
 
 # Backup files
 *.bak
+*.log

@@ -1,0 +1,14 @@
+{
+  "mcpServers": {
+    "test": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:\\Users\\Lenovo\\code\\chrome-multitool-plugin\\.cursor\\mcp\\test\\index.js"]
+    },
+    "context": {
+      "type": "stdio",
+      "command": "node",
+      "args": ["C:\\Users\\Lenovo\\code\\chrome-multitool-plugin\\.cursor\\mcp\\context\\index.js"]
+    }
+  }
+}
