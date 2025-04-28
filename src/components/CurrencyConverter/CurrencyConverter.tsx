@@ -2,25 +2,30 @@
 
 import React, { useState, useCallback } from 'react';
 import { ConversionResult } from '../../interfaces'; // Import the interface
+import styles from './CurrencyConverter.module.css'; // Import CSS module
 
 export const CurrencyConverter: React.FC = () => {
   const [inputValue, setInputValue] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [isClarifying, setIsClarifying] = useState<boolean>(false); // Separate loading state for clarification
   const [result, setResult] = useState<ConversionResult | null>(null);
-  // State for clarification UI
   const [showClarificationInput, setShowClarificationInput] = useState<boolean>(false);
   const [clarificationValue, setClarificationValue] = useState<string>('');
 
-  const resetState = () => {
+  const resetState = (keepInput = false) => {
     setIsLoading(false);
+    setIsClarifying(false);
     setResult(null);
     setShowClarificationInput(false);
     setClarificationValue('');
+    if (!keepInput) {
+      setInputValue('');
+    }
   };
 
   const handleInputChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     setInputValue(event.target.value);
-    resetState(); // Reset everything on new input
+    resetState(true); // Reset results/clarification but keep input
   };
 
   const handleClarificationChange = (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -47,8 +52,8 @@ export const CurrencyConverter: React.FC = () => {
       });
       console.log('Received response from background:', response);
       setResult(response);
-      // Show clarification input if needed
-      if (!response.success && response.needsClarification) {
+      // Show clarification input if needed - check specific property from new interface
+      if (!response.success && response.needsClarification) { 
         setShowClarificationInput(true);
       }
     } catch (error) {
@@ -68,14 +73,13 @@ export const CurrencyConverter: React.FC = () => {
         // Optionally show an error message here
         return;
       }
-      setIsLoading(true);
+      setIsClarifying(true); // Use separate loading state
+      setIsLoading(true); // Also set general loading to disable main button
       // Keep previous error message visible while clarifying
-      // setResult(null);
       setShowClarificationInput(false); // Hide clarification input while processing
 
       try {
         console.log('Sending clarification message:', { action: 'clarifyAndConvertCurrency', originalText: inputValue, clarification: clarificationValue });
-        // Send a different message type for clarification
         const response: ConversionResult = await chrome.runtime.sendMessage({
           action: 'clarifyAndConvertCurrency',
           originalText: inputValue, // Send original text again
@@ -83,69 +87,79 @@ export const CurrencyConverter: React.FC = () => {
         });
         console.log('Received response after clarification:', response);
         setResult(response);
-        // Reset clarification input value after successful submission
+
         if (response.success) {
-             setClarificationValue('');
+             setClarificationValue(''); // Clear clarification input on success
+             // Optionally reset main input too?
+             // setInputValue(''); 
         } else if (response.needsClarification) {
             // If it still needs clarification, show input again
             setShowClarificationInput(true);
+        } else {
+             // If it failed for another reason after clarification, keep input shown but clear clarification
+             setShowClarificationInput(false);
+             setClarificationValue(''); 
         }
+
       } catch (error) {
         console.error('Error sending clarification message:', error);
         setResult({
           success: false,
           error: error instanceof Error ? error.message : 'Communication error during clarification.',
         });
+        setShowClarificationInput(false); // Hide input on error
+        setClarificationValue('');
       } finally {
         setIsLoading(false);
+        setIsClarifying(false);
       }
 
   }, [inputValue, clarificationValue]);
 
   // Allow pressing Enter in the main input field
   const handleKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'Enter') {
+    if (event.key === 'Enter' && !isLoading && !showClarificationInput) {
       handleConvertClick();
     }
   };
 
   // Allow pressing Enter in the clarification input field
   const handleClarificationKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-      if (event.key === 'Enter') {
+      if (event.key === 'Enter' && !isClarifying) {
         handleClarificationSubmit();
       }
   };
 
   return (
-    <div style={{ padding: '10px', borderTop: '1px solid #ccc', marginTop: '10px' }}>
-      <h4>Currency Converter</h4>
+    <div className={styles.container}>
+      <h4 className={styles.title}>Currency Converter</h4>
       {/* Main Input */}
-      <div style={{ display: 'flex', gap: '5px', marginBottom: '10px' }}>
+      <div className={styles.inputRow}>
         <input
           type="text"
           value={inputValue}
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="e.g., 100 USD, €50.99, 3.5M IDR"
-          disabled={isLoading}
-          style={{ flexGrow: 1, padding: '5px' }}
+          disabled={isLoading || isClarifying} // Disable if any loading
+          className={styles.inputField}
         />
-        <button onClick={handleConvertClick} disabled={isLoading || showClarificationInput}>
-          {isLoading ? 'Processing...' : 'Convert to PLN'}
+        <button onClick={handleConvertClick} disabled={isLoading || isClarifying || showClarificationInput} className={styles.button}>
+          {isLoading && !isClarifying ? <span className={styles.spinner}></span> : 'Convert to PLN'}
         </button>
       </div>
 
       {/* Result Display */}
       {result && !showClarificationInput && (
-         <div style={{ marginTop: '10px', padding: '8px', border: '1px solid #eee', borderRadius: '4px', backgroundColor: result.success ? '#e8f5e9' : '#ffebee' }}>
+         <div className={`${styles.resultArea} ${result.success ? styles.resultSuccess : styles.resultError}`}>
           {result.success ? (
-             <p style={{ margin: 0 }}>
+             <p className={styles.resultText}>
               {result.originalAmount} {result.originalCurrency} ≈
-              <strong>{result.convertedAmount?.toFixed(2)} {result.targetCurrency}</strong>
-              <span style={{ fontSize: '0.8em', color: '#555' }}> (Rate: {result.rate?.toFixed(4)})</span>
+              <strong> {result.convertedAmount?.toFixed(2)} {result.targetCurrency}</strong>
+              <span className={styles.rateText}>(Rate: {result.rate?.toFixed(4)})</span>
             </p>
           ) : (
-            <p style={{ margin: 0, color: '#c62828' }}>
+            <p className={styles.resultText}>
               Error: {result.error}
             </p>
           )}
@@ -154,11 +168,12 @@ export const CurrencyConverter: React.FC = () => {
 
       {/* Clarification Input Area */}
       {showClarificationInput && (
-          <div style={{ marginTop: '5px', border: '1px dashed #ffcc80', padding: '8px', backgroundColor: '#fff9c4' }}>
-              <label htmlFor="clarificationInput" style={{ display: 'block', marginBottom: '5px', fontSize: '0.9em', color: '#777' }}>
-                 AI couldn&apos;t recognize the currency. Please provide the ISO code (e.g., USD, EUR):
+          <div className={styles.clarificationArea}>
+              <label htmlFor="clarificationInput" className={styles.clarificationLabel}>
+                 {/* Make message dynamic based on result.needsClarification string if available */}
+                 {result?.needsClarification || "AI needs clarification. Please provide the currency code (e.g., USD, EUR):"}
               </label>
-              <div style={{ display: 'flex', gap: '5px' }}>
+              <div className={styles.inputRow}> {/* Reuse inputRow style */}
                 <input
                     id="clarificationInput"
                     type="text"
@@ -166,12 +181,13 @@ export const CurrencyConverter: React.FC = () => {
                     onChange={handleClarificationChange}
                     onKeyDown={handleClarificationKeyDown}
                     placeholder="e.g., USD"
-                    disabled={isLoading}
-                    maxLength={3}
-                    style={{ flexGrow: 1, padding: '5px' }}
+                    disabled={isLoading || isClarifying}
+                    maxLength={3} // Keep max length for ISO codes
+                    className={styles.inputField}
+                    autoFocus // Focus clarification input when it appears
                 />
-                <button onClick={handleClarificationSubmit} disabled={isLoading || !clarificationValue.trim()}>
-                    {isLoading ? 'Processing...' : 'Retry'}
+                <button onClick={handleClarificationSubmit} disabled={isLoading || isClarifying || !clarificationValue.trim()} className={styles.button}>
+                    {isClarifying ? <span className={styles.spinner}></span> : 'Retry'}
                 </button>
              </div>
           </div>
