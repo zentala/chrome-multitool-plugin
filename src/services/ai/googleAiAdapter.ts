@@ -1,4 +1,6 @@
 import { ParsedCurrencyResult } from '../../interfaces/AI';
+import { IAIAdapter, ParseCurrencyInput, ParseCurrencyOutput, AIAdapterError } from '../../interfaces/IAIAdapter';
+import { CURRENCY_PARSING_PROMPT } from './prompts';
 
 // Placeholder for the actual Gemini API response structure
 // We need to define this based on the expected JSON from the prompt
@@ -21,15 +23,19 @@ interface GeminiApiResponse {
 /**
  * Adapter for interacting with the Google Gemini API.
  */
-export class GoogleAIAdapter {
+export class GoogleAIAdapter implements IAIAdapter {
   private apiKey: string;
-  private readonly apiUrl = 'https://us-central1-aiplatform.googleapis.com/v1'; // Base Vertex AI URL
-  private readonly modelId = 'gemini-2.5-flash-preview-04-17'; // Chosen model
-  // TODO: Get PROJECT_ID from .env as well or find a way to determine it?
-  // Hardcoding project ID is not ideal. For extensions, maybe not needed if using only API key?
-  // The curl example uses gcloud auth token *and* project ID in URL, but SDK example uses only API key...
-  // Let's assume API key is sufficient for now for ai.google.dev endpoint, or needs project ID for Vertex.
-  // Will need to clarify based on actual API endpoint/SDK used.
+  private readonly apiUrl = 'https://generativelanguage.googleapis.com/v1beta'; // Using generativelanguage endpoint as it's simpler with API key
+  private modelName: string = 'gemini-1.5-flash'; // Use modelName consistently
+  // Default generation configuration
+  private generationConfig: object = {
+    temperature: 0.1,
+    top_p: 0.95,
+    top_k: 64,
+    maxOutputTokens: 150, // Limit output size
+    responseMimeType: "application/json", // Request JSON directly
+  };
+
 
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY || '';
@@ -40,101 +46,37 @@ export class GoogleAIAdapter {
   }
 
   /**
-   * Creates the prompt for the Gemini API to parse currency.
-   * @param inputText The raw text input from the user.
-   * @returns The formatted prompt string.
-   */
-  private createPrompt(inputText: string): string {
-    // Escape potential issues in inputText if needed, e.g., quotes
-    const escapedInput = inputText.replace(/"/g, '"');
-
-    return `
-Your task is to parse the following text to extract a monetary amount and its ISO 4217 currency code.
-
-The input text might be messy, contain various separators, or have the currency code directly attached.
-
-Instructions:
-1. Identify the numeric value. Handle separators like '.', ',', or spaces.
-2. Identify the currency code (e.g., "IDR", "USD", "EUR") or symbol (e.g., "€", "$"). Convert it to the 3-letter uppercase ISO 4217 code.
-3. Respond ONLY with a valid JSON object.
-4. On success, respond with: {"amount": <number>, "currency": "<code>"}
-5. On failure (cannot confidently determine both amount and currency), respond with: {"error": "parsing_failed", "reason": "<brief English explanation>"}
-
-Examples:
-
-Input text: "3.500.555IDR"
-JSON response:
-{"amount": 3500555, "currency": "IDR"}
-
-Input text: "€50,99"
-JSON response:
-{"amount": 50.99, "currency": "EUR"}
-
-Input text: "$1,250.75"
-JSON response:
-{"amount": 1250.75, "currency": "USD"}
-
-Input text: "PLN 25 000"
-JSON response:
-{"amount": 25000, "currency": "PLN"}
-
-Input text: "100dollars"
-JSON response:
-{"amount": 100, "currency": "USD"}
-
-Input text: "Just 100"
-JSON response:
-{"error": "parsing_failed", "reason": "currency not provided"}
-
-Input text: "Random text"
-JSON response:
-{"error": "parsing_failed", "reason": "no amount or currency found"}
-
----
-
-Input text: "${escapedInput}"
-JSON response:
-`;
-  }
-
-  /**
    * Calls the Gemini API to parse currency from text.
-   * @param text The natural language input text.
+   * @param input The ParseCurrencyInput object containing the text to parse.
    * @returns A promise resolving to the parsed currency result.
    * @throws {AIAdapterError} If there is an API error or parsing issue.
    */
-  async parseCurrency(text: string): Promise<ParsedCurrencyResult> {
+  async parseCurrency(input: ParseCurrencyInput): Promise<ParseCurrencyOutput> {
     if (!this.apiKey) {
-      return {
-        success: false,
-        error: 'Google AI API Key not configured.',
-      };
+      console.error('GoogleAIAdapter: GEMINI_API_KEY is not set!');
+      // Consider throwing AIAdapterError here
+      return { success: false, error: 'API key not configured' };
     }
 
-    const prompt = this.createPrompt(text);
+    const prompt = CURRENCY_PARSING_PROMPT.replace('{TEXT_TO_PARSE}', input.text);
 
-    // TODO: Construct the correct API endpoint URL and request body
-    // This depends on whether we use Vertex AI endpoint or ai.google.dev / specific SDK
-    // Assuming a structure similar to the curl example for Vertex AI (needs project ID):
-    // const endpoint = `${this.apiUrl}/projects/YOUR_PROJECT_ID/locations/us-central1/publishers/google/models/${this.modelId}:generateContent?key=${this.apiKey}`;
-    // Or for ai.google.dev (simpler, uses API key directly?):
-    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${this.modelId}:generateContent?key=${this.apiKey}`;
-
+    // Use the generativelanguage endpoint which typically works directly with API Key
+    const endpoint = `${this.apiUrl}/models/${this.modelName}:generateContent?key=${this.apiKey}`;
+    
     const requestBody = {
       contents: [
         {
-          parts: [{ text: prompt }],
+          parts: [
+            { text: prompt },
+          ],
         },
       ],
-      // Add generationConfig if needed (temperature, max output tokens etc.)
-      // generationConfig: {
-      //   temperature: 0.2,
-      //   maxOutputTokens: 100,
-      //   responseMimeType: "application/json", // Request JSON directly if supported
-      // }
+      generationConfig: this.generationConfig,
+      // TODO: Add safety settings if necessary
+      // safetySettings: [...]
     };
 
-    console.log('GoogleAIAdapter: Sending request to Gemini...', { endpoint, requestBody });
+    console.log('GoogleAIAdapter: Sending request to Gemini...', { model: this.modelName }); // Log model name
 
     try {
       const response = await fetch(endpoint, {
@@ -150,56 +92,80 @@ JSON response:
       if (!response.ok) {
         const errorBody = await response.text();
         console.error('GoogleAIAdapter: API error response:', errorBody);
-        throw new Error(`Google AI API request failed with status ${response.status}: ${errorBody}`);
+        // Throw specific error type
+        throw new AIAdapterError(`API request failed with status ${response.status}`, response.status, errorBody);
       }
 
       const responseData: GeminiApiResponse = await response.json();
-      console.log('GoogleAIAdapter: Received data:', responseData);
+      // console.log('GoogleAIAdapter: Received data:', responseData); // Log raw data only if needed for debugging
 
       // Extract the JSON text from the response
-      // This structure might vary based on the actual API response!
+      // When responseMimeType: "application/json" is used, the result *should* be directly in text
+      // However, structure might still be nested based on API version/behavior.
       const jsonText = responseData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
       if (!jsonText) {
         console.error('GoogleAIAdapter: Could not extract JSON text from response', responseData);
-        throw new Error('Invalid response structure from Google AI API');
+        throw new AIAdapterError('Invalid response structure from AI API: Missing text part');
       }
 
       // Parse the JSON text
-      let parsedJson: unknown;
+      let parsedJson: any; // Use any initially for flexible parsing
       try {
-        parsedJson = JSON.parse(jsonText);
+        // The API might return the JSON string *or* already parsed JSON if mime type is respected
+        if (typeof jsonText === 'string') {
+             // Remove potential markdown code fences if present
+            const cleanedJsonText = jsonText.replace(/^```json\s*/, '').replace(/\s*```$/, '');
+            parsedJson = JSON.parse(cleanedJsonText);
+        } else {
+            console.warn("GoogleAIAdapter: Response part was not a string, assuming pre-parsed JSON:", jsonText);
+            parsedJson = jsonText; // Assume it's already an object/json
+        }
+
       } catch (parseError) {
         console.error('GoogleAIAdapter: Failed to parse JSON response from LLM:', jsonText, parseError);
-        throw new Error('LLM returned invalid JSON');
+        throw new AIAdapterError('LLM returned invalid JSON', undefined, jsonText);
       }
 
-      // Validate the parsed JSON structure after type check
+      // console.log('GoogleAIAdapter: Parsed JSON:', parsedJson); // Log parsed JSON for debugging
+
+      // Validate the parsed JSON structure based on the prompt requirements
       if (typeof parsedJson === 'object' && parsedJson !== null) {
         // Check for error property
         if ('error' in parsedJson && typeof parsedJson.error === 'string') {
           console.log('GoogleAIAdapter: LLM reported parsing error:', parsedJson.error);
-          return { success: false, error: `LLM could not parse input: ${parsedJson.error}` };
-        } 
-        // Check for success properties
-        else if ('amount' in parsedJson && typeof parsedJson.amount === 'number' && 
-                 'currency' in parsedJson && typeof parsedJson.currency === 'string') {
+          // Return structured error according to ParseCurrencyOutput
+          return { success: false, error: `LLM Error: ${parsedJson.error}` };
+        }
+        // Check for needsClarification property
+        else if ('needsClarification' in parsedJson && typeof parsedJson.needsClarification === 'string') {
+             console.log('GoogleAIAdapter: LLM needs clarification:', parsedJson.needsClarification);
+             return { success: false, needsClarification: parsedJson.needsClarification };
+        }
+        // Check for success properties (using currencyCode)
+        else if ('amount' in parsedJson && typeof parsedJson.amount === 'number' &&
+                 'currencyCode' in parsedJson && typeof parsedJson.currencyCode === 'string') {
+          // Return success structure according to ParseCurrencyOutput
           return {
             success: true,
             amount: parsedJson.amount,
-            currency: parsedJson.currency.toUpperCase(), // Ensure uppercase ISO code
+            currencyCode: parsedJson.currencyCode.toUpperCase(), // Ensure uppercase ISO code
           };
-        } 
-      } 
-        
+        }
+      }
+
       // If structure is not as expected
       console.error('GoogleAIAdapter: Unexpected JSON structure from LLM:', parsedJson);
-      throw new Error('LLM returned unexpected JSON structure');
+      throw new AIAdapterError('LLM returned unexpected JSON structure', undefined, parsedJson);
 
     } catch (error) {
       console.error('GoogleAIAdapter: Error during API call or processing:', error);
-      // Rethrow or handle specific errors
-      throw error; // Let the facade handle wrapping this into a ParsedCurrencyResult error
+      // If it's already our specific error, rethrow it
+      if (error instanceof AIAdapterError) {
+        throw error;
+      }
+      // Otherwise, wrap it
+      throw new AIAdapterError('Network or processing error', undefined, error instanceof Error ? error.message : String(error));
     }
   }
 } 
