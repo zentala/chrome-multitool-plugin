@@ -115,29 +115,37 @@ Używaj zawsze gotowych skryptów:
 
 ### Pliki dokumentacyjne w `.cursor/`:
 
-- Nowa decyzja:
+Zamiast skryptów PowerShell, używaj narzędzia `mcp_context_create_from_template` do tworzenia nowych wpisów w odpowiednich typach kontekstu (np. `decisions`, `mood`, `errors`, `failedexperiments`).
 
-```pwsh
-.\.cursor\scripts\gen-cursor-doc.ps1 -Type "decision" -Title "use-react-query"
-```
+Przykład:
 
-- Nowy wpis mood:
+- Nowa decyzja (używa szablonu `decision.md` w typie `decisions`):
+  Wywołaj `mcp_context_create_from_template` z parametrami:
+  - `templateName`: "decision"
+  - `type`: "decisions"
+  - `filename`: "use-react-query" (opcjonalnie, utworzony z tytułu)
+  - `variables`: `{ "title": "use-react-query" }` (opcjonalnie, jeśli szablon wymaga)
 
-```pwsh
-.\.cursor\scripts\gen-cursor-doc.ps1 -Type "mood" -Title "week-17-2025"
-```
+- Nowy wpis mood (używa szablonu `mood.md` w typie `mood`):
+  Wywołaj `mcp_context_create_from_template` z parametrami:
+  - `templateName`: "mood"
+  - `type`: "mood"
+  - `filename`: "week-17-2025"
+  - `variables`: `{ "title": "week-17-2025" }`
 
-- Nowy błąd:
+- Nowy błąd (używa szablonu `error.md` w typie `errors`):
+  Wywołaj `mcp_context_create_from_template` z parametrami:
+  - `templateName`: "error"
+  - `type`: "errors"
+  - `filename`: "auth-token-expiry-bug"
+  - `variables`: `{ "title": "auth-token-expiry-bug" }`
 
-```pwsh
-.\.cursor\scripts\gen-cursor-doc.ps1 -Type "error" -Title "auth-token-expiry-bug"
-```
+- Nowy nieudany eksperyment (używa szablonu `failed-experiment.md` w typie `failedexperiments`):
+  Wywołaj `mcp_context_create_from_template` z parametrami:
+  - `templateName`: "failed-experiment"
+  - `type`: "failedexperiments"
+  - `filename`: "replace-redux-with-zustand"
+  - `variables`: `{ "title": "replace-redux-with-zustand" }`
 
-- Nowy nieudany eksperyment:
-
-```pwsh
-.\.cursor\scripts\gen-cursor-doc.ps1 -Type "failed-experiment" -Title "replace-redux-with-zustand"
-```
-
-Szablony są zawsze w `.cursor/TEMPLATES/`.
+Szablony znajdują się w `.cursor/context/_templates/`.
 
