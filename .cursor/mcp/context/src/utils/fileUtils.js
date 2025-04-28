@@ -15,7 +15,14 @@ const dateYamlType = new yaml.Type('!date', {
 
 const CUSTOM_SCHEMA = yaml.DEFAULT_SCHEMA.extend([dateYamlType]);
 
-// Function to parse front matter and content from raw text using gray-matter
+/**
+ * Parses YAML front matter and content from a raw string using gray-matter.
+ *
+ * @param {string} rawContent - The raw string content, potentially containing front matter.
+ * @param {string} [filePathForErrorLogging='unknown file'] - The path of the file being parsed, used for logging errors.
+ * @returns {{metadata: object, mainContent: string}} An object containing the parsed metadata (or an empty object/
+ *                                                     parseError object) and the main content string (trimmed of leading newline).
+ */
 export const parseFrontMatter = (rawContent, filePathForErrorLogging = 'unknown file') => {
     try {
         // gray-matter handles parsing YAML and separating content
@@ -48,7 +55,16 @@ export const parseFrontMatter = (rawContent, filePathForErrorLogging = 'unknown 
     }
 };
 
-// Function to format content with YAML Front Matter using gray-matter
+/**
+ * Formats metadata and content into a string with YAML front matter.
+ *
+ * Uses js-yaml directly for precise control over formatting and custom types (like Date).
+ *
+ * @param {object | null | undefined} metadata - The metadata object to format as YAML.
+ * @param {string} content - The main content string.
+ * @returns {string} The combined string with YAML front matter and content, formatted according to expectations
+ *                   (e.g., two newlines between front matter and content if content exists).
+ */
 export const formatWithFrontMatter = (metadata, content) => {
      // If metadata is null or empty, return just the content (consistent with old behavior)
      if (!metadata || Object.keys(metadata).length === 0) {
@@ -71,8 +87,16 @@ ${yamlString.trim()}
 ---${separator}${content}`;
  };
 
-// Function to get the full path and validate its existence and read access
-// Takes contextDataPath as an argument now
+/**
+ * Gets the full path to a context entry file and validates its existence and read access.
+ *
+ * @param {string} contextDataPath - The base path to the context data directory.
+ * @param {string} type - The context type (subdirectory name).
+ * @param {string} id - The entry ID (filename without extension).
+ * @returns {Promise<string>} A promise that resolves with the validated full file path.
+ * @throws {Error} Throws an error if the type directory or entry file doesn't exist, 
+ *                 is not accessible, or if the type path is not a directory.
+ */
 export const getValidatedFilePath = async (contextDataPath, type, id) => {
     const typePath = path.join(contextDataPath, type);
     const filePath = path.join(typePath, `${id}.md`);

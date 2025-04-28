@@ -54,15 +54,47 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
               // Continue, but metadata from template might be missing/partial
           }
 
-          // 4. Substitute variables in main content
+          // 4. Substitute variables in main content AND metadata
           let processedContent = templateMainContent;
+          let processedMetadata = { ...templateMetadata }; // Create a mutable copy
+
+          // Function to recursively process metadata object/array values
+          const processMetadataValue = (value) => {
+              if (typeof value === 'string') {
+                  let processedValue = value;
+                  if (variables) {
+                      for (const key in variables) {
+                          const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g'); 
+                          processedValue = processedValue.replace(regex, variables[key]);
+                      }
+                  }
+                  // Remove remaining placeholders in string values
+                  return processedValue.replace(/{{\s*[^}]+\s*}}/g, ''); 
+              } else if (Array.isArray(value)) {
+                  return value.map(processMetadataValue); // Recursively process array elements
+              } else if (typeof value === 'object' && value !== null) {
+                  const newValue = {};
+                  for (const key in value) {
+                      newValue[key] = processMetadataValue(value[key]); // Recursively process object values
+                  }
+                  return newValue;
+              }
+              return value; // Return non-string/array/object values as is
+          };
+
+          // Process metadata
+          for (const metaKey in processedMetadata) {
+              processedMetadata[metaKey] = processMetadataValue(processedMetadata[metaKey]);
+          }
+
+          // Process main content
           if (variables) {
               for (const key in variables) {
                   const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g'); 
                   processedContent = processedContent.replace(regex, variables[key]);
               }
           }
-           // Remove any remaining unsubstituted placeholders 
+           // Remove any remaining unsubstituted placeholders in content
            processedContent = processedContent.replace(/{{\s*[^}]+\s*}}/g, '' ); // Simple removal
 
           // 5. Determine final filename
@@ -74,8 +106,8 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
            // 6. Prepare final metadata 
            const nowISO = new Date().toISOString();
            const finalMetadata = {
-               ...templateMetadata,
-               ...(variables || {}),
+               ...processedMetadata, // Use processed metadata
+               ...(variables || {}), // Merge variables again? Decide if needed or if processedMetadata is enough
                createdAt: nowISO,    
                updatedAt: nowISO,
            };
