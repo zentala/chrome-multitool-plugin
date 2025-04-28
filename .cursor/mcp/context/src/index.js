@@ -19,7 +19,8 @@ import {
   registerGetRelatedEntriesTool,
   registerCreateFromTemplateTool,
   registerCreateTypeWithTemplateTool,
-  registerOverviewTool
+  registerOverviewTool,
+  registerInitTool
 } from './tools/index.js';
 
 // --- MCP Server Setup ---
@@ -41,6 +42,7 @@ registerGetRelatedEntriesTool(server, contextDataPath);
 registerCreateFromTemplateTool(server, contextDataPath);
 registerCreateTypeWithTemplateTool(server, contextDataPath);
 registerOverviewTool(server, contextDataPath);
+registerInitTool(server, contextDataPath);
 
 // --- Server Startup ---
 async function main() {

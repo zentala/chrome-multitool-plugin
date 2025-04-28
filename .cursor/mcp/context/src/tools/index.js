@@ -11,4 +11,5 @@ export { registerDeleteEntryTool } from './deleteEntry.js';
 export { registerGetRelatedEntriesTool } from './getRelatedEntries.js';
 export { registerCreateFromTemplateTool } from './createFromTemplate.js';
 export { registerCreateTypeWithTemplateTool } from './createTypeWithTemplate.js';
-export { registerOverviewTool } from './overview.js'; 
+export { registerOverviewTool } from './overview.js';
+export { registerInitTool } from './init.js'; 
