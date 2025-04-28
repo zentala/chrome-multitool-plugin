@@ -21,7 +21,7 @@ interface GeminiApiResponse {
 /**
  * Adapter for interacting with the Google Gemini API.
  */
-export class GoogleAiAdapter {
+export class GoogleAIAdapter {
   private apiKey: string;
   private readonly apiUrl = 'https://us-central1-aiplatform.googleapis.com/v1'; // Base Vertex AI URL
   private readonly modelId = 'gemini-2.5-flash-preview-04-17'; // Chosen model
@@ -34,7 +34,7 @@ export class GoogleAiAdapter {
   constructor() {
     this.apiKey = process.env.GEMINI_API_KEY || '';
     if (!this.apiKey) {
-      console.error('GoogleAiAdapter: GEMINI_API_KEY is not set in environment variables!');
+      console.error('GoogleAIAdapter: GEMINI_API_KEY is not set in environment variables!');
       // Potentially throw an error or set a state indicating misconfiguration
     }
   }
@@ -101,7 +101,7 @@ JSON response:
    * Calls the Gemini API to parse currency from text.
    * @param text The natural language input text.
    * @returns A promise resolving to the parsed currency result.
-   * @throws Throws an error if the API call fails or the API key is missing.
+   * @throws {AIAdapterError} If there is an API error or parsing issue.
    */
   async parseCurrency(text: string): Promise<ParsedCurrencyResult> {
     if (!this.apiKey) {
@@ -134,7 +134,7 @@ JSON response:
       // }
     };
 
-    console.log('GoogleAiAdapter: Sending request to Gemini...', { endpoint, requestBody });
+    console.log('GoogleAIAdapter: Sending request to Gemini...', { endpoint, requestBody });
 
     try {
       const response = await fetch(endpoint, {
@@ -145,23 +145,23 @@ JSON response:
         body: JSON.stringify(requestBody),
       });
 
-      console.log('GoogleAiAdapter: Received response status:', response.status);
+      console.log('GoogleAIAdapter: Received response status:', response.status);
 
       if (!response.ok) {
         const errorBody = await response.text();
-        console.error('GoogleAiAdapter: API error response:', errorBody);
+        console.error('GoogleAIAdapter: API error response:', errorBody);
         throw new Error(`Google AI API request failed with status ${response.status}: ${errorBody}`);
       }
 
       const responseData: GeminiApiResponse = await response.json();
-      console.log('GoogleAiAdapter: Received data:', responseData);
+      console.log('GoogleAIAdapter: Received data:', responseData);
 
       // Extract the JSON text from the response
       // This structure might vary based on the actual API response!
       const jsonText = responseData.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
 
       if (!jsonText) {
-        console.error('GoogleAiAdapter: Could not extract JSON text from response', responseData);
+        console.error('GoogleAIAdapter: Could not extract JSON text from response', responseData);
         throw new Error('Invalid response structure from Google AI API');
       }
 
@@ -170,7 +170,7 @@ JSON response:
       try {
         parsedJson = JSON.parse(jsonText);
       } catch (parseError) {
-        console.error('GoogleAiAdapter: Failed to parse JSON response from LLM:', jsonText, parseError);
+        console.error('GoogleAIAdapter: Failed to parse JSON response from LLM:', jsonText, parseError);
         throw new Error('LLM returned invalid JSON');
       }
 
@@ -178,7 +178,7 @@ JSON response:
       if (typeof parsedJson === 'object' && parsedJson !== null) {
         // Check for error property
         if ('error' in parsedJson && typeof parsedJson.error === 'string') {
-          console.log('GoogleAiAdapter: LLM reported parsing error:', parsedJson.error);
+          console.log('GoogleAIAdapter: LLM reported parsing error:', parsedJson.error);
           return { success: false, error: `LLM could not parse input: ${parsedJson.error}` };
         } 
         // Check for success properties
@@ -193,11 +193,11 @@ JSON response:
       } 
         
       // If structure is not as expected
-      console.error('GoogleAiAdapter: Unexpected JSON structure from LLM:', parsedJson);
+      console.error('GoogleAIAdapter: Unexpected JSON structure from LLM:', parsedJson);
       throw new Error('LLM returned unexpected JSON structure');
 
     } catch (error) {
-      console.error('GoogleAiAdapter: Error during API call or processing:', error);
+      console.error('GoogleAIAdapter: Error during API call or processing:', error);
       // Rethrow or handle specific errors
       throw error; // Let the facade handle wrapping this into a ParsedCurrencyResult error
     }

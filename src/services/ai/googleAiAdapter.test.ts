@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ParsedCurrencyResult } from '../../interfaces/AI';
-import { GoogleAiAdapter } from './googleAiAdapter';
+import { GoogleAIAdapter } from './GoogleAIAdapter';
+import { AIAdapterError } from '../interfaces/IAIAdapter';
 
 // Mock fetch using Vitest
 vi.stubGlobal('fetch', vi.fn());
@@ -84,10 +85,10 @@ const mockFetchNetworkError = () => {
     mockFetch.mockRejectedValueOnce(new Error('Network failed'));
 };
 
-describe('GoogleAiAdapter', () => {
+describe('GoogleAIAdapter', () => {
   it('constructor should read API key from process.env', () => {
     process.env.GEMINI_API_KEY = 'test-key-123';
-    const adapter = new GoogleAiAdapter();
+    const adapter = new GoogleAIAdapter();
     // Internal state isn't directly testable, but we can test its effect
     // We'll test the effect in the parseCurrency method tests
     expect(adapter).toBeDefined();
@@ -95,7 +96,7 @@ describe('GoogleAiAdapter', () => {
 
   it('parseCurrency should return error if API key is missing', async () => {
     delete process.env.GEMINI_API_KEY; // Ensure key is not set
-    const adapter = new GoogleAiAdapter();
+    const adapter = new GoogleAIAdapter();
     const result = await adapter.parseCurrency('100 USD');
     expect(result).toEqual<ParsedCurrencyResult>({
       success: false,
@@ -106,7 +107,7 @@ describe('GoogleAiAdapter', () => {
 
   it('parseCurrency should call fetch with correct URL and body, and return success on valid response', async () => {
     process.env.GEMINI_API_KEY = 'test-key-123';
-    const adapter = new GoogleAiAdapter();
+    const adapter = new GoogleAIAdapter();
     const inputText = '€50.99';
     const expectedAmount = 50.99;
     const expectedCurrency = 'EUR';
@@ -138,7 +139,7 @@ describe('GoogleAiAdapter', () => {
 
   it('parseCurrency should return error if API returns an error status', async () => {
     process.env.GEMINI_API_KEY = 'test-key-123';
-    const adapter = new GoogleAiAdapter();
+    const adapter = new GoogleAIAdapter();
 
     mockGeminiApiError(400, 'Invalid request');
 
@@ -148,7 +149,7 @@ describe('GoogleAiAdapter', () => {
 
   it('parseCurrency should return parsing failed if LLM returns error JSON', async () => {
     process.env.GEMINI_API_KEY = 'test-key-123';
-    const adapter = new GoogleAiAdapter();
+    const adapter = new GoogleAIAdapter();
     const reason = 'currency ambiguous';
     mockGeminiParsingFailed(reason);
 
@@ -163,7 +164,7 @@ describe('GoogleAiAdapter', () => {
 
   it('parseCurrency should throw error if LLM returns invalid JSON text', async () => {
     process.env.GEMINI_API_KEY = 'test-key-123';
-    const adapter = new GoogleAiAdapter();
+    const adapter = new GoogleAIAdapter();
     mockGeminiInvalidJsonText();
 
     await expect(adapter.parseCurrency('any input')).rejects.toThrow('LLM returned invalid JSON');
@@ -172,7 +173,7 @@ describe('GoogleAiAdapter', () => {
 
   it('parseCurrency should throw error on fetch network error', async () => {
     process.env.GEMINI_API_KEY = 'test-key-123';
-    const adapter = new GoogleAiAdapter();
+    const adapter = new GoogleAIAdapter();
     mockFetchNetworkError();
 
     await expect(adapter.parseCurrency('any input')).rejects.toThrow('Network failed');
