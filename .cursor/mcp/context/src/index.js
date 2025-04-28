@@ -26,28 +26,60 @@ function getArgValue(argName) {
 }
 
 // --- Configuration ---
+
+/**
+ * Path provided via the --context-data-path command line argument, if any.
+ * @type {string | null}
+ */
 const providedContextPath = getArgValue('--context-data-path');
-const defaultContextDirName = '.cursor/context'; // Default directory name
+
+/**
+ * The default directory name for context data, relative to the tool's root.
+ * @type {string}
+ */
+const defaultContextDirName = '.cursor/context';
+
+/**
+ * The final resolved absolute path to the context data directory.
+ * @type {string}
+ */
 let contextDataPath;
+
+/**
+ * A description of how the contextDataPath was determined (default or provided).
+ * @type {string}
+ */
 let usingPathSource;
 
-// Determine the directory of the current module using import.meta.url
+// Determine the root directory of this context tool based on the location of this script.
+// This ensures paths are resolved correctly regardless of the current working directory (CWD).
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-// contextToolRoot is the directory containing the 'src' folder (e.g., .cursor/mcp/context/)
+/**
+ * The root directory of the context tool.
+ * Assumes the script (`index.js`) is in a `src` subdirectory of the tool's root.
+ * Example: If script is at `/path/to/project/.cursor/mcp/context/src/index.js`,
+ * `contextToolRoot` will be `/path/to/project/.cursor/mcp/context`.
+ * @type {string}
+ */
 const contextToolRoot = path.resolve(__dirname, '..');
 
 if (providedContextPath) {
-  // Resolve the provided path relative to the context tool's root directory
+  // Resolve the provided path relative to the context tool's root directory.
+  // If the provided path is absolute, path.resolve will use it directly.
   contextDataPath = path.resolve(contextToolRoot, providedContextPath);
   usingPathSource = `provided via --context-data-path ('${providedContextPath}' relative to tool root: ${contextToolRoot})`;
 } else {
-  // Resolve the default path relative to the context tool's root directory
+  // Resolve the default path relative to the context tool's root directory.
   contextDataPath = path.resolve(contextToolRoot, defaultContextDirName);
   usingPathSource = `default ('${defaultContextDirName}' relative to tool root: ${contextToolRoot})`;
 }
 
-const serverVersion = "0.3.1"; // Incremented version
+/**
+ * The version of the @context MCP server.
+ * @type {string}
+ */
+const serverVersion = "0.3.1";
 
 // --- MCP Server Setup ---
 const server = new McpServer({
