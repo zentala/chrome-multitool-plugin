@@ -15,16 +15,38 @@ import { registerDeleteEntryTool } from './tools/deleteEntry.js';
 import { registerGetRelatedEntriesTool } from './tools/getRelatedEntries.js';
 import { registerCreateFromTemplateTool } from './tools/createFromTemplate.js';
 
+// --- Helper function to parse command line arguments ---
+function getArgValue(argName) {
+  const argIndex = process.argv.indexOf(argName);
+  if (argIndex !== -1 && process.argv.length > argIndex + 1) {
+    return process.argv[argIndex + 1];
+  }
+  return null;
+}
+
 // --- Configuration ---
-// Define the base path for context data relative to the workspace root
-const contextDataPath = path.resolve(process.cwd(), '.cursor', 'context'); 
-const serverVersion = "0.3.0"; // Incremented version after refactor
+const providedContextPath = getArgValue('--context-data-path');
+const defaultContextDirName = '.cursor/context'; // Default directory name
+let contextDataPath;
+let usingPathSource;
+
+if (providedContextPath) {
+  // Resolve the provided path relative to the current working directory
+  contextDataPath = path.resolve(process.cwd(), providedContextPath);
+  usingPathSource = `provided via --context-data-path ('${providedContextPath}')`;
+} else {
+  // Resolve the default path relative to the current working directory
+  contextDataPath = path.resolve(process.cwd(), defaultContextDirName);
+  usingPathSource = `default ('${defaultContextDirName}' relative to CWD)`;
+}
+
+const serverVersion = "0.3.1"; // Incremented version
 
 // --- MCP Server Setup ---
 const server = new McpServer({
   name: "@context", 
   version: serverVersion,
-  description: `Manages context data (.cursor/context). Version ${serverVersion}.`, 
+  description: `Manages context data (${usingPathSource}). Version ${serverVersion}.`, 
 });
 
 // --- Register All Tools ---
@@ -42,8 +64,9 @@ registerCreateFromTemplateTool(server, contextDataPath);
 async function main() {
   try {
     // Ensure the base context data directory exists at startup
+    console.error(`Attempting to use context data path: ${contextDataPath} (${usingPathSource})`);
     await fs.mkdir(contextDataPath, { recursive: true }); 
-    // Ensure the _templates subdirectory exists
+    // Ensure the _templates subdirectory exists within the context data path
     await fs.mkdir(path.join(contextDataPath, '_templates'), { recursive: true });
     
     console.error(`Context data directory target: ${contextDataPath}`);
@@ -56,7 +79,7 @@ async function main() {
     console.error("Registered tools:", Object.keys(server._registeredTools).join(', ')); 
     console.error("Waiting for requests from Cursor...");
   } catch (error) {
-    console.error("Fatal error starting @context MCP server:", error);
+    console.error(`Fatal error starting @context MCP server (using path: ${contextDataPath})`, error);
     process.exit(1);
   }
 }

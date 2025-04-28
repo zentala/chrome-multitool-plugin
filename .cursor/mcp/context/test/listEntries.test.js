@@ -1,17 +1,20 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import path from 'path';
 import fs from 'fs/promises';
-import yaml from 'js-yaml'; // Needed to check metadata output
 import { registerListEntriesTool } from '../src/tools/listEntries.js';
-import * as fileUtils from '../src/utils/fileUtils.js'; // To potentially mock parseFrontMatter if needed, though direct mocking of fs is simpler here
+// import * as fileUtils from '../src/utils/fileUtils.js'; // Not needed if we mock fs
 
 // Mock fs/promises module
 vi.mock('fs/promises');
-// Keep original fileUtils, we mock fs directly
+// Mock fileUtils if necessary for specific tests, but usually mocking fs is enough
 vi.mock('../src/utils/fileUtils.js', async (importOriginal) => {
-    return await importOriginal(); 
+    const actual = await importOriginal();
+    return {
+        ...actual, // Keep other functions
+        // If parseFrontMatter needs mocking, do it here:
+        // parseFrontMatter: vi.fn().mockImplementation((content, filePath) => { ... })
+    };
 });
-
 
 // Mock MCP Server instance
 const mockServer = {
@@ -48,23 +51,24 @@ describe('listEntries Tool', () => {
             { name: 'subfolder', isFile: () => false, isDirectory: () => true },
             { name: 'config.yaml', isFile: () => true }, // Should be ignored
         ];
-        fs.stat.mockResolvedValue({ isDirectory: () => true }); // Mock type directory exists
+        fs.stat.mockResolvedValue({ isDirectory: () => true }); 
         fs.readdir.mockResolvedValue(mockDirents);
 
-        const result = await handler({ type }); // includeMetadata omitted (defaults to false)
+        const result = await handler({ type }); // includeMetadata omitted
 
         expect(fs.stat).toHaveBeenCalledWith(typePath);
         expect(fs.readdir).toHaveBeenCalledWith(typePath, { withFileTypes: true });
-        expect(fs.readFile).not.toHaveBeenCalled(); // No need to read files
-        expect(result.content[0].type).toBe('text');
-        expect(result.content[0].text).toContain('Entries in \'todos\':');
-        expect(result.content[0].text).toContain('- task1');
-        expect(result.content[0].text).toContain('- another-task');
-        expect(result.content[0].text).not.toContain('subfolder');
-        expect(result.content[0].text).not.toContain('config.yaml');
+        expect(fs.readFile).not.toHaveBeenCalled(); 
+
+        // Expect JSON response with an array of objects containing only id
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json).toEqual([
+            { id: 'task1' },
+            { id: 'another-task' }
+        ]);
     });
 
-    it('should list entry IDs with basic metadata when includeMetadata is true', async () => {
+    it('should list entry IDs with metadata when includeMetadata is true', async () => {
         const handler = getToolHandler();
         const mockDirents = [
             { name: 'task1.md', isFile: () => true },
@@ -72,10 +76,11 @@ describe('listEntries Tool', () => {
             { name: 'task3_invalid_meta.md', isFile: () => true },
         ];
         const task1Metadata = { createdAt: '2024-01-01T10:00:00Z', status: 'open', tags: ['urgent'] };
+        // Use parseFrontMatter directly in the mock for consistency if not mocking it separately
         const task1Content = `---
-${yaml.dump(task1Metadata)}---
+${JSON.stringify(task1Metadata)}---
 
-Details for task 1`;
+Details for task 1`; 
         const task2Content = `Just content, no metadata`;
         const task3Content = `---
 invalid: yaml:
@@ -85,26 +90,40 @@ Content for task 3`;
         
         fs.stat.mockResolvedValue({ isDirectory: () => true });
         fs.readdir.mockResolvedValue(mockDirents);
-        // Mock readFile calls for each file
         fs.readFile
-            .mockResolvedValueOnce(task1Content)      // task1.md
-            .mockResolvedValueOnce(task2Content)      // task2_no_meta.md
-            .mockResolvedValueOnce(task3Content);     // task3_invalid_meta.md
+            .mockResolvedValueOnce(task1Content)      
+            .mockResolvedValueOnce(task2Content)      
+            .mockResolvedValueOnce(task3Content);     
 
         const result = await handler({ type, includeMetadata: true });
 
         expect(fs.readFile).toHaveBeenCalledTimes(3);
-        expect(result.content[0].type).toBe('text');
-        expect(result.content[0].text).toContain('Entries in \'todos\' (with metadata):');
-        // Check task1 output (adjust date format based on implementation)
-        expect(result.content[0].text).toMatch(/- task1 \| Created:.*?\d{1,2}\.\d{1,2}\.\d{4}.*?, Status: open, Tags: \[urgent\]/); 
-        // Check task2 output
-        expect(result.content[0].text).toContain('- task2_no_meta | (no metadata)');
-        // Check task3 output
-        expect(result.content[0].text).toContain('- task3_invalid_meta | (invalid metadata)');
+        expect(result.content[0].type).toBe('json');
+        
+        // Check the structure and content of the JSON array
+        const jsonResult = result.content[0].json;
+        expect(jsonResult).toBeInstanceOf(Array);
+        expect(jsonResult.length).toBe(3);
+
+        // Find specific entries for clearer assertions
+        const task1Result = jsonResult.find(item => item.id === 'task1');
+        const task2Result = jsonResult.find(item => item.id === 'task2_no_meta');
+        const task3Result = jsonResult.find(item => item.id === 'task3_invalid_meta');
+
+        expect(task1Result).toBeDefined();
+        expect(task1Result.metadata).toEqual(task1Metadata); // Check parsed metadata
+        expect(task1Result.metadataError).toBeUndefined();
+
+        expect(task2Result).toBeDefined();
+        expect(task2Result.metadata).toEqual({}); // Expect empty object if no front matter
+        expect(task2Result.metadataError).toBeUndefined();
+
+        expect(task3Result).toBeDefined();
+        expect(task3Result.metadata).toBeUndefined(); // Metadata should be undefined on error
+        expect(task3Result.metadataError).toMatch(/Failed to parse YAML/); // Check for error message
     });
 
-    it('should return message if no entries found', async () => {
+    it('should return an empty array if no entries found', async () => {
         const handler = getToolHandler();
         fs.stat.mockResolvedValue({ isDirectory: () => true });
         fs.readdir.mockResolvedValue([]); // Empty directory
@@ -112,10 +131,11 @@ Content for task 3`;
         const result = await handler({ type });
 
         expect(fs.readFile).not.toHaveBeenCalled();
-        expect(result.content[0].text).toBe(`No entries found in type '${type}'.`);
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json).toEqual([]); // Expect empty array
     });
 
-    it('should return message if context type directory not found', async () => {
+    it('should return a structured error if context type directory not found', async () => {
         const handler = getToolHandler();
         const error = new Error('ENOENT');
         error.code = 'ENOENT';
@@ -124,7 +144,8 @@ Content for task 3`;
         const result = await handler({ type });
 
         expect(fs.readdir).not.toHaveBeenCalled();
-        expect(result.content[0].text).toBe(`Context type '${type}' not found.`);
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json).toEqual({ error: `Context type '${type}' not found.` });
     });
 
      it('should handle readFile errors gracefully when including metadata', async () => {
@@ -133,6 +154,7 @@ Content for task 3`;
             { name: 'task1.md', isFile: () => true },
         ];
         const readError = new Error('Permission denied');
+        readError.code = 'EACCES'; // Use a code other than ENOENT
         
         fs.stat.mockResolvedValue({ isDirectory: () => true });
         fs.readdir.mockResolvedValue(mockDirents);
@@ -141,6 +163,12 @@ Content for task 3`;
         const result = await handler({ type, includeMetadata: true });
 
         expect(fs.readFile).toHaveBeenCalledTimes(1);
-        expect(result.content[0].text).toContain('- task1 | (read error)');
+        expect(result.content[0].type).toBe('json');
+        const jsonResult = result.content[0].json;
+        expect(jsonResult).toBeInstanceOf(Array);
+        expect(jsonResult.length).toBe(1);
+        expect(jsonResult[0].id).toBe('task1');
+        expect(jsonResult[0].metadata).toBeUndefined();
+        expect(jsonResult[0].metadataError).toContain('Error reading file for metadata: Permission denied');
     });
 }); 

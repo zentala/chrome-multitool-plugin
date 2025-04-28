@@ -37,6 +37,13 @@ describe('getRelatedEntries Tool', () => {
         registerGetRelatedEntriesTool(mockServer, MOCK_CONTEXT_PATH);
         // Default mocks for success cases
         fileUtils.getValidatedFilePath.mockResolvedValue(mockFilePath);
+        // Assume related entries also exist by default unless overridden in a test
+        vi.spyOn(fileUtils, 'getValidatedFilePath').mockImplementation(async (contextPath, entryType, entryId) => {
+            // Default success for the main entry
+            if (entryType === type && entryId === id) return mockFilePath;
+            // Default success for related entries (can be overridden per test)
+            return path.join(contextPath, entryType, `${entryId}.md`); 
+        });
     });
 
     it('should register the tool with the correct name', () => {
@@ -45,7 +52,7 @@ describe('getRelatedEntries Tool', () => {
         expect(lastCallArgs[0]).toBe(toolName);
     });
 
-    it('should return related entry IDs from the metadata', async () => {
+    it('should return related entry IDs from the metadata as JSON', async () => {
         const handler = getToolHandler();
         const related = ['tasks/task-1', 'ideas/new-concept'];
         const fileContent = `---
@@ -61,12 +68,14 @@ Content of the note.`;
 
         expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, type, id);
         expect(fs.readFile).toHaveBeenCalledWith(mockFilePath, 'utf8');
-        expect(result.content[0].text).toContain(`Related entries for '${type}/${id}':`);
-        expect(result.content[0].text).toContain(`- ${related[0]}`);
-        expect(result.content[0].text).toContain(`- ${related[1]}`);
+        
+        expect(result.content[0].type).toBe('json');
+        const jsonResult = result.content[0].json;
+        expect(jsonResult.relatedIds).toEqual(related);
+        expect(jsonResult.warnings).toBeUndefined(); // No warnings expected
     });
 
-    it('should return message if \'related\' field is missing', async () => {
+    it('should return an empty array if \'related\' field is missing', async () => {
         const handler = getToolHandler();
         const fileContent = `---
 title: Note without related field
@@ -76,10 +85,11 @@ Some content.`;
         fs.readFile.mockResolvedValue(fileContent);
 
         const result = await handler({ type, id });
-        expect(result.content[0].text).toBe(`Entry '${type}/${id}' has no 'related' field in its metadata.`);
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json).toEqual([]); // Expect empty array
     });
 
-    it('should return message if \'related\' field is not an array', async () => {
+    it('should return a structured error if \'related\' field is not an array', async () => {
         const handler = getToolHandler();
         const fileContent = `---
 related: tasks/task-1
@@ -89,33 +99,34 @@ Content.`;
         fs.readFile.mockResolvedValue(fileContent);
 
         const result = await handler({ type, id });
-        expect(result.content[0].text).toBe(`Entry '${type}/${id}' has a 'related' field, but it is not an array.`);
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json.error).toMatch(/related\' field, but it is not an array/);
     });
 
-    it('should return message if \'related\' array is empty or invalid', async () => {
+    it('should return an empty array if \'related\' array is empty or contains only invalid entries', async () => {
         const handler = getToolHandler();
-        const fileContent = `---
+        const fileContentEmpty = `---
 related: []
 ---
 
 Content.`;
-        fs.readFile.mockResolvedValue(fileContent);
-
-        const result = await handler({ type, id });
-        expect(result.content[0].text).toBe(`Entry '${type}/${id}' has an empty or invalid 'related' array.`);
+        fs.readFile.mockResolvedValue(fileContentEmpty);
+        const resultEmpty = await handler({ type, id });
+        expect(resultEmpty.content[0].type).toBe('json');
+        expect(resultEmpty.content[0].json).toEqual([]); // Expect empty array for empty 'related'
         
-        // Test with invalid entries
-         const fileContentInvalid = `---
+        const fileContentInvalid = `---
 related: [null, 123, ""]
 ---
 
 Content.`;
         fs.readFile.mockResolvedValue(fileContentInvalid);
         const resultInvalid = await handler({ type, id });
-         expect(resultInvalid.content[0].text).toBe(`Entry '${type}/${id}' has an empty or invalid 'related' array.`);
+        expect(resultInvalid.content[0].type).toBe('json');
+        expect(resultInvalid.content[0].json).toEqual([]); // Expect empty array for invalid entries
     });
 
-    it('should return warning if source entry has invalid YAML', async () => {
+    it('should return a structured warning if source entry has invalid YAML', async () => {
         const handler = getToolHandler();
         const invalidContent = `---
 related: [tasks/task-1
@@ -124,29 +135,35 @@ Content`;
         fs.readFile.mockResolvedValue(invalidContent);
 
         const result = await handler({ type, id });
-        expect(result.content[0].text).toContain(`Warning: Entry '${type}/${id}' has invalid YAML front matter.`);
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json.warning).toMatch(/invalid YAML front matter/);
     });
 
-    it('should return error if getValidatedFilePath fails', async () => {
+    it('should return a structured error if getValidatedFilePath fails for the main entry', async () => {
         const handler = getToolHandler();
         const error = new Error(`Entry '${id}' not found in context type '${type}'.`);
-        fileUtils.getValidatedFilePath.mockRejectedValue(error);
+        // Reset the mock specifically for this test
+        vi.mocked(fileUtils.getValidatedFilePath).mockRejectedValue(error);
 
         const result = await handler({ type, id });
         expect(fs.readFile).not.toHaveBeenCalled();
-        expect(result.content[0].text).toBe(`Error getting related entries: ${error.message}`);
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json.error).toBe(`Error getting related entries: ${error.message}`);
     });
 
-    it('should return error if readFile fails', async () => {
+    it('should return a structured error if readFile fails', async () => {
         const handler = getToolHandler();
         const error = new Error('Permission denied');
+        // Reset file system mocks for this specific case
+        fileUtils.getValidatedFilePath.mockResolvedValue(mockFilePath);
         fs.readFile.mockRejectedValue(error);
 
         const result = await handler({ type, id });
-        expect(result.content[0].text).toBe(`Error getting related entries: ${error.message}`);
+        expect(result.content[0].type).toBe('json');
+        expect(result.content[0].json.error).toBe(`Error getting related entries: ${error.message}`);
     });
 
-    it('should return only existing related entries when some are invalid or do not exist', async () => {
+    it('should return only validated related entry IDs and include warnings for invalid/non-existent ones', async () => {
         const handler = getToolHandler();
         const existingRelated1 = 'tasks/task-1';
         const nonExistingRelated = 'ideas/non-existent';
@@ -164,34 +181,34 @@ related:
 Content of the note.`;
         fs.readFile.mockResolvedValue(fileContent);
 
-        // Mock getValidatedFilePath: succeed for existing, fail for non-existing
-        // For the main file path check
-        fileUtils.getValidatedFilePath.mockResolvedValueOnce(mockFilePath);
-        // For the related entries checks
-        fileUtils.getValidatedFilePath
-            .mockResolvedValueOnce(path.join(MOCK_CONTEXT_PATH, 'tasks', 'task-1.md')) // tasks/task-1 exists
-            .mockRejectedValueOnce(new Error(`Entry 'non-existent' not found in context type 'ideas'.`)) // ideas/non-existent doesn't exist
-            .mockResolvedValueOnce(path.join(MOCK_CONTEXT_PATH, 'notes', 'another-note.md')); // notes/another-note exists
-            // The invalid format 'justid' won't even reach getValidatedFilePath due to split failure
+        // Setup mock for getValidatedFilePath to handle different cases
+        vi.mocked(fileUtils.getValidatedFilePath).mockImplementation(async (contextPath, entryType, entryId) => {
+            if (entryType === type && entryId === id) return mockFilePath; // Main entry
+            if (entryType === 'tasks' && entryId === 'task-1') return path.join(contextPath, entryType, `${entryId}.md`);
+            if (entryType === 'notes' && entryId === 'another-note') return path.join(contextPath, entryType, `${entryId}.md`);
+            if (entryType === 'ideas' && entryId === 'non-existent') throw new Error('ENOENT'); // Simulate not found
+            // Default throw for any other unexpected calls
+            throw new Error(`Unexpected validation call for ${entryType}/${entryId}`);
+        });
 
         const result = await handler({ type, id });
 
-        // Check validation calls for related entries
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledTimes(4); // Main entry + 3 potentially valid related entries
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, type, id);
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, 'tasks', 'task-1');
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, 'ideas', 'non-existent');
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, 'notes', 'another-note');
+        expect(result.content[0].type).toBe('json');
+        const jsonResult = result.content[0].json;
 
-        expect(result.content[0].text).toContain(`Related entries for '${type}/${id}':`);
-        expect(result.content[0].text).toContain(`- ${existingRelated1}`);
-        expect(result.content[0].text).toContain(`- ${existingRelated2}`);
-        expect(result.content[0].text).not.toContain(`- ${nonExistingRelated}`);
-        expect(result.content[0].text).not.toContain(invalidFormatRelated); // Should be skipped due to invalid format
-        // We might want to check for logged warnings, but that requires more complex spy setup on console.warn
+        // Check validated IDs
+        expect(jsonResult.relatedIds).toEqual([existingRelated1, existingRelated2]);
+
+        // Check warnings
+        expect(jsonResult.warnings).toBeInstanceOf(Array);
+        expect(jsonResult.warnings.length).toBe(2); // One for non-existent, one for invalid format
+        expect(jsonResult.warnings).toEqual(expect.arrayContaining([
+            expect.stringMatching(/Invalid related entry format: "justid"/), // Check invalid format warning
+            expect.stringMatching(/Related entry "ideas\/non-existent" .* not found or invalid: ENOENT/) // Check not found warning
+        ]));
     });
 
-    it('should return a specific message when \'related\' field exists but none of the entries could be validated', async () => {
+    it('should return empty relatedIds and include warnings when related field exists but none validate', async () => {
         const handler = getToolHandler();
         const nonExistingRelated1 = 'tasks/task-nope';
         const nonExistingRelated2 = 'ideas/idea-gone';
@@ -206,15 +223,22 @@ Content.`;
         fs.readFile.mockResolvedValue(fileContent);
 
         // Mock getValidatedFilePath: fail for all related entries
-        fileUtils.getValidatedFilePath.mockResolvedValueOnce(mockFilePath); // Main entry validation
-        fileUtils.getValidatedFilePath.mockRejectedValue(new Error('Entry not found')); // Simulate failure for both related
+        vi.mocked(fileUtils.getValidatedFilePath).mockImplementation(async (contextPath, entryType, entryId) => {
+             if (entryType === type && entryId === id) return mockFilePath; // Main entry
+             throw new Error('ENOENT'); // Simulate failure for related
+        });
 
         const result = await handler({ type, id });
 
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledTimes(3); // Main entry + 2 related
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, 'tasks', 'task-nope');
-        expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, 'ideas', 'idea-gone');
-        expect(result.content[0].text).toBe(`Entry '${type}/${id}' has a 'related' field, but none of the specified entries could be found or validated.`);
+        expect(result.content[0].type).toBe('json');
+        const jsonResult = result.content[0].json;
+        expect(jsonResult.relatedIds).toEqual([]); // Expect empty array of validated IDs
+        expect(jsonResult.warnings).toBeInstanceOf(Array);
+        expect(jsonResult.warnings.length).toBe(2);
+        expect(jsonResult.warnings).toEqual(expect.arrayContaining([
+            expect.stringMatching(/Related entry "tasks\/task-nope".*ENOENT/),
+            expect.stringMatching(/Related entry "ideas\/idea-gone".*ENOENT/)
+        ]));
     });
 
     it('should handle related entries with leading/trailing whitespace', async () => {
@@ -229,14 +253,22 @@ Content.`;
         fs.readFile.mockResolvedValue(fileContent);
         const expectedValidatedPath = path.join(MOCK_CONTEXT_PATH, 'tasks', `spaced-task.md`);
 
-        // Mock getValidatedFilePath
-        fileUtils.getValidatedFilePath.mockResolvedValueOnce(mockFilePath); // Main file
-        fileUtils.getValidatedFilePath.mockResolvedValueOnce(expectedValidatedPath); // Related file
+        // Mock getValidatedFilePath - assume the spaced one exists
+        vi.mocked(fileUtils.getValidatedFilePath).mockImplementation(async (contextPath, entryType, entryId) => {
+             if (entryType === type && entryId === id) return mockFilePath; // Main entry
+             if (entryType === 'tasks' && entryId === 'spaced-task') return expectedValidatedPath;
+             throw new Error(`Unexpected validation call for ${entryType}/${entryId}`);
+        });
 
         const result = await handler({ type, id });
 
         // Verify getValidatedFilePath was called with trimmed values
         expect(fileUtils.getValidatedFilePath).toHaveBeenCalledWith(MOCK_CONTEXT_PATH, 'tasks', 'spaced-task');
-        expect(result.content[0].text).toContain(`- ${relatedWithSpace.trim()}`); // Output should also likely be trimmed
+        
+        expect(result.content[0].type).toBe('json');
+        const jsonResult = result.content[0].json;
+        // The returned ID should be the original string from the file
+        expect(jsonResult.relatedIds).toEqual([relatedWithSpace]); 
+        expect(jsonResult.warnings).toBeUndefined();
     });
 }); 
