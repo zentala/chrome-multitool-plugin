@@ -6,76 +6,51 @@ import { parseFrontMatter, getValidatedFilePath } from '../utils/fileUtils.js';
 export function registerGetRelatedEntriesTool(server, contextDataPath) {
     server.tool(
       "get_related_entries",
-      "Retrieves a list of entries mentioned in the 'related' field of a specific entry's metadata.",
+      "Retrieves a list of related entry IDs mentioned in the 'related' field of a specific entry's front matter.",
       {
-        type: z.string().min(1).describe("Context type of the source entry."),
-        id: z.string().min(1).describe("ID of the source entry whose related entries to find."),
+        type: z.string().min(1).describe("The context type (directory) of the entry."),
+        id: z.string().min(1).describe("The ID (filename without extension) of the entry."),
       },
       async ({ type, id }) => {
         try {
-          const filePath = await getValidatedFilePath(contextDataPath, type, id); // Validate source entry exists
+          // 1. Validate and get the file path
+          const filePath = await getValidatedFilePath(contextDataPath, type, id);
+
+          // 2. Read the file content
           const rawContent = await fs.readFile(filePath, 'utf8');
+
+          // 3. Parse front matter
           const { metadata } = parseFrontMatter(rawContent, filePath);
 
           if (metadata.parseError) {
-              throw new Error(`Source entry has invalid YAML front matter: ${metadata.parseError}`);
+            return { content: [{ type: "text", text: `Warning: Entry '${type}/${id}' has invalid YAML front matter. Cannot reliably get related entries.` }] };
           }
 
-          if (!metadata.related || !Array.isArray(metadata.related) || metadata.related.length === 0) {
-             return { content: [{ type: "text", text: `Entry '${type}/${id}' has no 'related' entries specified in its metadata.` }] };
-          }
+          // 4. Extract and return related entries
+          const relatedEntries = metadata.related;
 
-          const relatedLinks = metadata.related;
-          const foundRelated = [];
-          const notFound = [];
-          const invalidFormat = [];
-          const linkRegex = /^([a-zA-Z0-9_-]+)\/([a-zA-Z0-9_-]+(?:\.md)?)$/; // type/id or type/id.md
+          if (!relatedEntries) {
+            return { content: [{ type: "text", text: `Entry '${type}/${id}' has no 'related' field in its metadata.` }] };
+          } 
 
-          for (const link of relatedLinks) {
-              if (typeof link !== 'string') {
-                  invalidFormat.push(String(link));
-                  continue;
-              }
-              
-              const match = link.match(linkRegex);
-              if (!match) {
-                  invalidFormat.push(link);
-                  continue;
-              }
-
-              const relatedType = match[1];
-              const relatedId = match[2].replace(/\.md$/, ''); // Remove .md if present
-
-              try {
-                  // Check if the related file actually exists
-                  await getValidatedFilePath(contextDataPath, relatedType, relatedId); 
-                  foundRelated.push(`${relatedType}/${relatedId}`);
-              } catch (error) {
-                  // If getValidatedFilePath throws (likely ENOENT), the related file doesn't exist
-                  if (error.message.includes('not found')) { // Check error message for robustness
-                       notFound.push(link);
-                  } else {
-                       console.error(`Unexpected error validating related link '${link}':`, error); 
-                       notFound.push(`${link} (validation error)`); // Mark as not found with error note
-                  }
-              }
+          if (!Array.isArray(relatedEntries)) {
+               return { content: [{ type: "text", text: `Entry '${type}/${id}' has a 'related' field, but it is not an array.` }] };
           }
           
-          let responseText = `Related entries for '${type}/${id}':\n`;
-          if (foundRelated.length > 0) {
-               responseText += foundRelated.map(f => `- ${f}`).join('\n');
-          } else {
-               responseText += "(None found or valid)";
-          }
-          
-          if (notFound.length > 0) {
-               responseText += `\n\nCould not find:\n- ${notFound.join('\n- ')}`;
-          }
-           if (invalidFormat.length > 0) {
-               responseText += `\n\nInvalid format links skipped:\n- ${invalidFormat.join('\n- ')}`;
-           }
+          const relatedIds = relatedEntries.filter(rel => typeof rel === 'string' && rel.trim() !== '');
 
-          return { content: [{ type: "text", text: responseText }] };
+          if (relatedIds.length === 0) {
+               return { content: [{ type: "text", text: `Entry '${type}/${id}' has an empty or invalid 'related' array.` }] };
+          }
+
+          // Format the output nicely
+          const relatedList = relatedIds.map(relId => `- ${relId}`).join('\n');
+          return { 
+              content: [{
+                  type: "text",
+                  text: `Related entries for '${type}/${id}':\n${relatedList}`
+              }]
+          };
 
         } catch (error) {
           console.error(`Error getting related entries for '${type}/${id}':`, error);

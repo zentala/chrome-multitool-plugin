@@ -19,6 +19,7 @@ export function registerSearchEntriesTool(server, contextDataPath) {
         const queryLower = query.toLowerCase();
         const requiredTags = filterTags ? filterTags.split(',').map(t => t.trim().toLowerCase()).filter(t => t) : [];
         const requiredStatus = filterStatus ? filterStatus.trim().toLowerCase() : null;
+        const CONTEXT_LINES = 1; // Number of lines before/after match
         let searchDirs = [];
         let searchCriteriaDescription = `matching "${query}"`;
         if (requiredTags.length > 0) searchCriteriaDescription += ` with tags [${requiredTags.join(', ')}]`;
@@ -57,6 +58,7 @@ export function registerSearchEntriesTool(server, contextDataPath) {
               for (const file of files) {
                 if (file.isFile() && file.name.endsWith('.md')) {
                   const filePath = path.join(dir.path, file.name);
+                  const entryId = `${dir.name}/${file.name.replace(/\.md$/, '')}`;
                   try {
                     const rawContent = await fs.readFile(filePath, 'utf8');
                     const { metadata, mainContent } = parseFrontMatter(rawContent, filePath);
@@ -77,9 +79,32 @@ export function registerSearchEntriesTool(server, contextDataPath) {
                         }
                     }
 
-                    // Apply text query (search the entire raw content now) if metadata matches
-                    if (metadataMatch && rawContent.toLowerCase().includes(queryLower)) { 
-                      results.push(`${dir.name}/${file.name.replace(/\.md$/, '')}`);
+                    // Search content only if metadata matches
+                    if (metadataMatch && mainContent.toLowerCase().includes(queryLower)) { 
+                       const lines = mainContent.split('\n');
+                       const snippets = [];
+                       for (let i = 0; i < lines.length; i++) {
+                            if (lines[i].toLowerCase().includes(queryLower)) {
+                                const start = Math.max(0, i - CONTEXT_LINES);
+                                const end = Math.min(lines.length, i + CONTEXT_LINES + 1);
+                                const context = lines.slice(start, end).join('\n');
+                                // Add ellipsis if context doesn't start/end at the beginning/end of the section
+                                const prefix = start > 0 ? '...\n' : '';
+                                const suffix = end < lines.length ? '\n...' : '';
+                                snippets.push(prefix + context + suffix);
+                                // Avoid adding overlapping contexts, jump ahead
+                                i = end -1; 
+                            }
+                       }
+                       if (snippets.length > 0) {
+                            results.push({ id: entryId, snippets });
+                       } else {
+                           // Fallback: if query is in rawContent but NOT mainContent (i.e., in metadata)
+                           // Still add the entry ID but without snippets
+                           if (rawContent.toLowerCase().includes(queryLower)) {
+                               results.push({ id: entryId, snippets: ["(Match found in metadata)"] });
+                           }
+                       }
                     }
                   } catch (readError) {
                      if (readError.code !== 'ENOENT') console.error(`Error reading ${filePath} during search:`, readError);
@@ -93,7 +118,19 @@ export function registerSearchEntriesTool(server, contextDataPath) {
 
           // Format results
           if (results.length === 0) return { content: [{ type: "text", text: `No entries found ${searchCriteriaDescription}.` }] };
-          return { content: [{ type: "text", text: `Found ${results.length} entr${results.length === 1 ? 'y' : 'ies'} ${searchCriteriaDescription}:\n- ${results.join('\n- ')}` }] };
+          
+          let resultText = `Found ${results.length} entr${results.length === 1 ? 'y' : 'ies'} ${searchCriteriaDescription}:\n\n`;
+          results.forEach(res => {
+              resultText += `**${res.id}**\n`;
+              res.snippets.forEach(snippet => {
+                  // Indent snippets for readability
+                  const indentedSnippet = snippet.split('\n').map(line => `  ${line}`).join('\n');
+                  resultText += `${indentedSnippet}\n---\n`;
+              });
+              resultText += '\n'; // Add space between entries
+          });
+
+          return { content: [{ type: "text", text: resultText.trim() }] };
 
         } catch (error) {
           console.error(`Error during search for "${query}":`, error);
