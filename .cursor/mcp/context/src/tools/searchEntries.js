@@ -3,6 +3,94 @@ import fs from 'fs/promises';
 import path from 'path';
 import { parseFrontMatter } from '../utils/fileUtils.js';
 
+/**
+ * Processes a single entry file for search.
+ * Reads the file, parses front matter, applies filters, and searches content.
+ * @param {string} filePath - Full path to the markdown file.
+ * @param {string} entryId - The constructed ID (e.g., type/name).
+ * @param {object} searchParams - Object containing search parameters:
+ *   {string|null} queryLower, {RegExp|null} regexQuery, {boolean} isRegex,
+ *   {string|null} requiredStatus, {string[]} requiredTags, {number} CONTEXT_LINES
+ * @returns {Promise<{result?: object, error?: object, skipped?: boolean}>} - Outcome of processing.
+ */
+async function processEntryForSearch(filePath, entryId, searchParams) {
+    const { queryLower, regexQuery, isRegex, requiredStatus, requiredTags, CONTEXT_LINES } = searchParams;
+    try {
+        const rawContent = await fs.readFile(filePath, 'utf8');
+        const { metadata, mainContent } = parseFrontMatter(rawContent, filePath);
+
+        // Check for parseError within the metadata object
+        if (metadata && metadata.parseError) {
+            console.warn(`Skipping entry '${entryId}' due to YAML parse error: ${metadata.parseError}`);
+            return { error: { id: entryId, error: `YAML parse error: ${metadata.parseError}` } };
+        }
+
+        // Apply metadata filters
+        let metadataMatch = true;
+        if (requiredStatus && (!metadata.status || String(metadata.status).toLowerCase() !== requiredStatus)) {
+            metadataMatch = false;
+        }
+        if (metadataMatch && requiredTags.length > 0) {
+            const entryTags = Array.isArray(metadata.tags) ? metadata.tags.map(t => String(t).toLowerCase()) : [];
+            if (!requiredTags.every(reqTag => entryTags.includes(reqTag))) {
+                metadataMatch = false;
+            }
+        }
+        if (!metadataMatch) return { skipped: true };
+
+        // --- Metadata filters passed, now search content ---
+        const snippets = [];
+        const lines = mainContent.split('\n');
+        let contentMatchFound = false;
+
+        for (let i = 0; i < lines.length; i++) {
+            const line = lines[i];
+            const lineMatches = isRegex ? regexQuery.test(line) : line.toLowerCase().includes(queryLower);
+
+            if (lineMatches) {
+                contentMatchFound = true;
+                const start = Math.max(0, i - CONTEXT_LINES);
+                const end = Math.min(lines.length, i + CONTEXT_LINES + 1);
+                let snippetLines = [];
+                for (let j = start; j < end; j++) {
+                    const lineNum = j + 1;
+                    const isMatchingLine = (j === i);
+                    const linePrefix = isMatchingLine ? " >>" : "   ";
+                    snippetLines.push(`${linePrefix}${lineNum}: ${lines[j]}`);
+                }
+                snippets.push({
+                    line: i,
+                    snippet: snippetLines.join('\n')
+                });
+            }
+        }
+        // --- End content search ---
+
+        if (contentMatchFound) {
+            return {
+                result: {
+                    id: entryId,
+                    title: metadata.title || entryId.split('/').pop(),
+                    metadata: metadata,
+                    snippets: snippets
+                }
+            };
+        } else {
+            return { skipped: true }; // Content didn't match
+        }
+
+    } catch (readFileError) {
+        // Handle errors during file reading
+        if (readFileError.code !== 'ENOENT') {
+            console.error(`Error reading file '${entryId}':`, readFileError);
+            return { error: { id: entryId, error: `Read error: ${readFileError.message}` } };
+        } else {
+            console.warn(`File '${entryId}' disappeared during search.`);
+            return { error: { id: entryId, error: `File disappeared during search.` } };
+        }
+    }
+}
+
 export function registerSearchEntriesTool(server, contextDataPath) {
     server.tool(
       "search_entries",
@@ -16,23 +104,24 @@ export function registerSearchEntriesTool(server, contextDataPath) {
       },
       async ({ query, type, filterTags, filterStatus, isRegex }) => {
         const results = [];
-        const processingErrors = []; // Array for processing errors
-
+        const processingErrors = [];
+        let searchDirs = []; // Declare here to be accessible in catch block if needed
         let regexQuery = null;
+
+        // Compile regex if needed, handle error early
         if (isRegex) {
             try {
                 regexQuery = new RegExp(query, 'i'); 
             } catch (e) {
-                 // Return structured error
-                 return { content: [{ type: "json", json: { error: `Invalid regular expression: ${e.message}` } }] };
+                // Return structured error for invalid regex
+                return { content: [{ type: "json", json: { error: `Invalid regular expression: ${e.message}` } }] };
             }
         }
-        const queryLower = isRegex ? null : query.toLowerCase(); // Define queryLower here
-        
+
+        const queryLower = isRegex ? null : query.toLowerCase();
         const requiredTags = filterTags ? filterTags.split(',').map(t => t.trim().toLowerCase()).filter(t => t) : [];
         const requiredStatus = filterStatus ? filterStatus.trim().toLowerCase() : null;
         const CONTEXT_LINES = 2;
-        let searchDirs = [];
         
         try {
           // Determine directories to search
@@ -72,98 +161,43 @@ export function registerSearchEntriesTool(server, contextDataPath) {
              return { content: [{ type: "json", json: { results: [], errors: [], message: message } }] };
           }
 
-          // Iterate, parse, filter, search
+          // Process directories one by one, but files within each directory concurrently
           for (const dir of searchDirs) {
+            let filesInDir = [];
             try {
-              const files = await fs.readdir(dir.path, { withFileTypes: true });
-              for (const file of files) {
-                if (file.isFile() && file.name.endsWith('.md')) {
-                  const filePath = path.join(dir.path, file.name);
-                  const entryId = `${dir.name}/${file.name.replace(/\.md$/, '')}`;
-                  try {
-                    const rawContent = await fs.readFile(filePath, 'utf8');
-                    const { metadata, mainContent } = parseFrontMatter(rawContent, filePath);
-
-                    // Check for parseError within the metadata object
-                    if (metadata && metadata.parseError) {
-                        // Log and report using the error message from metadata.parseError
-                        console.warn(`Skipping entry '${entryId}' due to YAML parse error: ${metadata.parseError}`); 
-                        processingErrors.push({ id: entryId, error: `YAML parse error: ${metadata.parseError}` });
-                        continue; // Skip to the next file
-                    }
-                    
-                    // Apply metadata filters 
-                    let metadataMatch = true;
-                    // Check status filter
-                    if (requiredStatus && (!metadata.status || String(metadata.status).toLowerCase() !== requiredStatus)) {
-                        metadataMatch = false;
-                    }
-                    // Check tags filter (only if status filter passed or wasn't required)
-                    if (metadataMatch && requiredTags.length > 0) {
-                         const entryTags = Array.isArray(metadata.tags) ? metadata.tags.map(t => String(t).toLowerCase()) : [];
-                         if (!requiredTags.every(reqTag => entryTags.includes(reqTag))) {
-                             metadataMatch = false;
-                         }
-                    }
-
-                    // If metadata filters don't match, skip this file
-                    if (!metadataMatch) continue; 
-
-                    // --- Metadata filters passed, now search content ---
-                    const snippets = [];
-                    const lines = mainContent.split('\n');
-                    let contentMatchFound = false; // Track if any line matched
-
-                    for (let i = 0; i < lines.length; i++) {
-                        const line = lines[i];
-                        const lineMatches = isRegex ? regexQuery.test(line) : line.toLowerCase().includes(queryLower);
-
-                        if (lineMatches) {
-                            contentMatchFound = true; // Mark that we found at least one match
-                            const start = Math.max(0, i - CONTEXT_LINES);
-                            const end = Math.min(lines.length, i + CONTEXT_LINES + 1);
-                            let snippetLines = [];
-                            for (let j = start; j < end; j++) {
-                                const lineNum = j + 1; 
-                                const isMatchingLine = (j === i);
-                                const linePrefix = isMatchingLine ? " >>" : "   ";
-                                snippetLines.push(`${linePrefix}${lineNum}: ${lines[j]}`); 
-                            }
-                            snippets.push({
-                                line: i,
-                                snippet: snippetLines.join('\n')
-                            });
-                        }
-                    }
-                    // --- End content search ---
-
-                    // Only add to results if content actually matched
-                    if (contentMatchFound) {
-                        results.push({
-                            id: entryId,
-                            // Use title from metadata if available, otherwise fallback to id
-                            title: metadata.title || entryId.split('/').pop(), 
-                            metadata: metadata, // Include full metadata for context
-                            snippets: snippets // Use the key 'snippets' instead of 'content'
-                        });
-                    }
-                  } catch (readFileError) {
-                    // Handle errors during file reading (after readdir)
-                     if (readFileError.code !== 'ENOENT') { // Ignore if deleted during search
-                         console.error(`Error reading file '${entryId}':`, readFileError);
-                         processingErrors.push({ id: entryId, error: `Read error: ${readFileError.message}` });
-                     } else {
-                          console.warn(`File '${entryId}' disappeared during search.`);
-                          processingErrors.push({ id: entryId, error: `File disappeared during search.` });
-                     }
-                  }
-                }
-              }
+                filesInDir = await fs.readdir(dir.path, { withFileTypes: true });
             } catch (readDirError) {
-              // Handle errors reading a directory's contents
-              console.error(`Error reading directory '${dir.name}':`, readDirError);
-              processingErrors.push({ id: dir.name, error: `Error reading directory: ${readDirError.message}` });
+                console.error(`Error reading directory '${dir.name}':`, readDirError);
+                processingErrors.push({ id: dir.name, error: `Error reading directory: ${readDirError.message}` });
+                continue; // Skip to next directory
             }
+
+            const mdFiles = filesInDir.filter(file => file.isFile() && file.name.endsWith('.md'));
+            const searchParams = { queryLower, regexQuery, isRegex, requiredStatus, requiredTags, CONTEXT_LINES };
+
+            const promises = mdFiles.map(file => {
+                const filePath = path.join(dir.path, file.name);
+                const entryId = `${dir.name}/${file.name.replace(/\.md$/, '')}`;
+                return processEntryForSearch(filePath, entryId, searchParams);
+            });
+
+            const settledResults = await Promise.allSettled(promises);
+
+            settledResults.forEach(outcome => {
+                if (outcome.status === 'fulfilled') {
+                    const { result, error, skipped } = outcome.value;
+                    if (result) {
+                        results.push(result);
+                    } else if (error) {
+                        processingErrors.push(error);
+                    }
+                    // Ignore skipped entries
+                } else {
+                    // Handle unexpected errors from processEntryForSearch itself (rejected promise)
+                    console.error("Unexpected error during entry processing:", outcome.reason);
+                    processingErrors.push({ id: "unknown", error: `Internal processing error: ${outcome.reason?.message || outcome.reason}` });
+                }
+            });
           }
           
           // Return final structured response
