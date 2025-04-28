@@ -2,6 +2,7 @@ import { z } from "zod";
 import fs from 'fs/promises';
 import path from 'path';
 import { parseFrontMatter, formatWithFrontMatter } from '../utils/fileUtils.js';
+import { contextToolRoot } from '../config.js';
 
 export function registerCreateFromTemplateTool(server, contextDataPath) {
     server.tool(
@@ -26,8 +27,8 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
             templateContent = await fs.readFile(templatePath, 'utf8');
           } catch (err) {
             if (err.code === 'ENOENT') {
-                // Try reading from the older templates location as a fallback
-                const fallbackTemplateDir = path.resolve(process.cwd(), '.cursor', 'TEMPLATES');
+                // Try reading from the application's default templates location as a fallback
+                const fallbackTemplateDir = path.join(contextToolRoot, 'example', 'templates');
                 const fallbackTemplatePath = path.join(fallbackTemplateDir, `${templateName}.md`);
                 try {
                     templateContent = await fs.readFile(fallbackTemplatePath, 'utf8');

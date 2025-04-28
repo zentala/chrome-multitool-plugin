@@ -22,28 +22,46 @@ const mockServer = {
     tool: vi.fn(),
 };
 
-const getToolHandler = () => {
+// Dynamically import config *after* mocks are set up
+let contextToolRoot;
+
+const getToolHandler = async () => {
+    // Ensure config is imported only once and after mocks
+    if (!contextToolRoot) {
+      try {
+        // Simulate the top-level await behavior for config import in tests
+        const configModule = await import('../src/config.js');
+        contextToolRoot = configModule.contextToolRoot;
+      } catch (e) {
+        console.error("Error importing config in test setup:", e);
+        contextToolRoot = '/mock/tool/root'; // Provide a fallback for tests if import fails
+      }
+    }
     if (mockServer.tool.mock.calls.length === 0) throw new Error('server.tool was not called');
-    // Assumes create_from_template is the last registered tool
-    return mockServer.tool.mock.calls[mockServer.tool.mock.calls.length - 1][3]; 
+    return mockServer.tool.mock.calls[mockServer.tool.mock.calls.length - 1][3];
 };
 
 describe('createFromTemplate Tool', () => {
     const MOCK_CONTEXT_PATH = '/mock/workspace/.cursor/context';
-    const MOCK_FALLBACK_TEMPLATE_PATH = path.resolve(process.cwd(), '.cursor', 'TEMPLATES');
     const toolName = 'create_from_template';
     const templateName = 'test-template';
     const type = 'notes';
     const mockTemplatePath = path.join(MOCK_CONTEXT_PATH, '_templates', `${templateName}.md`);
     const mockTargetPath = path.join(MOCK_CONTEXT_PATH, type);
-    
-    beforeEach(() => {
+    let expectedFallbackPath; // Will be set in beforeEach
+
+    beforeEach(async () => { // Make beforeEach async
         vi.resetAllMocks();
         registerCreateFromTemplateTool(mockServer, MOCK_CONTEXT_PATH);
         // Default mocks 
-        fs.mkdir.mockResolvedValue(undefined); // Assume mkdir succeeds
-        fs.writeFile.mockResolvedValue(undefined); // Assume write succeeds by default
-        vi.useFakeTimers(); // Use fake timers for predictable filenames/timestamps
+        fs.mkdir.mockResolvedValue(undefined);
+        fs.writeFile.mockResolvedValue(undefined);
+        vi.useFakeTimers();
+
+        // Get the handler to ensure config is loaded and set expectedFallbackPath
+        await getToolHandler(); // Ensure contextToolRoot is loaded
+        if (!contextToolRoot) throw new Error('contextToolRoot not loaded in beforeEach');
+        expectedFallbackPath = path.join(contextToolRoot, 'example', 'templates', `${templateName}.md`);
     });
 
     afterEach(() => {
@@ -51,7 +69,7 @@ describe('createFromTemplate Tool', () => {
     });
 
     it('should create an entry from a template with variable substitution in content and metadata', async () => {
-        const handler = getToolHandler();
+        const handler = await getToolHandler();
         const mockDate = new Date();
         vi.setSystemTime(mockDate);
         const expectedFilenameTimestamp = mockDate.toISOString().replace(/[:.]/g, '-');
@@ -127,7 +145,7 @@ Unused: {{unused_placeholder}}`;
     });
 
     it('should use the provided filename instead of a timestamp', async () => {
-        const handler = getToolHandler();
+        const handler = await getToolHandler();
         const customFilename = 'my-custom-note';
         const expectedFilePath = path.join(mockTargetPath, `${customFilename}.md`);
         const templateContent = `---
@@ -146,23 +164,22 @@ Content.`;
     });
 
     it('should return an error if the template is not found in context or fallback location', async () => {
-        const handler = getToolHandler();
+        const handler = await getToolHandler();
         const error = new Error('Template not found');
         error.code = 'ENOENT';
         fs.readFile.mockRejectedValue(error);
-        const fallbackTemplatePath = path.join(MOCK_FALLBACK_TEMPLATE_PATH, `${templateName}.md`);
 
         const result = await handler({ templateName, type });
 
-        // Check that it tried both locations
+        // Check that it tried both locations with the *correct* fallback path
         expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
-        expect(fs.readFile).toHaveBeenCalledWith(fallbackTemplatePath, 'utf8');
+        expect(fs.readFile).toHaveBeenCalledWith(expectedFallbackPath, 'utf8'); // Use corrected path
         expect(fs.writeFile).not.toHaveBeenCalled();
         expect(result.content[0].text).toBe(`Error creating from template '${templateName}': Template '${templateName}.md' not found in _templates or TEMPLATES directory.`);
     });
 
     it('should return an error if the template has invalid YAML front matter', async () => {
-        const handler = getToolHandler();
+        const handler = await getToolHandler();
         const invalidTemplateContent = `---
 title: Invalid YAML
 tag: [one, two
@@ -178,7 +195,7 @@ Content`; // Missing closing bracket
     });
 
     it('should create an entry with placeholders remaining if no variables are provided', async () => {
-        const handler = getToolHandler();
+        const handler = await getToolHandler();
         const mockDate = new Date();
         vi.setSystemTime(mockDate);
         const expectedFilenameTimestamp = mockDate.toISOString().replace(/[:.]/g, '-');
@@ -208,7 +225,7 @@ Content with {{placeholder}}.`;
     });
 
     it('should return an error if writeFile fails (e.g., file exists)', async () => {
-        const handler = getToolHandler();
+        const handler = await getToolHandler();
         const customFilename = 'existing-file';
         const expectedFilePath = path.join(mockTargetPath, `${customFilename}.md`);
         const templateContent = `Content`;
@@ -227,12 +244,11 @@ Content with {{placeholder}}.`;
     });
 
     it('should use the fallback template location if not found in context', async () => {
-        const handler = getToolHandler();
+        const handler = await getToolHandler();
         const mockDate = new Date();
         vi.setSystemTime(mockDate);
         const expectedFilenameTimestamp = mockDate.toISOString().replace(/[:.]/g, '-');
         const expectedFilePath = path.join(mockTargetPath, `${expectedFilenameTimestamp}.md`);
-        const fallbackTemplatePath = path.join(MOCK_FALLBACK_TEMPLATE_PATH, `${templateName}.md`);
         const fallbackTemplateContent = `Fallback Content`;
 
         // Mock readFile: fail for context location, succeed for fallback
@@ -245,9 +261,9 @@ Content with {{placeholder}}.`;
         const result = await handler({ templateName, type });
 
         expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
-        expect(fs.readFile).toHaveBeenCalledWith(fallbackTemplatePath, 'utf8');
+        expect(fs.readFile).toHaveBeenCalledWith(expectedFallbackPath, 'utf8'); // Use corrected path
         expect(fs.writeFile).toHaveBeenCalledWith(expectedFilePath, expect.stringContaining(fallbackTemplateContent), { flag: 'wx' });
-        expect(result.content[0].text).toContain(`Successfully created '${type}/${expectedFilenameTimestamp}' from template '${templateName}' (using fallback).`); // Expect indication of fallback usage
+        expect(result.content[0].text).toContain(`Successfully created '${type}/${expectedFilenameTimestamp}' from template '${templateName}' (using fallback).`);
     });
 
     // TODO: Add more tests:

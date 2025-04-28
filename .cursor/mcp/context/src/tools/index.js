@@ -9,4 +9,5 @@ export { registerSearchEntriesTool } from './searchEntries.js';
 export { registerUpdateEntryTool } from './updateEntry.js';
 export { registerDeleteEntryTool } from './deleteEntry.js';
 export { registerGetRelatedEntriesTool } from './getRelatedEntries.js';
-export { registerCreateFromTemplateTool } from './createFromTemplate.js'; 
+export { registerCreateFromTemplateTool } from './createFromTemplate.js';
+export { registerCreateTypeWithTemplateTool } from './createTypeWithTemplate.js'; 
