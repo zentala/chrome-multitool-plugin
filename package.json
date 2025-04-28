@@ -54,6 +54,7 @@
     "@langchain/anthropic": "^0.3.9",
     "@langchain/core": "^0.3.23",
     "@langchain/openai": "^0.3.14",
+    "@modelcontextprotocol/sdk": "^1.10.2",
     "@mui/icons-material": "^6.2.0",
     "@mui/material": "^6.2.0",
     "@mui/styles": "^6.2.0",
@@ -62,6 +63,7 @@
     "langchain": "^0.3.7",
     "limiter": "^3.0.0",
     "react": "^19.0.0",
-    "react-dom": "^19.0.0"
+    "react-dom": "^19.0.0",
+    "zod": "^3.24.3"
   }
 }

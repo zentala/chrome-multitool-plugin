@@ -2,9 +2,6 @@ import { initializeContextMenu, setupContextMenuOnClickListener, setupRuntimeMes
 import { ConversionResult, IAIAdapter, ParseCurrencyOutput } from '../interfaces';
 import { GoogleAIAdapter } from '../services/ai/GoogleAIAdapter';
 import { exchangeRateService } from '../services/exchangeRateService';
-import {
-  CurrencyClarificationRequest,
-} from '../types';
 
 console.log('Background script loaded.');
 
@@ -84,13 +81,6 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
 
   // Add handlers for other message types here...
 });
-
-// Temporary direct initialization for testing Google
-// TODO: Remove this and use the dynamic initialization above
-console.warn('Using placeholder Google API key. AI features may not work.');
-// Initialize GoogleAIAdapter without passing the key
-const aiProvider: IAIAdapter = new GoogleAIAdapter(); // Constructor reads from env var
-console.log('AI Provider TEMPORARILY initialized: Google AI');
 
 /**
  * Handles the entire currency conversion request process.

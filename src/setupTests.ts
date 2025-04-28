@@ -4,17 +4,19 @@ import { vi } from 'vitest'; // Import vi
 // Import original jest-dom matchers
 import '@testing-library/jest-dom';
 
-// Import GoogleAIAdapter module
-import * as RealAdapterModule from '../services/ai/GoogleAIAdapter'; // Import type info
+// Remove unused import
+// import * as RealAdapterModule from '../services/ai/GoogleAIAdapter'; // Import type info
 
 // --- Workaround for Vitest/React 18 act warning --- //
 if (typeof globalThis !== 'undefined') {
   // Revert to any for simplicity in test setup
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 }
 // Also ensure it's set on self/window if they exist in jsdom
 if (typeof self !== 'undefined') {
   // Revert to any for simplicity in test setup
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   (self as any).IS_REACT_ACT_ENVIRONMENT = true;
 }
 // ---------------------------------------------------- //

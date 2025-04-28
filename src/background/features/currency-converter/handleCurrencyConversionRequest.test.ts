@@ -1,37 +1,39 @@
 // Test file for handleCurrencyConversionRequest
 // See decision log: .cursor/decisions/2025-04-28-refactor-mocking-handleCurrencyConversionRequest-test.md
 
-// Import the function TYPE, but the actual function will come from the mock factory
+// Import TYPE of the function under test
 import type { handleCurrencyConversionRequest as handleCurrencyConversionRequestType } from '../../index';
 import { describe, it, expect, vi, beforeEach, beforeAll } from 'vitest';
-import type { ConversionResult, CurrencyParseResult, IAIAdapter } from '../../../interfaces'; // Use type imports
-import { exchangeRateService } from '../../../services/exchangeRateService';
+import type { ConversionResult, CurrencyParseResult, IAIAdapter } from '../../../interfaces';
+// We don't need to import exchangeRateService directly if we mock the module
+// import { exchangeRateService } from '../../../services/exchangeRateService';
+// We don't import GoogleAIAdapter
 
 // --- Mock Dependencies --- //
 
-// Mock the getAIProvider function within ../../index using a factory
+// Define mock functions outside the factory
 const mockParseCurrency = vi.fn();
 const mockGetRate = vi.fn();
 
+// Mock the index module to intercept getAIProvider
 vi.mock('../../index', async (importOriginal) => {
-  // Dynamically import the original module to get the real function
   const originalModule = await importOriginal() as typeof import('../../index');
   return {
-    // Mock getAIProvider
+    // Provide a mocked getAIProvider that returns a simple object with mocked parseCurrency
     getAIProvider: vi.fn(() => ({
       parseCurrency: mockParseCurrency,
     }) as IAIAdapter),
-    // Keep the original function under test
+    // Keep the original function that we want to test
     handleCurrencyConversionRequest: originalModule.handleCurrencyConversionRequest,
-    // Mock or provide defaults for other exports if needed by the test setup
+    // Provide mocks for other functions exported by index if they might be called
     initializeContextMenu: vi.fn(),
     setupContextMenuOnClickListener: vi.fn(),
     setupRuntimeMessageListener: vi.fn(),
-    handleCurrencyClarificationRequest: vi.fn(), // Mock this too if needed
+    handleCurrencyClarificationRequest: vi.fn(),
   };
 });
 
-// Mock the exchangeRateService directly (no factory needed if simple)
+// Mock the exchangeRateService module
 vi.mock('../../../services/exchangeRateService', () => ({
   exchangeRateService: {
     getRate: mockGetRate,
@@ -40,20 +42,23 @@ vi.mock('../../../services/exchangeRateService', () => ({
 
 // --- Test Suite --- //
 
-// Need to dynamically import the mocked function AFTER vi.mock has run
+// Dynamically import the function under test AFTER mocks are set up
 let handleCurrencyConversionRequest: typeof handleCurrencyConversionRequestType;
 
 describe('handleCurrencyConversionRequest', () => {
-
   beforeAll(async () => {
-    // Import the potentially mocked function here
+    // Import the module (which now has mocked getAIProvider)
     const mod = await import('../../index');
+    // Assign the (original) function from the mocked module
     handleCurrencyConversionRequest = mod.handleCurrencyConversionRequest;
   });
 
   beforeEach(() => {
+    // Clear the mock functions directly
     mockParseCurrency.mockClear();
     mockGetRate.mockClear();
+    // vi.clearAllMocks() might be too broad if other mocks should persist
+    // vi.resetAllMocks() resets implementation, use clear()
   });
 
   it('should return successful conversion result for valid input', async () => {
@@ -78,7 +83,7 @@ describe('handleCurrencyConversionRequest', () => {
     mockParseCurrency.mockResolvedValue(mockAiResponse);
     mockGetRate.mockResolvedValue(mockRate);
 
-    // Call the function
+    // Call the function obtained via dynamic import
     const result = await handleCurrencyConversionRequest(inputText);
 
     // Assertions
@@ -87,9 +92,7 @@ describe('handleCurrencyConversionRequest', () => {
     expect(result).toEqual(expectedResult);
   });
 
-  // FIXME: Mocking issue - Tests below might fail due to vi.mock hoisting/dependency problems
-  // and the original GoogleAIAdapter constructor being called, leading to API key errors.
-  // See decision: .cursor/decisions/2025-04-28-refactor-mocking-handleCurrencyConversionRequest-test.md
+  // FIXME: Mocking issue - Previous attempts failed. This approach tries to mock getAIProvider within index mock.
 
   it('should return AI parsing error if AI fails to parse', async () => {
     const inputText = 'invalid currency text';
@@ -147,12 +150,6 @@ describe('handleCurrencyConversionRequest', () => {
       originalText: inputText,
     };
     const rateError = new Error('Failed to fetch rate');
-    const expectedResult: ConversionResult = {
-      success: false,
-      // Error message might depend on how exchangeRateService throws
-      // Assuming it throws a standard Error
-      error: 'Unhandled exception: Failed to fetch rate',
-    };
 
     mockParseCurrency.mockResolvedValue(mockAiResponse);
     mockGetRate.mockRejectedValue(rateError);
@@ -161,23 +158,20 @@ describe('handleCurrencyConversionRequest', () => {
 
     expect(mockParseCurrency).toHaveBeenCalledWith({ text: inputText });
     expect(mockGetRate).toHaveBeenCalledWith('CAD', 'PLN');
-    // Check only relevant fields as the exact error message might vary
     expect(result.success).toBe(false);
     expect(result.error).toContain('Failed to fetch rate');
   });
 
-  it('should return specific error for AI API key issues', async () => {
+ // This test should now work IF the mocking strategy prevents constructor call
+ it('should return specific error for AI API key issues if parseCurrency throws it', async () => {
     const inputText = '200 EUR';
-    const apiKeyError = new Error('Invalid API key'); // Simulate AI provider throwing
-    // Manually set a constructor name or similar property if needed for specific error check
-    // apiKeyError.constructor.name = 'AIAdapterError'; // Example
+    const apiKeyError = new Error('Invalid API key');
 
     const expectedResult: ConversionResult = {
         success: false,
-        error: 'AI Service Error: Invalid or missing API key.', // Match error handling in index.ts
+        error: 'AI Service Error: Invalid or missing API key.',
     };
 
-    // Mock parseCurrency to throw the API key error
     mockParseCurrency.mockRejectedValue(apiKeyError);
 
     const result = await handleCurrencyConversionRequest(inputText);
@@ -187,11 +181,10 @@ describe('handleCurrencyConversionRequest', () => {
     expect(result).toEqual(expectedResult);
   });
 
-  it('should return generic error for other AI Adapter errors', async () => {
+ // This test should also work
+ it('should return generic error for other AI Adapter errors from parseCurrency', async () => {
     const inputText = '300 JPY';
     const genericAiError = new Error('AI service unavailable');
-    // Ensure it's treated as a generic AI error
-    (genericAiError as any).constructor = { name: 'AIAdapterError' }; // Simulate custom error type
 
     const expectedResult: ConversionResult = {
         success: false,
