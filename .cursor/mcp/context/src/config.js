@@ -28,13 +28,14 @@ function getArgValue(argName) {
 const providedContextPath = getArgValue('--context-data-path');
 
 /**
- * The default directory name for context data, relative to the tool's root.
+ * The default directory name for context data, relative to the current working directory.
  * @type {string}
  */
 const defaultContextDirName = '.cursor/context';
 
 /**
  * The final resolved absolute path to the context data directory.
+ * Resolved relative to the current working directory (CWD).
  * @type {string}
  */
 let contextDataPath;
@@ -45,28 +46,26 @@ let contextDataPath;
  */
 let usingPathSource;
 
-// Determine the root directory of this context tool based on the location of this script.
-// This ensures paths are resolved correctly regardless of the current working directory (CWD).
+// Determine the root directory of this context tool itself (used for finding example templates).
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 /**
- * The root directory of the context tool.
- * Assumes this script (`config.js`) is in the `src` subdirectory of the tool's root.
- * Example: If script is at `/path/to/project/.cursor/mcp/context/src/config.js`,
- * `contextToolRoot` will be `/path/to/project/.cursor/mcp/context`.
+ * The root directory of the @context MCP tool itself.
+ * Used primarily for locating fallback resources like example templates.
  * @type {string}
  */
-const contextToolRoot = path.resolve(__dirname, '..');
+const contextToolRoot = path.resolve(__dirname, '..'); // Keep this for fallback templates
 
+// --- Resolve contextDataPath ---
+// Both default and provided paths are resolved relative to the Current Working Directory (CWD)
+// This allows the server to operate on the project from which it was launched,
+// unless a specific absolute path is provided via the argument.
 if (providedContextPath) {
-  // Resolve the provided path relative to the context tool's root directory.
-  // If the provided path is absolute, path.resolve will use it directly.
-  contextDataPath = path.resolve(contextToolRoot, providedContextPath);
-  usingPathSource = `provided via --context-data-path ('${providedContextPath}' relative to tool root: ${contextToolRoot})`;
+  contextDataPath = path.resolve(process.cwd(), providedContextPath);
+  usingPathSource = `provided via --context-data-path ('${providedContextPath}' relative to CWD: ${process.cwd()})`;
 } else {
-  // Resolve the default path relative to the context tool's root directory.
-  contextDataPath = path.resolve(contextToolRoot, defaultContextDirName);
-  usingPathSource = `default ('${defaultContextDirName}' relative to tool root: ${contextToolRoot})`;
+  contextDataPath = path.resolve(process.cwd(), defaultContextDirName);
+  usingPathSource = `default ('${defaultContextDirName}' relative to CWD: ${process.cwd()})`;
 }
 
 /**
@@ -101,5 +100,5 @@ export {
   contextDataPath,
   usingPathSource,
   serverVersion,
-  contextToolRoot // Exporting this might be useful if other modules need the root path
+  contextToolRoot // Keep exporting this for fallback template path calculation
 }; 
