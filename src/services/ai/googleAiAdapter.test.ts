@@ -1,7 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { ParsedCurrencyResult } from '../../interfaces/AI';
 import { GoogleAIAdapter } from './GoogleAIAdapter';
-import { IAIAdapter } from '../../interfaces/IAIAdapter';
 
 // Mock fetch using Vitest
 vi.stubGlobal('fetch', vi.fn());
@@ -89,15 +88,13 @@ describe('GoogleAIAdapter', () => {
   it('constructor should read API key from process.env', () => {
     process.env.GEMINI_API_KEY = 'test-key-123';
     const adapter = new GoogleAIAdapter();
-    // Internal state isn't directly testable, but we can test its effect
-    // We'll test the effect in the parseCurrency method tests
     expect(adapter).toBeDefined();
   });
 
   it('parseCurrency should return error if API key is missing', async () => {
     delete process.env.GEMINI_API_KEY; // Ensure key is not set
     const adapter = new GoogleAIAdapter();
-    const result = await adapter.parseCurrency('100 USD');
+    const result = await adapter.parseCurrency({ text: '100 USD' });
     expect(result).toEqual<ParsedCurrencyResult>({
       success: false,
       error: 'Google AI API Key not configured.',
@@ -114,7 +111,7 @@ describe('GoogleAIAdapter', () => {
 
     mockGeminiSuccess(expectedAmount, expectedCurrency);
 
-    const result = await adapter.parseCurrency(inputText);
+    const result = await adapter.parseCurrency({ text: inputText });
 
     expect(result).toEqual<ParsedCurrencyResult>({
       success: true,
@@ -128,7 +125,7 @@ describe('GoogleAIAdapter', () => {
     const options = fetchCall[1] as RequestInit;
 
     expect(url).toContain('generativelanguage.googleapis.com');
-    expect(url).toContain(adapter['modelId']); // Access private member for test
+    expect(url).toContain(adapter['modelName']); // Access private member for test
     expect(url).toContain('key=test-key-123');
     expect(options.method).toBe('POST');
     expect(options.headers).toEqual({ 'Content-Type': 'application/json' });
@@ -143,7 +140,7 @@ describe('GoogleAIAdapter', () => {
 
     mockGeminiApiError(400, 'Invalid request');
 
-    await expect(adapter.parseCurrency('bad input')).rejects.toThrow(/API request failed with status 400/);
+    await expect(adapter.parseCurrency({ text: 'bad input' })).rejects.toThrow(/API request failed with status 400/);
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -153,7 +150,7 @@ describe('GoogleAIAdapter', () => {
     const reason = 'currency ambiguous';
     mockGeminiParsingFailed(reason);
 
-    const result = await adapter.parseCurrency('100 pesos');
+    const result = await adapter.parseCurrency({ text: '100 pesos' });
 
     expect(result).toEqual<ParsedCurrencyResult>({
       success: false,
@@ -167,7 +164,7 @@ describe('GoogleAIAdapter', () => {
     const adapter = new GoogleAIAdapter();
     mockGeminiInvalidJsonText();
 
-    await expect(adapter.parseCurrency('any input')).rejects.toThrow('LLM returned invalid JSON');
+    await expect(adapter.parseCurrency({ text: 'any input' })).rejects.toThrow('LLM returned invalid JSON');
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 
@@ -176,7 +173,7 @@ describe('GoogleAIAdapter', () => {
     const adapter = new GoogleAIAdapter();
     mockFetchNetworkError();
 
-    await expect(adapter.parseCurrency('any input')).rejects.toThrow('Network failed');
+    await expect(adapter.parseCurrency({ text: 'any input' })).rejects.toThrow('Network failed');
     expect(mockFetch).toHaveBeenCalledTimes(1);
   });
 }); 

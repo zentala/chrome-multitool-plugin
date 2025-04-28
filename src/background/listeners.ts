@@ -25,9 +25,8 @@ export function initializeContextMenu() {
 
 /**
  * @param {chrome.contextMenus.OnClickData} info - Information about the clicked menu item.
- * @param {chrome.tabs.Tab | undefined} _tab - The tab where the click happened (optional, hence possibly undefined).
  */
-export async function handleContextMenuClick(info: chrome.contextMenus.OnClickData, _tab?: chrome.tabs.Tab): Promise<void> {
+export async function handleContextMenuClick(info: chrome.contextMenus.OnClickData): Promise<void> {
   if (info.menuItemId === CONTEXT_MENU_ID && info.selectionText) {
     const selectedText = info.selectionText.trim();
     console.log(`Context menu: Clicked! Selected text: "${selectedText}"`);

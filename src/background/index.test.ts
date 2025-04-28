@@ -82,11 +82,10 @@ describe('Background Script Integration Tests', () => {
 
     it('should handle successful parsing and rate fetching', async () => {
       const inputText = '100 EUR';
-      const parsed = { success: true, amount: 100, currency: 'EUR' };
       const rate = 4.5;
       const expectedResult = { success: true, originalAmount: 100, originalCurrency: 'EUR', convertedAmount: 450, targetCurrency: 'PLN', rate: 4.5 };
 
-      mockParseCurrency.mockResolvedValue(parsed);
+      mockParseCurrency.mockResolvedValue({ success: true, amount: 100, currency: 'EUR' });
       mockGetRate.mockResolvedValue(rate);
 
       const result = await handleCurrencyConversionRequest(inputText);
@@ -129,13 +128,10 @@ describe('Background Script Integration Tests', () => {
 
     it('should handle rate fetching failure', async () => {
       // Arrange
-      // Remove unused variable
-      // const mockSendMessage = vi.fn(); 
-      mockParseCurrency.mockResolvedValue({ success: true, amount: 100, currency: 'USD' });
+      mockParseCurrency.mockResolvedValue({ success: true, amount: 200, currency: 'CAD' });
       mockGetRate.mockRejectedValue(new Error('API Error'));
 
       const inputText = '200 CAD';
-      const parsed = { success: true, amount: 200, currency: 'CAD' };
 
       const result = await handleCurrencyConversionRequest(inputText);
 

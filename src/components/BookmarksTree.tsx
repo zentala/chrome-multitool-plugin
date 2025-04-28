@@ -1,13 +1,13 @@
 import React from 'react';
-import { TreeView, TreeItem, TreeItemProps } from '@mui/x-tree-view';
+import { TreeView } from '@mui/x-tree-view/TreeView';
+import { TreeItem } from '@mui/x-tree-view/TreeItem';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { IconButton, Typography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
 import { BookmarkEntity } from '../types/bookmarks.types';
 import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
-import { Button } from "./ui/button";
-// import { BookmarkTreeNode } from "../types"; // Assuming correct path
+// import { Button } from "./ui/button"; // Remove unused import
 
 interface BookmarksTreeProps {
   bookmarks: BookmarkEntity[];
@@ -135,18 +135,18 @@ export const BookmarksTree: React.FC<BookmarksTreeProps> = ({
         key={nodePath}
         itemId={nodePath}
         label={label}
-        expandIcon={isFolder ? <ChevronRightIcon /> : null}
-        collapseIcon={isFolder ? <ExpandMoreIcon /> : null}
       >
-        {bookmark.children?.map((child) => renderBookmarkTree(child, nodePath))}
+        {isFolder && bookmark.children?.map((child) => renderBookmarkTree(child, nodePath))}
       </TreeItem>
     );
   };
 
   return (
     <TreeView
+      aria-label="bookmarks tree"
       defaultCollapseIcon={<ExpandMoreIcon />}
       defaultExpandIcon={<ChevronRightIcon />}
+      sx={{ flexGrow: 1, maxWidth: 400, overflowY: 'auto' }}
     >
       {bookmarks.map((bookmark) => renderBookmarkTree(bookmark))}
     </TreeView>

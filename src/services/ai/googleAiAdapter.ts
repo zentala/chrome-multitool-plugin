@@ -5,6 +5,7 @@ import { CURRENCY_PARSING_PROMPT } from './prompts';
 
 // Placeholder for the actual Gemini API response structure
 // We need to define this based on the expected JSON from the prompt
+/*
 interface GeminiApiResponse {
   // Example structure - needs refinement based on prompt design
   candidates?: [
@@ -20,6 +21,7 @@ interface GeminiApiResponse {
   ];
   // Add potential error fields if the API returns structured errors
 }
+*/
 
 /**
  * Adapter for interacting with the Google Gemini API.
@@ -126,14 +128,14 @@ export class GoogleAIAdapter implements IAIAdapter {
       }
       // --- End Basic JSON Parsing ---
 
-    } catch (error: any) { // Catch any error during API call or response processing
+    } catch (error: unknown) { // Use unknown instead of any
       console.error('GoogleAIAdapter: Error during generateContent:', error);
-      // Check if it's a Google AI specific error (needs library inspection for exact types)
-      if (error && error.message) {
+      // Check if it's a Google AI specific error or a standard Error
+      if (error instanceof Error) {
         // Basic error message extraction
         return { success: false, error: `Gemini API Error: ${error.message}` };
       } else {
-        // Generic fallback
+        // Generic fallback for non-Error throwables
         return { success: false, error: 'Unknown error communicating with Gemini API.' };
       }
     }

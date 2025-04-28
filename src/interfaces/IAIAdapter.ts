@@ -55,9 +55,9 @@ export interface IAIAdapter {
  */
 export class AIAdapterError extends Error {
     public readonly status?: number; // Optional HTTP status code
-    public readonly details?: any;   // Optional additional details (e.g., API error response)
+    public readonly details?: unknown;   // Use unknown instead of any
 
-    constructor(message: string, status?: number, details?: any) {
+    constructor(message: string, status?: number, details?: unknown) {
         super(message);
         this.name = 'AIAdapterError';
         this.status = status;

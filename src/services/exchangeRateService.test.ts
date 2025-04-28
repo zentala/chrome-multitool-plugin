@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, beforeAll, afterAll, Mock } from 'vitest';
 // Remove the conflicting import, the service instance will be created in tests
 // import { exchangeRateService } from './exchangeRateService'; 
 // Remove the non-existent error import
