@@ -1,0 +1,1 @@
+to powinno byc w pliku @tools indexjs i to rexportowac all tolsy a tutaj tylko 1 impor z tego rexportu zamiast tyle importow ztools, po co? 

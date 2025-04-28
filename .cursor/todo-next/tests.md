@@ -1,0 +1,1 @@
+nie wiem czy testy zwiazane z uzyciem ai oraz api nie powinnu byc e2e na realnych api, fajnie ze sa unit ale e2e sa wazniejsze dla apliakcji i nie trzeba nic mockowac! dodaj mi je raz dwa

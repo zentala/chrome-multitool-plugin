@@ -21,6 +21,7 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
         try {
           // 1. Read the template file
           let templateContent;
+          let usedFallback = false;
           try {
             templateContent = await fs.readFile(templatePath, 'utf8');
           } catch (err) {
@@ -31,6 +32,7 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
                 try {
                     templateContent = await fs.readFile(fallbackTemplatePath, 'utf8');
                     console.warn(`Template found in fallback location: ${fallbackTemplatePath}`);
+                    usedFallback = true;
                 } catch (fallbackErr) {
                      if (fallbackErr.code === 'ENOENT') {
                          throw new Error(`Template '${templateName}.md' not found in _templates or TEMPLATES directory.`);
@@ -50,8 +52,8 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
               parseFrontMatter(templateContent, templatePath);
 
           if (templateMetadata.parseError) {
-              console.warn(`Template '${templateName}.md' has invalid YAML front matter. Metadata might be incomplete.`);
-              // Continue, but metadata from template might be missing/partial
+            // Stop execution if the template itself has invalid YAML
+            return { content: [{ type: "text", text: `Error processing template '${templateName}': ${templateMetadata.parseError}` }] };
           }
 
           // 4. Substitute variables in main content AND metadata
@@ -64,12 +66,12 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
                   let processedValue = value;
                   if (variables) {
                       for (const key in variables) {
-                          const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g'); 
+                          const regex = new RegExp(`{{${key}}}`, 'g'); 
                           processedValue = processedValue.replace(regex, variables[key]);
                       }
                   }
-                  // Remove remaining placeholders in string values
-                  return processedValue.replace(/{{\s*[^}]+\s*}}/g, ''); 
+                  // Remove ONLY the explicitly matched variables, leave others
+                  return processedValue;
               } else if (Array.isArray(value)) {
                   return value.map(processMetadataValue); // Recursively process array elements
               } else if (typeof value === 'object' && value !== null) {
@@ -90,12 +92,12 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
           // Process main content
           if (variables) {
               for (const key in variables) {
-                  const regex = new RegExp(`{{\\s*${key}\\s*}}`, 'g'); 
+                  const regex = new RegExp(`{{${key}}}`, 'g'); 
                   processedContent = processedContent.replace(regex, variables[key]);
               }
           }
-           // Remove any remaining unsubstituted placeholders in content
-           processedContent = processedContent.replace(/{{\s*[^}]+\s*}}/g, '' ); // Simple removal
+           // Remove ONLY the explicitly matched variables, leave others
+           processedContent = processedContent;
 
           // 5. Determine final filename
           let finalFilename = filename 
@@ -118,19 +120,24 @@ export function registerCreateFromTemplateTool(server, contextDataPath) {
           await fs.writeFile(filePath, fileContent, { flag: 'wx' }); // Fail if exists
 
           console.error(`Created entry from template: ${filePath}`);
-          return { 
-              content: [{ 
-                  type: "text", 
-                  text: `Successfully created '${type}/${finalFilename.replace(/\.md$/, '')}\' from template \'${templateName}\'.` 
-              }] 
-          };
+
+          // Return success message
+          const fallbackIndicator = usedFallback ? ' (using fallback)' : '';
+          return { content: [{ type: "text", text: `Successfully created '${type}/${finalFilename.replace(/\.md$/, '')}' from template '${templateName}'${fallbackIndicator}.` }] };
 
         } catch (error) {
+          // Handle EEXIST specifically, as it occurs after filename calculation
           if (error.code === 'EEXIST') {
-              return { content: [{ type: "text", text: `Error: File '${error.path}\' already exists. Choose a different name.` }] };
+               // Determine filename used for error message (could be custom or timestamp-based)
+               // finalFilename should be defined at this point
+               const filenameForError = filename || finalFilename.replace(/\.md$/, ''); 
+               return { content: [{ type: "text", text: `Error creating entry '${type}/${filenameForError}' from template '${templateName}': File already exists.` }] };
            }
-          console.error(`Error creating entry from template \'${templateName}\':`, error);
-          return { content: [{ type: "text", text: `Error creating from template: ${error.message}` }] };
+           
+          // For other errors (likely template read/parse errors), finalFilename might not be defined
+          console.error(`Error creating entry from template '${templateName}':`, error);
+          // Return a generic error related to template processing
+          return { content: [{ type: "text", text: `Error creating from template '${templateName}': ${error.message}` }] };
         }
       }
     );

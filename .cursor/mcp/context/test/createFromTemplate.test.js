@@ -110,9 +110,9 @@ Unused: {{unused_placeholder}}`;
         expect(writtenContent).toContain(`Status is ${variables.initial_status}.`);
         expect(writtenContent).toContain(`Nested: ${variables.nested_val}`);
 
-        // Check placeholder removal
-        expect(writtenContent).not.toContain('{{unused_placeholder}}');
-        expect(writtenContent).not.toContain('{{ project_name }}'); // Ensure placeholders are gone
+        // Check placeholder removal / retention
+        expect(writtenContent).toContain('{{unused_placeholder}}'); // This one SHOULD remain
+        expect(writtenContent).not.toContain('{{project_name}}'); // Ensure substituted placeholders are gone
         expect(writtenContent).not.toContain('{{initial_status}}'); 
         expect(writtenContent).not.toContain('{{description}}'); 
         expect(writtenContent).not.toContain('{{nested_val}}'); 
@@ -126,10 +126,131 @@ Unused: {{unused_placeholder}}`;
         expect(result.content[0].text).toContain(`Successfully created '${type}/${expectedFilenameTimestamp}' from template '${templateName}'.`);
     });
 
+    it('should use the provided filename instead of a timestamp', async () => {
+        const handler = getToolHandler();
+        const customFilename = 'my-custom-note';
+        const expectedFilePath = path.join(mockTargetPath, `${customFilename}.md`);
+        const templateContent = `---
+title: Simple Template
+---
+
+Content.`;
+        fs.readFile.mockResolvedValue(templateContent);
+
+        const result = await handler({ templateName, type, filename: customFilename });
+
+        expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
+        expect(fs.mkdir).toHaveBeenCalledWith(mockTargetPath, { recursive: true });
+        expect(fs.writeFile).toHaveBeenCalledWith(expectedFilePath, expect.any(String), { flag: 'wx' });
+        expect(result.content[0].text).toContain(`Successfully created '${type}/${customFilename}' from template '${templateName}'.`);
+    });
+
+    it('should return an error if the template is not found in context or fallback location', async () => {
+        const handler = getToolHandler();
+        const error = new Error('Template not found');
+        error.code = 'ENOENT';
+        fs.readFile.mockRejectedValue(error);
+        const fallbackTemplatePath = path.join(MOCK_FALLBACK_TEMPLATE_PATH, `${templateName}.md`);
+
+        const result = await handler({ templateName, type });
+
+        // Check that it tried both locations
+        expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
+        expect(fs.readFile).toHaveBeenCalledWith(fallbackTemplatePath, 'utf8');
+        expect(fs.writeFile).not.toHaveBeenCalled();
+        expect(result.content[0].text).toBe(`Error creating from template '${templateName}': Template '${templateName}.md' not found in _templates or TEMPLATES directory.`);
+    });
+
+    it('should return an error if the template has invalid YAML front matter', async () => {
+        const handler = getToolHandler();
+        const invalidTemplateContent = `---
+title: Invalid YAML
+tag: [one, two
+--- 
+Content`; // Missing closing bracket
+        fs.readFile.mockResolvedValue(invalidTemplateContent);
+
+        const result = await handler({ templateName, type });
+
+        expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
+        expect(fs.writeFile).not.toHaveBeenCalled();
+        expect(result.content[0].text).toContain(`Error processing template '${templateName}': Failed to parse YAML: unexpected end of the stream`);
+    });
+
+    it('should create an entry with placeholders remaining if no variables are provided', async () => {
+        const handler = getToolHandler();
+        const mockDate = new Date();
+        vi.setSystemTime(mockDate);
+        const expectedFilenameTimestamp = mockDate.toISOString().replace(/[:.]/g, '-');
+        const expectedFilePath = path.join(mockTargetPath, `${expectedFilenameTimestamp}.md`);
+
+        const templateContent = `---
+title: Template for {{project_name}}
+---
+
+Content with {{placeholder}}.`;
+        fs.readFile.mockResolvedValue(templateContent);
+
+        const result = await handler({ templateName, type }); // No variables passed
+
+        expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
+        expect(fs.writeFile).toHaveBeenCalledOnce();
+
+        const writtenContent = fs.writeFile.mock.calls[0][1];
+        expect(writtenContent).toContain('title: Template for {{project_name}}');
+        expect(writtenContent).toContain('Content with {{placeholder}}.');
+        // Check generated metadata is still added
+        const isoTimestamp = mockDate.toISOString();
+        expect(writtenContent).toContain(`createdAt: '${isoTimestamp}'`);
+        expect(writtenContent).toContain(`updatedAt: '${isoTimestamp}'`);
+
+        expect(result.content[0].text).toContain(`Successfully created '${type}/${expectedFilenameTimestamp}' from template '${templateName}'.`);
+    });
+
+    it('should return an error if writeFile fails (e.g., file exists)', async () => {
+        const handler = getToolHandler();
+        const customFilename = 'existing-file';
+        const expectedFilePath = path.join(mockTargetPath, `${customFilename}.md`);
+        const templateContent = `Content`;
+        fs.readFile.mockResolvedValue(templateContent);
+
+        const writeError = new Error(`File already exists: ${expectedFilePath}`);
+        writeError.code = 'EEXIST';
+        fs.writeFile.mockRejectedValue(writeError);
+
+        const result = await handler({ templateName, type, filename: customFilename });
+
+        expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
+        expect(fs.mkdir).toHaveBeenCalledWith(mockTargetPath, { recursive: true });
+        expect(fs.writeFile).toHaveBeenCalledWith(expectedFilePath, expect.any(String), { flag: 'wx' });
+        expect(result.content[0].text).toBe(`Error creating entry '${type}/${customFilename}' from template '${templateName}': File already exists.`);
+    });
+
+    it('should use the fallback template location if not found in context', async () => {
+        const handler = getToolHandler();
+        const mockDate = new Date();
+        vi.setSystemTime(mockDate);
+        const expectedFilenameTimestamp = mockDate.toISOString().replace(/[:.]/g, '-');
+        const expectedFilePath = path.join(mockTargetPath, `${expectedFilenameTimestamp}.md`);
+        const fallbackTemplatePath = path.join(MOCK_FALLBACK_TEMPLATE_PATH, `${templateName}.md`);
+        const fallbackTemplateContent = `Fallback Content`;
+
+        // Mock readFile: fail for context location, succeed for fallback
+        const contextError = new Error('Not found in context');
+        contextError.code = 'ENOENT';
+        fs.readFile
+            .mockRejectedValueOnce(contextError) // Fails for context path
+            .mockResolvedValueOnce(fallbackTemplateContent); // Succeeds for fallback path
+
+        const result = await handler({ templateName, type });
+
+        expect(fs.readFile).toHaveBeenCalledWith(mockTemplatePath, 'utf8');
+        expect(fs.readFile).toHaveBeenCalledWith(fallbackTemplatePath, 'utf8');
+        expect(fs.writeFile).toHaveBeenCalledWith(expectedFilePath, expect.stringContaining(fallbackTemplateContent), { flag: 'wx' });
+        expect(result.content[0].text).toContain(`Successfully created '${type}/${expectedFilenameTimestamp}' from template '${templateName}' (using fallback).`); // Expect indication of fallback usage
+    });
+
     // TODO: Add more tests:
-    // - Custom filename provided
-    // - Template not found (in both locations)
-    // - Template has invalid YAML
     // - Variable substitution in arrays/nested objects (covered partially above, maybe more edge cases)
     // - No variables provided
     // - writeFile error (e.g., EEXIST)

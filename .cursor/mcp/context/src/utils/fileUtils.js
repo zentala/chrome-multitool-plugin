@@ -36,8 +36,22 @@ export const parseFrontMatter = (rawContent, filePathForErrorLogging = 'unknown 
             }
         });
 
-        // Trim leading newline from content, as gray-matter might leave it
-        const mainContent = parsed.content.startsWith('\n') ? parsed.content.slice(1) : parsed.content;
+        // Handle empty front matter explicitly: check if the original content was just the separators
+        const isEmptyFrontMatterBlock = rawContent.trim() === '---' || rawContent.trim().startsWith('---\n---');
+
+        let mainContent = parsed.content;
+        // If it was an empty block AND gray-matter returns the separators in content, strip them.
+        if (isEmptyFrontMatterBlock && mainContent.startsWith('---\n---')) {
+             // Find the position after the second '---' and any following newline
+             const contentStartIndex = mainContent.indexOf('---\n', 4); // Start search after first '---'
+             if (contentStartIndex !== -1) {
+                 mainContent = mainContent.substring(contentStartIndex + 4); // Get content after '---\n'
+             }
+         }
+        
+         // Trim leading newline from content, which gray-matter might leave otherwise
+         // Do this AFTER handling the empty block case
+         mainContent = mainContent.startsWith('\n') ? mainContent.slice(1) : mainContent;
 
         // Return structure consistent with previous implementation
         return {

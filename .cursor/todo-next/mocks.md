@@ -1,0 +1,1 @@
+co sadzisz o tym aby mocki chrome jakie rozwijamy wybastachowc do jakiegos osobnego pliku czy komponetu czy to niema sensu? aby rozne testy mogly ich wspoluzywac?
