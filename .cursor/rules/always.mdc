@@ -51,13 +51,12 @@ alwaysApply: true
 
 ## Terminal
 
-- Although **PowerShell 7** (`pwsh`) on **Windows 11** is the preferred manual shell, the **`run_terminal_cmd` tool must use `cmd.exe`** due to persistent integration issues with PowerShell/PSReadLine in the AI environment.
-- Use **pnpm** as the package manager (ensure it's available in the system PATH for CMD).
-- Log any terminal problems specific to `cmd.exe` execution via `run_terminal_cmd` into `./.cursor/CMD_ISSUES.md` (create if needed).
-- **Executing PowerShell scripts via CMD:** To run `.ps1` scripts using `run_terminal_cmd` (which uses CMD), invoke them via `pwsh.exe -Command`. Ensure the PowerShell command is properly quoted. Example:
-  ```cmd
-  pwsh -Command ".\\.cursor\\scripts\\gen-meta.ps1 \"src/some-folder\""
-  ```
+- Use **PowerShell 7** (`pwsh`) on **Windows 11**.
+- Use **pnpm** as the package manager.
+- Log any terminal problems into `./.cursor/PWSH_ISSUES.md`, providing:
+  - Problem description
+  - Workarounds that work
+  - Best practices you recommend
 - Prefer **non-interactive mode** for commands when possible.
 
 ---

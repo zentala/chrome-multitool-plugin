@@ -56,7 +56,8 @@
 - [ ] Przejrzeć kod pod kątem potencjalnych optymalizacji.
 - [ ] Zidentyfikować i naprawić wszelkie `TODO` i `FIXME` w kodzie.
 - [ ] Upewnić się, że zależności są aktualne.
-- [ ] [Zbadać i rozwiązać problemy z PSReadLine](.cursor/TODO_PSReadLine_Troubleshooting.md)
+- [ ] Zbadać i rozwiązać problemy z PSReadLine (zobacz `.cursor/PWSH_ISSUES.md`).
+- [ ] **[Przyszłość]** Zbadać i znaleźć **prawdziwe rozwiązanie** problemu wrażliwości terminala AI (`run_terminal_cmd`) na konfigurację profilu PowerShell, aby uniknąć konieczności utrzymywania czystego profilu jako obejścia (zobacz `.cursor/PWSH_ISSUES.md`).
 
 # TODO List
 

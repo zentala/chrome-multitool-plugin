@@ -117,3 +117,5 @@ Wygląda na to, że istnieje fundamentalna niekompatybilność lub błąd w spos
 - Wszelkie zadania wymagające uruchomienia skryptów `.ps1` (np. `gen-meta.ps1`, `gen-usage.ps1`, `gen-cursor-doc.ps1`) **muszą być wykonywane ręcznie** przez użytkownika w zewnętrznym, poprawnie działającym terminalu PowerShell.
 - Należy zgłosić ten problem zespołowi Cursor jako błąd krytyczny dotyczący integracji terminala AI z PowerShell na Windows.
 
+**(Aktualizacja 2025-04-28): Obejściem problemu okazało się całkowite wyczyszczenie profilu PowerShell użytkownika (`$PROFILE`). Po tym kroku, `run_terminal_cmd` zaczęło poprawnie uruchamiać skrypty `.ps1` bezpośrednio. Wskazuje to na fundamentalną wrażliwość terminala AI Cursora na konfigurację profilu użytkownika w Windows. Utrzymanie czystego profilu jest obecnie wymaganym **obejściem**, a nie pełnym rozwiązaniem potencjalnych problemów z integracją.**
+
