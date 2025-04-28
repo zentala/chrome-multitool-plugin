@@ -26,7 +26,7 @@ Lista zadań i pomysłów na ulepszenie serwera MCP `@context` do zarządzania k
     *   [x] Dodać narzędzie `delete_entry(type, id)` do usuwania plików.
 
 3.  **[ ] Ulepszone Wyszukiwanie**
-    *   [ ] Zwracanie fragmentów tekstu (kontekstu) w wynikach `search_entries`.
+    *   [x] Zwracanie fragmentów tekstu (kontekstu) w wynikach `search_entries` (ze wskaźnikiem linii i dopasowania).
     *   [ ] (Opcjonalnie) Wsparcie dla bardziej zaawansowanych zapytań (operatory logiczne, regex).
 
 4.  **[x] Powiązania Między Wpisami**

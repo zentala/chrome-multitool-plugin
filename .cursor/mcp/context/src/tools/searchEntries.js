@@ -19,7 +19,7 @@ export function registerSearchEntriesTool(server, contextDataPath) {
         const queryLower = query.toLowerCase();
         const requiredTags = filterTags ? filterTags.split(',').map(t => t.trim().toLowerCase()).filter(t => t) : [];
         const requiredStatus = filterStatus ? filterStatus.trim().toLowerCase() : null;
-        const CONTEXT_LINES = 1; // Number of lines before/after match
+        const CONTEXT_LINES = 2; // Increase context lines
         let searchDirs = [];
         let searchCriteriaDescription = `matching "${query}"`;
         if (requiredTags.length > 0) searchCriteriaDescription += ` with tags [${requiredTags.join(', ')}]`;
@@ -92,14 +92,25 @@ export function registerSearchEntriesTool(server, contextDataPath) {
                        contentMatchFound = true;
                        const lines = mainContent.split('\n');
                        for (let i = 0; i < lines.length; i++) {
-                            if (lines[i].toLowerCase().includes(queryLower)) {
+                            const lineLower = lines[i].toLowerCase();
+                            if (lineLower.includes(queryLower)) {
                                 const start = Math.max(0, i - CONTEXT_LINES);
                                 const end = Math.min(lines.length, i + CONTEXT_LINES + 1);
-                                const context = lines.slice(start, end).join('\n');
-                                const prefix = start > 0 ? '...\n' : '';
-                                const suffix = end < lines.length ? '\n...' : '';
-                                snippets.push(prefix + context + suffix);
-                                i = end - 1; // Avoid overlapping contexts
+                                // Add line numbers and highlight matching line
+                                let snippetLines = [];
+                                for (let j = start; j < end; j++) {
+                                    const linePrefix = (j === i) ? `> ${j + 1}: ` : `  ${j + 1}: `;
+                                    snippetLines.push(linePrefix + lines[j]);
+                                }
+                                const snippet = snippetLines.join('\n');
+                                // Check if this snippet overlaps significantly with the previous one
+                                const lastSnippet = snippets.length > 0 ? snippets[snippets.length - 1] : null;
+                                // Simple overlap check (could be more sophisticated)
+                                if (!lastSnippet || !lastSnippet.includes(lines[i])) {
+                                    snippets.push(snippet); 
+                                }
+                                // Jump ahead to avoid immediately re-matching context lines
+                                i = i + CONTEXT_LINES; 
                             }
                        }
                     }
@@ -127,18 +138,17 @@ export function registerSearchEntriesTool(server, contextDataPath) {
           // Format results
           if (results.length === 0) return { content: [{ type: "text", text: `No entries found ${searchCriteriaDescription}.` }] };
           
-          let resultText = `Found ${results.length} entr${results.length === 1 ? 'y' : 'ies'} ${searchCriteriaDescription}:\n\n`;
-          results.forEach(res => {
-              resultText += `**${res.id}**\n`;
-              res.snippets.forEach(snippet => {
-                  // Indent snippets for readability
-                  const indentedSnippet = snippet.split('\n').map(line => `  ${line}`).join('\n');
-                  resultText += `${indentedSnippet}\n---\n`;
-              });
-              resultText += '\n'; // Add space between entries
-          });
-
-          return { content: [{ type: "text", text: resultText.trim() }] };
+          // Return structured results instead of just text
+          return {
+             content: [
+                 { type: "text", text: `Found ${results.length} entr${results.length === 1 ? 'y' : 'ies'} ${searchCriteriaDescription}:` },
+                 ...results.map(res => ({
+                     type: "search_result", // Use a specific type for structured result
+                     id: res.id,
+                     snippets: res.snippets
+                 }))
+             ]
+          };
 
         } catch (error) {
           console.error(`Error during search for "${query}":`, error);
