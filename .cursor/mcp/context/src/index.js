@@ -52,7 +52,8 @@ async function main() {
     await server.connect(transport);
     
     console.error(`MCP Server "@context" v${server.version} running on stdio.`);
-    console.error("Registered tools:", Object.keys(server.tools).join(', '));
+    // Use internal property instead of potentially problematic getter
+    console.error("Registered tools:", Object.keys(server._registeredTools).join(', ')); 
     console.error("Waiting for requests from Cursor...");
   } catch (error) {
     console.error("Fatal error starting @context MCP server:", error);
