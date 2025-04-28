@@ -1,3 +1,63 @@
+# Główny Plik TODO dla Projektu ZNTL Chrome Multitool
+
+## Ogólne
+
+- [x] Zdefiniować podstawową strukturę projektu (manifest, webpack, typescript)
+- [x] Skonfigurować ESLint i Prettier dla spójności kodu.
+- [ ] Dodać podstawowe testy jednostkowe przy użyciu Vitest.
+- [x] Skonfigurować CI/CD (np. GitHub Actions) do automatycznego budowania i testowania.
+- [x] Stworzyć plik `.cursor/CURSOR.md` z ogólnym opisem projektu.
+- [x] Stworzyć `.cursor/WHY.md` do dokumentowania decyzji architektonicznych.
+- [x] Utworzyć ten plik (`TODO.md`).
+
+## Funkcjonalności
+
+### Konwerter Walut
+
+- [x] Dodać menu kontekstowe do zaznaczonego tekstu.
+- [x] Zaimplementować logikę do wyciągania kwoty i waluty z zaznaczonego tekstu.
+- [x] Zintegrować z zewnętrznym API do pobierania kursów walut (np. NBP API lub inny darmowy).
+  - [x] Obsługa podstawowych przypadków (np. "100 EUR", "50 USD").
+  - [ ] Obsługa bardziej złożonych przypadków (np. "$50.50", "100 złotych").
+- [x] Wyświetlanie wyniku konwersji (początkowo w konsoli, potem jako powiadomienie).
+- [x] Ulepszyć obsługę błędów (np. gdy tekst nie zawiera kwoty, problem z API).
+- [x] Refaktoryzacja logiki powiadomień w `background/listeners.ts` i poprawa typowania `NotificationOptions`.
+- [ ] Dodanie opcji w Popupie do ustawienia domyślnej waluty docelowej.
+- [ ] Dodanie testów dla logiki parsowania i konwersji.
+- [ ] Utworzenie `.usage.md` dla modułu konwertera.
+
+### Notatki
+
+- [ ] Zaimplementować prosty system notatek w Popupie.
+- [ ] Zapisywanie notatek w `chrome.storage.local`.
+- [ ] Możliwość dodawania, edycji i usuwania notatek.
+
+### Czytnik RSS (Opcjonalnie)
+
+- [ ] Dodanie funkcjonalności czytnika RSS w Popupie.
+- [ ] Możliwość dodawania i zarządzania subskrypcjami RSS.
+- [ ] Wyświetlanie najnowszych wpisów.
+
+## Dokumentacja i Metadane
+
+- [ ] [Implementacja generowania dokumentacji](.cursor/TODO_docs_generation.md)
+- [x] Utworzyć `.meta.md` dla głównych folderów (`src`, `background`, `components`, `services` itp.).
+- [ ] Regularnie aktualizować `.cursor/CURSOR.md`, `.cursor/WHY.md`.
+- [ ] Prowadzić log decyzji w `.cursor/DECISIONS_<date>.md`.
+- [ ] Logować nieudane eksperymenty w `.cursor/failedexperiments/`.
+- [ ] Prowadzić log błędów w `.cursor/ERRORS.md`.
+- [ ] Dokumentować `CODE_SMELLS` w `.cursor/CODE_SMELLS.md`.
+- [ ] Cotygodniowy log nastroju w `.cursor/DEV_MOOD_TRACKER.md`.
+- [ ] Zdefiniować filozofię projektu w `.cursor/PHILOSOPHY.md`.
+- [ ] Zapisywać mądrości programistyczne w `.cursor/RANDOM_WISDOM.md`.
+
+## Poprawki i Refaktoryzacja
+
+- [ ] Przejrzeć kod pod kątem potencjalnych optymalizacji.
+- [ ] Zidentyfikować i naprawić wszelkie `TODO` i `FIXME` w kodzie.
+- [ ] Upewnić się, że zależności są aktualne.
+- [ ] [Zbadać i rozwiązać problemy z PSReadLine](.cursor/TODO_PSReadLine_Troubleshooting.md)
+
 # TODO List
 
 ## Sprint 1: Konwerter Walut z AI

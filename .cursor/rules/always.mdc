@@ -26,7 +26,7 @@ alwaysApply: true
   - Each important folder must have a `.meta.md` file describing its purpose and structure.
   - Maintain a `.cursor/WHY.md` explaining key architectural decisions.
   - Log major decisions in `.cursor/DECISIONS_<date>.md`.
-  - Log all failed technical experiments in `.cursor/FAILED_EXPERIMENTS.md`.
+  - Log all failed technical experiments in `.cursor/failedexperiments/`.
   - Maintain a `.cursor/ERRORS.md` for known issues and solutions.
   - Document typical mistakes in `.cursor/CODE_SMELLS.md`.
   - Maintain a weekly developer mood log in `.cursor/DEV_MOOD_TRACKER.md`.
@@ -51,12 +51,13 @@ alwaysApply: true
 
 ## Terminal
 
-- Use **PowerShell 7** (`pwsh`) on **Windows 11**.
-- Use **pnpm** as the package manager.
-- Log any terminal problems into `./.cursor/PWSH_ISSUES.md`, providing:
-  - Problem description
-  - Workarounds that work
-  - Best practices you recommend
+- Although **PowerShell 7** (`pwsh`) on **Windows 11** is the preferred manual shell, the **`run_terminal_cmd` tool must use `cmd.exe`** due to persistent integration issues with PowerShell/PSReadLine in the AI environment.
+- Use **pnpm** as the package manager (ensure it's available in the system PATH for CMD).
+- Log any terminal problems specific to `cmd.exe` execution via `run_terminal_cmd` into `./.cursor/CMD_ISSUES.md` (create if needed).
+- **Executing PowerShell scripts via CMD:** To run `.ps1` scripts using `run_terminal_cmd` (which uses CMD), invoke them via `pwsh.exe -Command`. Ensure the PowerShell command is properly quoted. Example:
+  ```cmd
+  pwsh -Command ".\\.cursor\\scripts\\gen-meta.ps1 \"src/some-folder\""
+  ```
 - Prefer **non-interactive mode** for commands when possible.
 
 ---
@@ -100,3 +101,50 @@ alwaysApply: true
 - Enforce Stale Checks to ensure documentation, diagrams, and TODOs are up-to-date.
 - Prefer lightweight but accurate diagrams (`.puml` or simple `.md`) for non-trivial flows.
 - Document what didn't work, not only what did — build context over time.
+
+## Generowanie dokumentacji
+
+Używaj zawsze gotowych skryptów:
+
+### Foldery i moduły:
+
+- `.meta.md`:
+
+```pwsh
+.\.cursor\scripts\gen-meta.ps1 "src/components"
+```
+
+- `.usage.md`:
+
+```pwsh
+.\.cursor\scripts\gen-usage.ps1 "src/hooks/useFetch.ts"
+```
+
+### Pliki dokumentacyjne w `.cursor/`:
+
+- Nowa decyzja:
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "decision" -Title "use-react-query"
+```
+
+- Nowy wpis mood:
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "mood" -Title "week-17-2025"
+```
+
+- Nowy błąd:
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "error" -Title "auth-token-expiry-bug"
+```
+
+- Nowy nieudany eksperyment:
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "failed-experiment" -Title "replace-redux-with-zustand"
+```
+
+Szablony są zawsze w `.cursor/TEMPLATES/`.
+

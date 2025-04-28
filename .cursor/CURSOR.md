@@ -74,4 +74,52 @@ This project is a Chrome browser extension named "Zentala Chrome Multitool Plugi
 - Review the usage of Langchain and the AI SDKs (OpenAI, Anthropic).
 - Understand how custom shortcuts and automations are implemented (likely in `background.js` using Chrome APIs).
 - Check the `content/` scripts for any further interactions with web pages.
-- Clarify the purpose of the root `manifest.json` vs `public/manifest.json`. 
+- Clarify the purpose of the root `manifest.json` vs `public/manifest.json`.
+
+## Generowanie dokumentacji
+
+Używaj zawsze gotowych skryptów do tworzenia standardowych plików dokumentacji. Pliki `.meta.md` i `.usage.md` są generowane bezpośrednio w strukturze projektu, natomiast pliki decyzji, błędów, wpisów nastroju i nieudanych eksperymentów trafiają do dedykowanych podkatalogów w `.cursor/`.
+
+Plik `.cursor/WHY.md` pozostaje globalnym plikiem do ogólnych uzasadnień architektonicznych.
+
+### Foldery i moduły:
+
+- `.meta.md` (w folderze docelowym):
+
+```pwsh
+.\.cursor\scripts\gen-meta.ps1 "sciezka/do/folderu"
+```
+
+- `.usage.md` (obok pliku modułu):
+
+```pwsh
+.\.cursor\scripts\gen-usage.ps1 "sciezka/do/plikuModulu.ts"
+```
+
+### Pliki dokumentacyjne w `.cursor/` (generowane w podkatalogach):
+
+- Nowa decyzja (trafia do `.cursor/decisions/`):
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "decision" -Title "tytul-decyzji"
+```
+
+- Nowy wpis mood (trafia do `.cursor/mood/`):
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "mood" -Title "RRRR-WW" # np. 2025-17
+```
+
+- Nowy błąd (trafia do `.cursor/errors/`):
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "error" -Title "tytul-bledu"
+```
+
+- Nowy nieudany eksperyment (trafia do `.cursor/failed-experiments/`):
+
+```pwsh
+.\.cursor\scripts\gen-cursor-doc.ps1 -Type "failed-experiment" -Title "tytul-eksperymentu"
+```
+
+Szablony źródłowe są zawsze w `.cursor/TEMPLATES/`. 
