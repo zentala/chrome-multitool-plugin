@@ -1,63 +1,71 @@
 // src/services/aiFacade.ts
 
-import { ParsedCurrencyResult } from '../interfaces/AI';
-import { GoogleAiAdapter } from './ai/googleAiAdapter';
+import { IAIAdapter, ParseCurrencyInput, ParseCurrencyOutput, AIAdapterError } from '../interfaces/IAIAdapter';
+import { GoogleAIAdapter } from './ai/GoogleAIAdapter';
+import { IAiFacade } from '../interfaces/IAiFacade';
+// Remove unused ConversionResult if the facade methods only return ParseCurrencyOutput
+// import { ConversionResult } from '../interfaces'; 
 
 /**
- * Interface for the AI Facade.
- * Defines the available AI operations.
+ * Facade for interacting with different AI models/providers.
+ * Implements the IAiFacade interface.
  */
-interface IAiFacade {
-  /**
-   * Parses a natural language text input to extract currency amount and code.
-   * @param text The input text (e.g., "100 dollars", "fifty euros and 25 cents").
-   * @returns A promise resolving to the parsed currency result or an error indicator.
-   */
-  parseCurrencyInput(text: string): Promise<ParsedCurrencyResult>;
+export class AiFacade implements IAiFacade {
+    private googleAdapter: IAIAdapter;
+    // private openAiAdapter: IOpenAiAdapter; // Example for future extension
+    // private currentAdapter: IAiAdapter; // Interface for the currently selected adapter
 
-  // Add other AI operations here in the future (e.g., summarizeText)
-}
-
-/**
- * AI Facade implementation.
- * Acts as a single point of entry for AI functionalities,
- * delegating tasks to specific adapters based on configuration.
- */
-class AiFacade implements IAiFacade {
-  private googleAdapter: GoogleAiAdapter;
-  // Add other adapters here (e.g., private openAiAdapter: OpenAiAdapter;)
-
-  constructor() {
-    // Initialize adapters
-    this.googleAdapter = new GoogleAiAdapter();
-    // TODO: Add logic to select adapter based on configuration
-  }
-
-  /**
-   * Parses currency input using the currently configured AI adapter (initially Google).
-   * @param text The input text.
-   * @returns A promise resolving to the parsed result.
-   */
-  async parseCurrencyInput(text: string): Promise<ParsedCurrencyResult> {
-    console.log('AiFacade: Parsing currency input:', text);
-    // For now, always delegate to Google Adapter
-    // TODO: Implement adapter selection logic
-    try {
-      const result = await this.googleAdapter.parseCurrency(text);
-      console.log('AiFacade: Parsing successful:', result);
-      return result;
-    } catch (error) {
-      console.error('AiFacade: Error parsing currency input:', error);
-      // Return a structured error result
-      return {
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown AI parsing error',
-      };
+    constructor() {
+        // TODO: Implement adapter selection logic (e.g., based on settings)
+        // For now, defaulting to Google AI
+        this.googleAdapter = new GoogleAIAdapter();
+        // this.currentAdapter = this.googleAdapter;
+        console.log('AiFacade initialized with GoogleAIAdapter');
     }
-  }
 
-  // Implement other facade methods here...
+    /**
+     * Parses currency information from text using the configured AI adapter.
+     * @param input The ParseCurrencyInput object.
+     * @returns A Promise resolving to a ParseCurrencyOutput.
+     * @throws {AIAdapterError} If the underlying adapter throws an error.
+     */
+    async parseCurrency(input: ParseCurrencyInput): Promise<ParseCurrencyOutput> {
+        // TODO: Use this.currentAdapter when multiple adapters are implemented
+        // For now, delegate directly to the Google adapter
+        console.log('AiFacade: Delegating parseCurrency to GoogleAIAdapter');
+        try {
+            const result = await this.googleAdapter.parseCurrency(input);
+            console.log('AiFacade: Received result from adapter:', result);
+            return result;
+        } catch (error) {
+            // Log the error at the facade level as well
+            console.error('AiFacade: Error during parseCurrency delegation:', error);
+            // Re-throw the error to be handled by the caller (e.g., background script)
+            // This allows the caller to access specific error details (AIAdapterError)
+            throw error;
+        }
+    }
+
+    /**
+     * Attempts to clarify a previous parsing attempt based on user input.
+     * This method is currently not implemented in the adapter.
+     * @param originalInput The original input object.
+     * @param clarification The clarification text.
+     * @returns A promise resolving to a ParseCurrencyOutput.
+     * @throws {Error} Throws error indicating it's not implemented.
+     */
+    async clarifyCurrency(originalInput: ParseCurrencyInput, clarification: string): Promise<ParseCurrencyOutput> {
+        console.warn('AiFacade: clarifyCurrency called but not implemented.');
+        // TODO: Implement clarification logic in the adapter and call it here.
+        // Example structure:
+        // try {
+        //     return await this.googleAdapter.clarifyCurrency(originalInput, clarification);
+        // } catch (error) { ... }
+        throw new Error('Clarification functionality not yet implemented.');
+    }
+
+    // TODO: Add more methods as needed, e.g., generateText, analyzeSentiment, etc.
 }
 
 // Export a singleton instance of the facade
-export const aiFacade = new AiFacade(); 
+export const aiFacade = new AiFacade();

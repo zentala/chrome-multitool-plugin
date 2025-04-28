@@ -54,8 +54,8 @@ export class GoogleAIAdapter implements IAIAdapter {
   async parseCurrency(input: ParseCurrencyInput): Promise<ParseCurrencyOutput> {
     if (!this.apiKey) {
       console.error('GoogleAIAdapter: GEMINI_API_KEY is not set!');
-      // Consider throwing AIAdapterError here
-      return { success: false, error: 'API key not configured' };
+      // Throw specific error for missing configuration
+      throw new AIAdapterError('Google AI API Key not configured.', 400, 'Missing API Key'); 
     }
 
     const prompt = CURRENCY_PARSING_PROMPT.replace('{TEXT_TO_PARSE}', input.text);

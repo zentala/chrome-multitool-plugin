@@ -1,7 +1,8 @@
 import { aiFacade } from '../services/aiFacade';
-import { exchangeRateService } from '../services/exchangeRateService';
+import { exchangeRateService, ExchangeRateServiceError } from '../services/exchangeRateService';
 import { initializeContextMenu, setupContextMenuOnClickListener } from './listeners';
 import { ConversionResult } from '../interfaces';
+import { AIAdapterError } from '../interfaces/IAIAdapter'; // Import AI specific error
 
 console.log('Background script loaded.');
 
@@ -67,59 +68,81 @@ export async function handleCurrencyConversionRequest(inputText: string): Promis
   }
 
   console.log('Background: Handling conversion request for:', inputText);
+  let parsedAmount: number | undefined = undefined;
+  let parsedCurrency: string | undefined = undefined;
 
   try {
-    // 1. Parse the input using AI Facade
-    const parsedResult = await aiFacade.parseCurrencyInput(inputText);
-    if (!parsedResult.success || !parsedResult.amount || !parsedResult.currency) {
-      console.log('Background: AI parsing failed or incomplete:', parsedResult.error);
-      // TODO: Implement logic to ask user for currency code if error is 'currency_not_recognized' etc.
+    // 1. Use the AI facade to parse the input
+    const parseOutput = await aiFacade.parseCurrency({ text: inputText }); // Pass input object
+
+    if (parseOutput.success) {
+        parsedAmount = parseOutput.amount;
+        parsedCurrency = parseOutput.currencyCode;
+        console.log(`Background: AI parsed: ${parsedAmount} ${parsedCurrency}. Converting to PLN...`);
+    } else {
+      // Handle AI parsing failure (error or needsClarification)
+      console.log('Background: AI parsing failed or needs clarification:', parseOutput);
       return {
         success: false,
-        error: `AI parsing failed: ${parsedResult.error || 'Unknown reason'}`,
-        needsClarification: parsedResult.error?.includes('parsing_failed') // Example flag
+        error: parseOutput.error ? `AI Error: ${parseOutput.error}` : undefined,
+        needsClarification: parseOutput.needsClarification ? parseOutput.needsClarification : undefined,
       };
     }
+    
+    // Ensure amount and currency are valid before proceeding
+    if (parsedAmount === undefined || !parsedCurrency) {
+        // This case should theoretically be handled by the check above, but adds safety
+        console.error('Background: Parsed amount or currency is invalid after successful AI parsing.');
+        return { success: false, error: 'Internal error after AI parsing.' };
+    }
 
-    const { amount, currency: fromCurrency } = parsedResult;
     const toCurrency = 'PLN'; // Hardcoded target currency for now
 
-    console.log(`Background: AI parsed: ${amount} ${fromCurrency}. Converting to ${toCurrency}...`);
-
-    // 2. Get the exchange rate
-    const rate = await exchangeRateService.getRate(fromCurrency, toCurrency);
-
-    if (rate === null) {
-      console.error(`Background: Failed to get exchange rate for ${fromCurrency} -> ${toCurrency}`);
-      // Return specific error, include parsed info for potential use
-      return {
-        success: false,
-        error: `Failed to get exchange rate for ${fromCurrency} to ${toCurrency}. Stale data might be used if available previously. `,
-        originalAmount: amount,
-        originalCurrency: fromCurrency
-      };
-    }
+    // 2. Get the exchange rate (this now throws on error)
+    const rate = await exchangeRateService.getRate(parsedCurrency, toCurrency);
 
     // 3. Calculate the converted amount
-    const convertedAmount = amount * rate;
+    const convertedAmount = parsedAmount * rate;
 
-    console.log(`Background: Conversion successful: ${amount} ${fromCurrency} = ${convertedAmount.toFixed(2)} ${toCurrency}`);
+    console.log(`Background: Conversion successful: ${parsedAmount} ${parsedCurrency} = ${convertedAmount.toFixed(2)} ${toCurrency}`);
 
     // 4. Return the successful result
     return {
       success: true,
-      originalAmount: amount,
-      originalCurrency: fromCurrency,
+      originalAmount: parsedAmount,
+      originalCurrency: parsedCurrency,
       convertedAmount: parseFloat(convertedAmount.toFixed(2)), // Keep consistent type
       targetCurrency: toCurrency,
       rate: rate,
     };
+
   } catch (error) {
-    console.error('Background: Unexpected error during handleCurrencyConversionRequest:', error);
-    return {
-      success: false,
-      error: error instanceof Error ? error.message : 'An unexpected error occurred during conversion.',
-    };
+    console.error('Background: Error during handleCurrencyConversionRequest:', error);
+
+    // Handle specific errors
+    if (error instanceof AIAdapterError) {
+      return {
+        success: false,
+        // Provide a user-friendly message based on the error
+        error: `AI Service Error: ${error.message}` + (error.details ? ` (${error.details})` : ''),
+        // We might still need clarification even if it was an API error (e.g., quota exceeded)
+        // needsClarification: ??? // Decide if/how to handle clarification after adapter errors
+      };
+    } else if (error instanceof ExchangeRateServiceError) {
+       // Try to return original parsed info if available, along with the rate error
+      return {
+        success: false,
+        error: `Exchange Rate Service Error: ${error.message}` + (error.details ? ` (${error.details})` : ''),
+        originalAmount: parsedAmount,      // Include if parsing succeeded before rate fetch failed
+        originalCurrency: parsedCurrency, // Include if parsing succeeded before rate fetch failed
+      };
+    } else {
+      // Handle generic/unexpected errors
+      return {
+        success: false,
+        error: error instanceof Error ? `Unexpected Error: ${error.message}` : 'An unexpected error occurred during conversion.',
+      };
+    }
   }
 }
 

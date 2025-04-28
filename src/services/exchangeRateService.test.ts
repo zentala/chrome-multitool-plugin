@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, Mock, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock, beforeAll } from 'vitest';
 // Usuń statyczny import: import { exchangeRateService } from './exchangeRateService';
 
 // --- Define a type for globalThis to allow process.env --- //

@@ -1,6 +1,26 @@
 import { storageService } from './storageService';
 import { ExchangeRates, CurrencyRate } from '../interfaces/Currency';
 
+// --- Custom Error Type --- //
+
+export class ExchangeRateServiceError extends Error {
+    public readonly status?: number; // Optional HTTP status code from API
+    public readonly details?: any;   // Optional details (e.g., API error type)
+
+    constructor(message: string, status?: number, details?: any) {
+        super(message);
+        this.name = 'ExchangeRateServiceError';
+        this.status = status;
+        this.details = details;
+
+        if (Error.captureStackTrace) {
+            Error.captureStackTrace(this, ExchangeRateServiceError);
+        }
+    }
+}
+
+// --- Constants --- //
+
 const CACHE_KEY = 'currencyRatesCache';
 const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
 
@@ -40,6 +60,7 @@ class ExchangeRateService {
    * @param fromCurrency - ISO 4217 code of the base currency.
    * @param toCurrency - ISO 4217 code of the target currency.
    * @returns A promise resolving to the rate (number) or null if an error occurs and no stale cache exists.
+   * @throws {ExchangeRateServiceError} If fetching fails and no stale cache is available.
    */
   async getRate(fromCurrency: string, toCurrency: string): Promise<number | null> {
     // Read API key directly from process.env inside the method
@@ -48,11 +69,13 @@ class ExchangeRateService {
     // Check for API key existence and valid currencies FIRST
     if (!apiKey) {
       console.error('ExchangeRateService: Cannot get rate, API Key is missing.');
-      return null;
+      // Throw error if API key is missing
+      throw new ExchangeRateServiceError('ExchangeRate API Key is missing.', 400, 'Missing API Key');
     }
     if (!fromCurrency || !toCurrency) {
       console.error('ExchangeRateService: fromCurrency and toCurrency must be provided.');
-      return null;
+      // Throw error for invalid input
+      throw new ExchangeRateServiceError('Base and target currency codes must be provided.', 400, 'Invalid Input');
     }
 
     const from = fromCurrency.toUpperCase();
@@ -84,12 +107,18 @@ class ExchangeRateService {
         await this.setCachedRate(pairKey, rate);
         return rate;
       } else {
+        // Error occurred during fetchRateFromApi (it now throws)
+        // This path should theoretically not be reached if fetchRateFromApi throws
+        // Kept for safety, but should rely on catch block primarily
         if (cachedData) {
           console.warn(`ExchangeRateService: API fetch failed for ${pairKey}, returning stale cached rate:`, cachedData.rate);
           return cachedData.rate;
         }
         console.error(`ExchangeRateService: API fetch failed for ${pairKey} and no stale cache available.`);
-        return null;
+        // If fetch failed and no cache, re-throw or throw a new specific error
+        // Re-throwing the original error might be better if fetchRateFromApi adds details
+        // For now, throw a generic error indicating failure without cache
+        throw new ExchangeRateServiceError(`Failed to get rate for ${pairKey} and no cache available.`, 500, 'Fetch Failed No Cache');
       }
     } catch (error) {
       console.error(`ExchangeRateService: Unhandled error getting rate for ${pairKey}:`, error instanceof Error ? error.message : error);
@@ -97,7 +126,13 @@ class ExchangeRateService {
         console.warn(`ExchangeRateService: Unhandled error occurred for ${pairKey}, returning stale cached rate:`, cachedData.rate);
         return cachedData.rate;
        }
-      return null;
+      // If an error occurred (including from fetchRateFromApi) and there's no stale cache, throw.
+      // If it's already our custom error, re-throw it. Otherwise, wrap it.
+      if (error instanceof ExchangeRateServiceError) {
+          throw error;
+      } else {
+          throw new ExchangeRateServiceError(`Failed to process rate for ${pairKey}: ${error instanceof Error ? error.message : String(error)}`, undefined, error);
+      }
     }
   }
 
@@ -112,29 +147,18 @@ class ExchangeRateService {
     fromCurrency: string,
     toCurrency: string,
     apiKey: string // Accept apiKey as parameter
-  ): Promise<number | null> {
-    // Use the passed apiKey
+  ): Promise<number> { // Return number or throw
     const url = `${this.apiUrl}/${apiKey}/pair/${fromCurrency}/${toCurrency}`;
     console.log(`ExchangeRateService: Fetching URL: ${url}`);
+    let response: Response | null = null; // Define response variable here to access status in catch
 
     try {
-      const response = await fetch(url);
+      response = await fetch(url);
 
       // Check for network errors or non-OK status codes
       if (!response.ok) {
-        let errorInfo = `Status ${response.status}`;
-        try {
-          const errorBody: ExchangeRateApiResponse = await response.json();
-          errorInfo += `: ${errorBody.result === 'error' ? errorBody.error_type : 'Unknown API structure'}`;
-          console.error(
-            `ExchangeRateService: API error response for ${fromCurrency}/${toCurrency}:`, errorBody
-          );
-        } catch {
-            // If parsing error body fails, use text
-            errorInfo += `: ${await response.text()}`;
-            console.error(`ExchangeRateService: Non-JSON API error for ${fromCurrency}/${toCurrency}: Status ${response.status}`, errorInfo);
-        }
-        throw new Error(`API request failed with ${errorInfo}`);
+         // Throw a generic error to be caught below, status will be available on response object
+        throw new Error(`API request failed`); 
       }
 
       // Parse the successful response
@@ -148,15 +172,46 @@ class ExchangeRateService {
         console.error(
           `ExchangeRateService: API returned 'success' but missing/invalid rate for ${fromCurrency}/${toCurrency}:`, data
         );
-        // Treat this as a failure, could be an API change or unexpected data
-        return null;
+        // Throw custom error for invalid success response structure
+        throw new ExchangeRateServiceError(`API returned success but rate was invalid for ${fromCurrency}/${toCurrency}`, 500, 'Invalid Success Response');
       }
     } catch (error) {
-      // Catch fetch errors (network issues) or errors thrown from response handling
+       // Handle all errors (fetch, non-ok status, JSON parsing, invalid success structure)
+      const status = response?.status; // Get status if response object exists
+      let details: any = error instanceof Error ? error.message : String(error);
+      let message = `Failed to fetch or process rate for ${fromCurrency}/${toCurrency}`;
+
+      // Try to get more specific details if it was an API error (non-ok status)
+      if (!response?.ok && response?.text) { 
+          try {
+              // Try parsing as JSON first
+              const errorBody: ExchangeRateApiResponse = await response.json();
+              details = errorBody?.error_type || 'Unknown API Error Structure';
+              message = `API request failed with status ${status}`; 
+          } catch (jsonError) {
+              // If parsing error body as JSON fails, try reading as text
+              try { 
+                const textBody = await response.text(); 
+                details = textBody;
+                message = `API request failed with status ${status}`; 
+              } catch (textError) {
+                  // If reading text also fails
+                  details = "Failed to read error response body";
+              }
+          }
+      }
+      
       console.error(
-        `ExchangeRateService: Failed to fetch or process rate for ${fromCurrency}/${toCurrency}:`, error instanceof Error ? error.message : error
+        `ExchangeRateService: ${message}:`, details
       );
-      return null;
+
+      // If it's already our custom error (e.g., from invalid success structure), re-throw it.
+      if (error instanceof ExchangeRateServiceError) {
+          throw error;
+      } else {
+          // Otherwise, wrap the error with collected info.
+          throw new ExchangeRateServiceError(message, status, details);
+      }
     }
   }
 

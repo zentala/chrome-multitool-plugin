@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect, useCallback, useMemo, ReactNode } from 'react';
 import { TreeView, TreeItem } from '@mui/x-tree-view';
 import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
@@ -131,7 +131,7 @@ export const BookmarksTree: React.FC<BookmarksTreeProps> = ({
     return (
       <TreeItem
         key={nodePath}
-        nodeId={nodePath}
+        itemId={nodePath}
         label={label}
         expandIcon={isFolder ? <ChevronRightIcon /> : null}
         collapseIcon={isFolder ? <ExpandMoreIcon /> : null}

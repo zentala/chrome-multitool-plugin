@@ -36,8 +36,6 @@ alwaysApply: true
   - Create lightweight diagrams for complex logic in `.cursor/DIAGRAMS/`.
   - stworzyony plik z szalbonem musisz jeszcze uzupelnic recznie
 
----
-
 ## Commits
 
 - Commit **after every completed task**.
@@ -49,8 +47,6 @@ alwaysApply: true
 - Lint and test code before committing.
 - sometimes ammend commit if it makes more sense
 
----
-
 ## Terminal
 
 - Use **PowerShell 7** (`pwsh`) on **Windows 11**.
@@ -60,8 +56,6 @@ alwaysApply: true
   - Workarounds that work
   - Best practices you recommend
 - Prefer **non-interactive mode** for commands when possible.
-
----
 
 ## Code and Documentation Style
 
@@ -76,7 +70,6 @@ alwaysApply: true
   - After major changes, **remove or archive outdated files**.
   - Update related `.meta.md` and `TODO.md` if structure or plans change.
 
----
 
 ## Testing
 
@@ -86,15 +79,11 @@ alwaysApply: true
   - Add `TODO` or `FIXME` for future improvement.
 - Prioritize testing core logic over minor UI behaviors unless critical.
 
----
-
 ## Cursor and Tools Behavior
 
-- If you experience editing issues (e.g., file won't update):
-  - **Pause work immediately** and **ask the user to restart Cursor**.
+- If you experience editing issues with tools (file won't update few times):
+  - Pause work immediately and **ask the user to restart Cursor**.
   - After restart, continue work.
-
----
 
 # ✨ Notes for Better Context Maintenance
 

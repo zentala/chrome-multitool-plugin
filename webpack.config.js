@@ -44,8 +44,9 @@ module.exports = {
   plugins: [
     new Dotenv(),
     new webpack.DefinePlugin({
-      'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY),
-      'process.env.EXCHANGERATE_API_KEY': JSON.stringify(process.env.EXCHANGERATE_API_KEY)
+      // Keep DefinePlugin for potential future use, but remove manual definitions handled by Dotenv
+      // 'process.env.GEMINI_API_KEY': JSON.stringify(process.env.GEMINI_API_KEY),
+      // 'process.env.EXCHANGERATE_API_KEY': JSON.stringify(process.env.EXCHANGERATE_API_KEY)
     }),
     new HtmlWebpackPlugin({
       template: './public/popup.html',
@@ -55,7 +56,7 @@ module.exports = {
     new CopyPlugin({
       patterns: [
         { from: "public/manifest.json", to: "manifest.json" },
-        { from: "public/icons", to: "icons" },
+        // { from: "public/icons", to: "icons" }, // Commenting out as public/icons doesn't exist yet
       ],
     }),
   ],
