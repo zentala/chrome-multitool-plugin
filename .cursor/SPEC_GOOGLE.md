@@ -51,9 +51,9 @@ Integracja z API Google w rozszerzeniu Chrome (Manifest V3) wymaga kilku kluczow
 ### B. Konwerter Walut
 
 *   **Poszukiwanie API Google:** Należy zbadać, czy Google oferuje publiczne, darmowe lub rozsądnie wycenione API do pobierania aktualnych kursów walut, które można by wykorzystać w rozszerzeniu Chrome.
-    *   *Wstępne wyszukiwanie sugeruje, że Google nie udostępnia dedykowanego, publicznego API do kursów walut na wzór np. NBP czy ExchangeRate-API.* Funkcja konwersji w wyszukiwarce Google niekoniecznie przekłada się na dostępne API.
-*   **Decyzja:** Jeśli nie znajdziemy odpowiedniego API Google, pozostaniemy przy wyborze zewnętrznego dostawcy (jak omówiono w [TODO_CONVERTER.md](TODO_CONVERTER.md)), ale zaimplementujemy go zgodnie z ogólnymi zasadami bezpieczeństwa (np. klucz API w `chrome.storage`).
-*   **Integracja:** Niezależnie od wyboru API, logika pobierania i cachowania kursów będzie w `exchangeRateService.ts` wywoływanym z background scriptu.
+    *   *Wstępne wyszukiwanie sugeruje, że Google nie udostępnia dedykowanego, publicznego API do kursów walut. Funkcja konwersji w wyszukiwarce Google niekoniecznie przekłada się na dostępne API.*
+*   **Decyzja:** Używamy zewnętrznego dostawcy **exchangerate-api.com**. Klucz API jest wymagany i zarządzany przez `.env` oraz Webpack.
+*   **Integracja:** Logika pobierania i cachowania kursów znajduje się w `exchangeRateService.ts` wywoływanym z background scriptu.
 
 ## Dalsze Kroki
 

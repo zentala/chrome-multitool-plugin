@@ -1,0 +1,10 @@
+Wiem, że Google oferuje jakąś wektorową bazę danych w Google Cloud. Chciałbym, abyś zmigrował obecną wektorową czy niewektorową bazę danych, którą próbowaliśmy robić, na tą wektorową bazę googlową, która jest w Google Cloud. Możesz zostawić starą implementację jakiejś lokalnej bazy danych na przykład na zapas po to, aby tutaj była, bo wiem, że zrobiłem jakąś pamięć podręcznej, ale generalnie tutaj chyba coś wektorowo nie działało. Chciałbym, żebyś to sprawdził, żebyśmy omówili właśnie, czy powinniśmy przejść na rozwiązanie Google Clouda, co prawdopodobnie będzie działało offline, ale może byśmy dla prostoty przeszli na rozwiązanie Google Clouda i zmigrowali, bo to był w komponencie Favorites Bookmarks, coś takiego Bookmarks, ma taki komponent Bookmarks, taki filtr cały Bookmarks, i chciałbym, żebyśmy to zmigrowali na jakąś wektorową bazę, żeby działało, żebyśmy mogli wektorowo szukać. I chciałbym też, żebyśmy do wszystkich tych zakładek, które mamy, wiem, że jest jakiś komponent, który generalnie bierze i gdzieś tam chyba dodaje do bazy danych coś takiego, chciałbym, żeby zrobić jakiegoś scrapera, zaprojektować i zrobić testy do tego scrapera na realnych stronach, które biorą, otwierają stronę, sprawdzają, co jest w środku. Jeżeli w środku znajdują się fajne rzeczy, to bierzemy, znaczy w ogóle podsumowujemy za pomocą AI, co jest w ogóle na tej stronie, pobieramy jej tytuł, jeżeli nie ma dobrego tytułu, to zmieniamy, wybieramy oryginalny tytuł, tworzymy własny tytuł dla mnie, jako użera w tym wszystkim itd., itd. Chciałbym z tobą przekazać, jak to zaprojektować i jak to zrobić.
+
+chcemy
+- screenshot
+- opis (streeczenie) wygnerowany przez llm i title przez niego
+- autotagowanie za pomoca tego samego llm
+- propozycje jak je przestotowac te pliki, jakis graf plikow i folderow aby pozniej nasza aplikacja zaopropnowala lespsza strikture
+- na poczatek chce tylko wyszukiwa zakladakach i ich stresczzeniach i tytaluahc wktoroeo
+- czyli indeksowanie zakladek, i nie indeksuj od razu all alas eprawdz kilka
+- 

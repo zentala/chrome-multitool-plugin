@@ -4,16 +4,18 @@ import { vi } from 'vitest'; // Import vi
 // Import original jest-dom matchers
 import '@testing-library/jest-dom';
 
+// Import GoogleAIAdapter module
+import * as RealAdapterModule from '../services/ai/GoogleAIAdapter'; // Import type info
+
 // --- Workaround for Vitest/React 18 act warning --- //
 if (typeof globalThis !== 'undefined') {
-  // Use a more specific type than any if possible, or leave as any if necessary
-  // For browser environments, globalThis often corresponds to Window
-  (globalThis as Window & typeof globalThis).IS_REACT_ACT_ENVIRONMENT = true;
+  // Revert to any for simplicity in test setup
+  (globalThis as any).IS_REACT_ACT_ENVIRONMENT = true;
 }
 // Also ensure it's set on self/window if they exist in jsdom
 if (typeof self !== 'undefined') {
-  // self often corresponds to Window or WorkerGlobalScope
-  (self as Window & typeof globalThis).IS_REACT_ACT_ENVIRONMENT = true;
+  // Revert to any for simplicity in test setup
+  (self as any).IS_REACT_ACT_ENVIRONMENT = true;
 }
 // ---------------------------------------------------- //
 
@@ -103,4 +105,10 @@ vi.stubGlobal('chrome', {
   // Add other needed chrome APIs here
 });
 
-console.log('Setup file loaded with manual Chrome vi mocks using vi.stubGlobal.'); 
+// --- Mock Environment Variables for Tests --- //
+// Remove the stubEnv for GEMINI_API_KEY as the library itself is mocked now
+
+// Keep the AI Adapter mock using factory (or remove if fully handled in test file)
+// vi.mock(...) - This should be removed if the mock was moved to index.test.ts
+
+console.log('Setup file loaded with Chrome mocks and Env Var mock potentially removed.'); 

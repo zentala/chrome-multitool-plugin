@@ -1,29 +1,47 @@
-import { initializeContextMenu, setupContextMenuOnClickListener } from './listeners';
-import { ConversionResult } from '../interfaces';
-import { AIProvider } from '../services/ai/AIProvider';
-import { GroqAI } from '../services/ai/GroqAI';
-import { getExchangeRates } from '../services/nbp';
+import { initializeContextMenu, setupContextMenuOnClickListener, setupRuntimeMessageListener } from './listeners';
+import { ConversionResult, IAIAdapter, ParseCurrencyOutput } from '../interfaces';
+import { GoogleAIAdapter } from '../services/ai/GoogleAIAdapter';
+import { exchangeRateService } from '../services/exchangeRateService';
 import {
   CurrencyClarificationRequest,
-  ParsedResponse,
 } from '../types';
-import {
-  buildPrompt,
-  parseAIResponse,
-  validateParsedResponse,
-} from '../utils/aiUtils';
-import { convertCurrency } from '../utils/currencyUtils';
 
 console.log('Background script loaded.');
+
+// --- AI Provider Initialization (Lazy Singleton) --- //
+let aiProviderInstance: IAIAdapter | null = null;
+
+function getAIProvider(): IAIAdapter {
+  if (!aiProviderInstance) {
+    console.log('Initializing AI Provider...');
+    try {
+      aiProviderInstance = new GoogleAIAdapter(); 
+      console.log('AI Provider Initialized: Google AI');
+    } catch (error) {
+        console.error("Failed to initialize AI Provider:", error);
+        // Fallback to a dummy provider that always returns errors?
+        // Or rethrow/handle differently based on desired behavior without API key
+        aiProviderInstance = {
+            parseCurrency: async () => ({ success: false, error: 'AI Provider not initialized correctly.' })
+        };
+    }
+  }
+  return aiProviderInstance;
+}
+
+// --- Event Listener Setup --- //
 
 // Initialize context menu on install/update
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Extension installed/updated. Initializing context menu...');
   initializeContextMenu();
+  // Optionally pre-initialize AI provider on install? 
+  // getAIProvider(); 
 });
 
-// Setup the listener for context menu clicks
+// Setup other listeners
 setupContextMenuOnClickListener();
+setupRuntimeMessageListener();
 
 /**
  * Handles messages sent from other parts of the extension (e.g., popup).
@@ -67,14 +85,12 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
   // Add handlers for other message types here...
 });
 
-// Temporary direct initialization for testing Groq
+// Temporary direct initialization for testing Google
 // TODO: Remove this and use the dynamic initialization above
-const TEMP_GROQ_API_KEY = process.env.GROQ_API_KEY || 'gsk_YOUR_GROQ_API_KEY_HERE'; // Replace with your actual key or env var
-if (TEMP_GROQ_API_KEY === 'gsk_YOUR_GROQ_API_KEY_HERE') {
-  console.warn('Using placeholder Groq API key. AI features may not work.');
-}
-const aiProvider: AIProvider = new GroqAI(TEMP_GROQ_API_KEY);
-console.log('AI Provider TEMPORARILY initialized: Groq');
+console.warn('Using placeholder Google API key. AI features may not work.');
+// Initialize GoogleAIAdapter without passing the key
+const aiProvider: IAIAdapter = new GoogleAIAdapter(); // Constructor reads from env var
+console.log('AI Provider TEMPORARILY initialized: Google AI');
 
 /**
  * Handles the entire currency conversion request process.
@@ -86,75 +102,74 @@ export async function handleCurrencyConversionRequest(
   text: string
 ): Promise<ConversionResult> {
   console.log(`Handling conversion request for text: "${text}"`);
+  
+  // Get the AI provider instance (initializes on first call)
+  const aiProvider = getAIProvider();
+
   try {
-    const prompt = buildPrompt(text);
-    console.log('Generated prompt:', prompt);
-
-    const aiResponse = await aiProvider.generateCompletion(prompt);
-    console.log('Received AI response:', aiResponse);
-
-    const parsed: ParsedResponse | CurrencyClarificationRequest =
-      parseAIResponse(aiResponse);
+    // Use the adapter's parseCurrency method directly
+    const parsed: ParseCurrencyOutput = await aiProvider.parseCurrency({ text });
     console.log('Parsed AI response:', parsed);
 
-    if (parsed.needsClarification) {
-      console.log('AI requires clarification:', parsed.question);
-      // TODO: Implement UI interaction to get clarification from the user
-      // For now, return a specific state indicating clarification is needed
-      return {
-        success: false,
-        needsClarification: true,
-        clarificationQuestion: parsed.question,
-        originalText: text, // Include original text for context
-        error: 'AI requires clarification.',
-      };
+    if (!parsed.success) {
+      // Handle cases where parsing failed or needs clarification
+      if (parsed.needsClarification) {
+        console.log('AI requires clarification:', parsed.error); // Use error field for clarification message?
+        return {
+          success: false,
+          needsClarification: true,
+          clarificationQuestion: parsed.error || 'Unknown clarification needed.', // Assuming error holds the question
+          originalText: text,
+          error: 'AI requires clarification.',
+        };
+      } else {
+        // General parsing failure
+        console.error('AI parsing failed:', parsed.error);
+        return { success: false, error: `AI parsing error: ${parsed.error || 'Unknown error'}` };
+      }
     }
 
-    // Type assertion after checking needsClarification
-    const validatedParsed = parsed as ParsedResponse;
-
-    // Validate the parsed structure (basic validation)
-    const validationError = validateParsedResponse(validatedParsed);
-    if (validationError) {
-      console.error('Parsed response validation failed:', validationError);
-      return { success: false, error: `AI response parsing error: ${validationError}` };
-    }
-
+    // If parsing succeeded, we have amount and currencyCode
+    const validatedParsed = {
+        amount: parsed.amount!,
+        currency: parsed.currencyCode! // Use currencyCode from ParseCurrencyOutput
+    };
     console.log('Parsed response validated:', validatedParsed);
 
-    // Fetch exchange rates from NBP
-    const rates = await getExchangeRates(); // Fetches Table A by default
-    console.log('Fetched exchange rates:', rates);
+    // Fetch exchange rate using exchangeRateService
+    const rate = await exchangeRateService.getRate(validatedParsed.currency, 'PLN');
+    console.log(`Fetched exchange rate ${validatedParsed.currency} -> PLN:`, rate);
 
-    // Perform currency conversion
-    const conversion = convertCurrency(
-      validatedParsed.amount,
-      validatedParsed.currency,
-      'PLN', // Target currency is always PLN for now
-      rates
-    );
+    // Perform currency conversion directly
+    const convertedAmount = validatedParsed.amount * rate;
+    console.log('Calculated converted amount:', convertedAmount);
 
-    console.log('Conversion result:', conversion);
-
-    if (conversion.success) {
+    // Check if conversion was successful (rate is a valid number)
+    if (typeof rate === 'number' && !isNaN(rate)) {
       return {
         success: true,
         originalAmount: validatedParsed.amount,
         originalCurrency: validatedParsed.currency,
-        convertedAmount: conversion.value,
+        convertedAmount: convertedAmount, // Use the calculated amount
         targetCurrency: 'PLN',
-        rateDate: rates.effectiveDate, // Include the date of the rates used
+        rate: rate, // Include the rate used
+        // rateDate is not available here
       };
     } else {
+      // Handle cases where rate might not be valid (though getRate should throw)
+      console.error('Invalid rate received:', rate);
       return {
         success: false,
-        error: conversion.error, // Pass the specific conversion error
+        error: 'Failed to retrieve a valid exchange rate.',
       };
     }
   } catch (error: unknown) {
     console.error('Error during currency conversion request:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     // Consider more specific error handling based on error type
+    if (error instanceof Error && error.constructor.name === 'AIAdapterError') {
+         return { success: false, error: `AI Service Error: ${errorMessage}` };
+    }
     if (errorMessage.includes('API key')) {
         return { success: false, error: 'AI Service Error: Invalid or missing API key.' };
     }
@@ -174,31 +189,13 @@ export async function handleCurrencyClarificationRequest(
   clarification: string
 ): Promise<ConversionResult> {
   console.log(`Handling clarification request. Original: "${originalText}", Clarification: "${clarification}"`);
-
-  // TODO: Implement the actual logic
-  // 1. Validate the clarification (e.g., not empty)
-  // 2. Build a new prompt incorporating the original text and the clarification.
-  // 3. Call the AI provider again with the new prompt.
-  // 4. Parse the new response (hopefully it doesn't ask for clarification again!).
-  // 5. Validate the parsed response.
-  // 6. Fetch exchange rates.
-  // 7. Perform conversion.
-  // 8. Return the final ConversionResult.
-
-  // Placeholder implementation:
-  await new Promise(resolve => setTimeout(resolve, 50)); // Simulate async work
-
-  // Dummy error for now, indicating it's not implemented
-  // return { success: false, error: 'Clarification handling not yet implemented.' };
-
-  // Dummy success for testing flow
+  // const aiProvider = getAIProvider(); // Get provider instance
+  // TODO: Implement actual logic using aiProvider, potentially needing a clarify method on the adapter
+  await new Promise(resolve => setTimeout(resolve, 50));
    return {
-     success: true,
-     originalAmount: 123, // Dummy data
-     originalCurrency: 'USD', // Dummy data
-     convertedAmount: 456.78, // Dummy data
-     targetCurrency: 'PLN',
-     rateDate: new Date().toISOString().split('T')[0], // Dummy date
+     success: true, // Dummy success
+     originalAmount: 123, originalCurrency: 'USD', convertedAmount: 456.78, targetCurrency: 'PLN',
+     rateDate: new Date().toISOString().split('T')[0],
    };
 }
 

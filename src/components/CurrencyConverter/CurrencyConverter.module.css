@@ -29,6 +29,7 @@
 }
 
 .inputField:focus {
+    /* Disable default browser outline; custom focus style is applied below */
     outline: none;
     border-color: #007bff;
     box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);

@@ -63,9 +63,11 @@ alwaysApply: true
 - Write **junior-friendly code and documentation**:
   - Use **TSDoc comments** on exported functions, classes, complex logic.
   - Add **TODO** and **FIXME** in code to mark future improvements or known issues.
+  - If file is longer than 200 lines split it into smaler files
+  - on top of every ts/tsx file comment what is purpose of this file in the app context
   - If fixing a problem:
     - Document **which approaches were tried and failed**.
-    - Optionally create a `.md` notes file next to the code (`<filename>.ts.md`).
+    - Optionally create a `.md` notes file next to the code (`<filename>.{ts,tsx,css,sh,etc..}.md`).
 
 - Maintain folder cleanliness:
   - After major changes, **remove or archive outdated files**.

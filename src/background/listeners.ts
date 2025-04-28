@@ -28,7 +28,7 @@ export function initializeContextMenu() {
  * Sets up the listener for context menu clicks.
  */
 export function setupContextMenuOnClickListener() {
-  chrome.contextMenus.onClicked.addListener(async (info, tab) => {
+  chrome.contextMenus.onClicked.addListener(async (info /*, tab is unused */) => {
     console.log('Context menu clicked:', info);
     if (info.menuItemId === CONTEXT_MENU_ID) {
       const selectedText = info.selectionText;

@@ -15,8 +15,8 @@
 ### Konwerter Walut
 
 - [x] Dodać menu kontekstowe do zaznaczonego tekstu.
-- [x] Zaimplementować logikę do wyciągania kwoty i waluty z zaznaczonego tekstu.
-- [x] Zintegrować z zewnętrznym API do pobierania kursów walut (np. NBP API lub inny darmowy).
+- [x] Zaimplementować logikę do wyciągania kwoty i waluty z zaznaczonego tekstu (przy użyciu AI - Gemini).
+- [x] Zintegrować z zewnętrznym API do pobierania kursów walut (używamy **exchangerate-api.com**).
   - [x] Obsługa podstawowych przypadków (np. "100 EUR", "50 USD").
   - [ ] Obsługa bardziej złożonych przypadków (np. "$50.50", "100 złotych").
 - [x] Wyświetlanie wyniku konwersji (początkowo w konsoli, potem jako powiadomienie).

@@ -1,7 +1,8 @@
 /// <reference types="chrome" />
 
 import React from 'react';
-import { render, screen, fireEvent, waitFor, act } from '@testing-library/react';
+import { render, screen, waitFor } from '@testing-library/react';
+import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
 import '@testing-library/jest-dom/vitest';
 
@@ -52,11 +53,15 @@ describe('CurrencyConverter Component', () => {
     expect(screen.queryByLabelText(/AI couldn't recognize/i)).not.toBeInTheDocument();
   });
 
-  it('updates input value on change', () => {
+  it('updates input value on change', async () => {
+    // Initialize userEvent
+    const user = userEvent.setup();
     render(<CurrencyConverter />);
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i) as HTMLInputElement;
 
-    fireEvent.change(input, { target: { value: '150 EUR' } });
+    // Clear before typing
+    await user.clear(input);
+    await user.type(input, '150 EUR');
     expect(input.value).toBe('150 EUR');
   });
 
@@ -71,18 +76,19 @@ describe('CurrencyConverter Component', () => {
     };
     mockSendMessage.mockResolvedValueOnce(mockSuccessResponse);
 
+    // Initialize userEvent
+    const user = userEvent.setup();
+
     render(<CurrencyConverter />);
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
     const convertButton = screen.getByRole('button', { name: /Convert to PLN/i });
 
-    await act(async () => {
-        fireEvent.change(input, { target: { value: '150 EUR' } });
-        fireEvent.click(convertButton);
-        // Wait for spinner to appear instead of checking disabled state immediately
-        await screen.findByTestId('spinner');
-    });
+    // Perform actions using userEvent - no explicit act needed here
+    await user.clear(input); // Clear before typing
+    await user.type(input, '150 EUR');
+    await user.click(convertButton);
 
-    // Wait for the result to appear (this implies loading finished)
+    // Wait for the result to appear (implies loading finished)
     await waitFor(() => {
         expect(screen.getByText(/150 EUR ≈/i)).toBeInTheDocument();
         expect(screen.getByText(/650.25 PLN/i)).toBeInTheDocument();
@@ -107,14 +113,17 @@ describe('CurrencyConverter Component', () => {
     };
     mockSendMessage.mockResolvedValueOnce(mockErrorResponse);
 
+    // Initialize userEvent
+    const user = userEvent.setup();
+
     render(<CurrencyConverter />);
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
     const convertButton = screen.getByRole('button', { name: /Convert to PLN/i });
 
-    await act(async () => {
-        fireEvent.change(input, { target: { value: 'only 200' } });
-        fireEvent.click(convertButton);
-    });
+    // Perform actions using userEvent - no explicit act needed here
+    await user.clear(input); // Clear before typing
+    await user.type(input, 'only 200');
+    await user.click(convertButton);
 
     // Wait for error message
     await waitFor(() => {
@@ -138,14 +147,17 @@ describe('CurrencyConverter Component', () => {
     };
     mockSendMessage.mockResolvedValueOnce(mockClarifyResponse);
 
+    // Initialize userEvent
+    const user = userEvent.setup();
+
     render(<CurrencyConverter />);
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
     const convertButton = screen.getByRole('button', { name: /Convert to PLN/i });
 
-    await act(async () => {
-        fireEvent.change(input, { target: { value: '100 pesos' } });
-        fireEvent.click(convertButton);
-    });
+    // Perform actions using userEvent - no explicit act needed here
+    await user.clear(input); // Clear before typing
+    await user.type(input, '100 pesos');
+    await user.click(convertButton);
 
     // Wait for clarification input to appear
     await waitFor(() => {
@@ -169,14 +181,17 @@ describe('CurrencyConverter Component', () => {
     };
     mockSendMessage.mockResolvedValueOnce(mockClarifyResponse);
 
+    // Initialize userEvent
+    const user = userEvent.setup();
+
     render(<CurrencyConverter />);
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
     const convertButton = screen.getByRole('button', { name: /Convert to PLN/i });
 
-    await act(async () => {
-        fireEvent.change(input, { target: { value: '100 pesos' } });
-        fireEvent.click(convertButton);
-    });
+    // Perform initial actions using userEvent
+    await user.clear(input); // Clear before typing
+    await user.type(input, '100 pesos');
+    await user.click(convertButton);
 
     // Wait for clarification UI
     // Find the label by its exact text content
@@ -202,12 +217,10 @@ describe('CurrencyConverter Component', () => {
     });
     // mockSendMessage.mockResolvedValueOnce(mockSuccessAfterClarify); // Original immediate resolve
 
-    await act(async () => {
-        fireEvent.change(clarificationInput, { target: { value: 'MXN' } });
-        fireEvent.click(retryButton);
-        // Wait for spinner to appear after clicking retry - REMOVED
-        // await screen.findByTestId('spinner');
-    });
+    // Perform clarification actions using userEvent
+    await user.clear(clarificationInput); // Clear before typing
+    await user.type(clarificationInput, 'MXN');
+    await user.click(retryButton);
 
     // Wait for successful result after clarification
     await waitFor(() => {
@@ -237,13 +250,16 @@ describe('CurrencyConverter Component', () => {
 
   it('triggers conversion on Enter key press in main input', async () => {
     mockSendMessage.mockResolvedValueOnce({ success: true, originalAmount: 50, originalCurrency: 'GBP', convertedAmount: 250, targetCurrency:'PLN', rate: 5 });
+    
+    // Initialize userEvent
+    const user = userEvent.setup();
+
     render(<CurrencyConverter />);
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
 
-    await act(async () => {
-        fireEvent.change(input, { target: { value: '50 GBP' } });
-        fireEvent.keyDown(input, { key: 'Enter', code: 'Enter', charCode: 13 });
-    });
+    // Perform actions using userEvent
+    await user.clear(input); // Clear before typing
+    await user.type(input, '50 GBP{enter}'); // Simulate typing and pressing Enter
 
     await waitFor(() => {
         expect(mockSendMessage).toHaveBeenCalledTimes(1);
@@ -259,24 +275,20 @@ describe('CurrencyConverter Component', () => {
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
     const convertButton = screen.getByRole('button', { name: /Convert to PLN/i });
 
-    await act(async () => {
-      fireEvent.change(input, { target: { value: '200 something' } });
-      fireEvent.click(convertButton);
-    });
+    await userEvent.clear(input); // Clear before typing
+    await userEvent.type(input, '200 something');
+    await userEvent.click(convertButton);
 
     const clarificationInput = await screen.findByLabelText(new RegExp(clarificationText, 'i'));
     
-    await act(async () => {
-        fireEvent.change(clarificationInput, { target: { value: 'CAD' } });
-    });
+    await userEvent.clear(clarificationInput); // Clear before typing
+    await userEvent.type(clarificationInput, 'CAD');
 
     // Mock the response for the retry call
     mockSendMessage.mockResolvedValueOnce({ success: true, originalAmount: 200, originalCurrency: 'CAD', convertedAmount: 600, targetCurrency: 'PLN', rate: 3 });
 
     // Press Enter in clarification input
-    await act(async () => {
-        fireEvent.keyDown(clarificationInput, { key: 'Enter', code: 'Enter', charCode: 13 });
-    });
+    await userEvent.type(clarificationInput, '{enter}');
 
     await waitFor(() => {
         // Should have been called twice: once initial, once for clarification
