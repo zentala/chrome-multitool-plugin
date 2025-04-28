@@ -77,9 +77,14 @@ Need to fix the API authentication flow. Login issue?`;
 
         expect(fs.readdir).toHaveBeenCalledTimes(3);
         expect(fs.readFile).toHaveBeenCalledTimes(2);
-        expect(result.content[0].text).toContain('Found 2 entries');
-        expect(result.content[0].text).toContain('- todos/entry1');
-        expect(result.content[0].text).toContain('- notes/entry4');
+        const resultText = result.content[0].text;
+        expect(resultText).toContain('Found 2 entries');
+        // Check entry 1
+        expect(resultText).toContain('**todos/entry1**');
+        expect(resultText).toContain('Fix the main login button.'); 
+        // Check entry 4 (no metadata, only content match)
+        expect(resultText).toContain('**notes/entry4**');
+        expect(resultText).toContain('Button styling needed.');
     });
 
     it('should find entries matching query text within a specific type', async () => {
@@ -102,10 +107,15 @@ Need to fix the API authentication flow. Login issue?`;
         expect(fs.stat).toHaveBeenCalledWith(typePath);
         expect(fs.readdir).toHaveBeenCalledWith(typePath, { withFileTypes: true });
         expect(fs.readFile).toHaveBeenCalledTimes(2);
-        expect(result.content[0].text).toContain('Found 2 entries');
-        expect(result.content[0].text).toContain(`in type '${type}'`);
-        expect(result.content[0].text).toContain('- api_issues/entry2');
-        expect(result.content[0].text).toContain('- api_issues/entry3');
+        const resultText = result.content[0].text;
+        expect(resultText).toContain('Found 2 entries');
+        expect(resultText).toContain(`in type '${type}'`);
+        // Check entry 2 (match in metadata only)
+        expect(resultText).toContain('**api_issues/entry2**');
+        expect(resultText).toContain('(Match found in metadata)');
+        // Check entry 3 (match in content)
+        expect(resultText).toContain('**api_issues/entry3**');
+        expect(resultText).toContain('Need to fix the API authentication flow.');
     });
 
     it('should filter entries by status', async () => {
@@ -127,10 +137,13 @@ Need to fix the API authentication flow. Login issue?`;
         const result = await handler({ query: 'fix', filterStatus: 'open' });
 
         expect(fs.readFile).toHaveBeenCalledTimes(2);
-        expect(result.content[0].text).toContain('Found 2 entries'); // Both match query and status
-        expect(result.content[0].text).toContain('with status "open"');
-        expect(result.content[0].text).toContain('- todos/entry1');
-        expect(result.content[0].text).toContain('- todos/entry3');
+        const resultText = result.content[0].text;
+        expect(resultText).toContain('Found 2 entries'); 
+        expect(resultText).toContain('with status "open"');
+        expect(resultText).toContain('**todos/entry1**');
+        expect(resultText).toContain('Fix the main login button.');
+        expect(resultText).toContain('**todos/entry3**');
+        expect(resultText).toContain('Need to fix the API authentication flow.');
     });
 
     it('should filter entries by tags (requiring all specified tags)', async () => {
@@ -148,9 +161,11 @@ Need to fix the API authentication flow. Login issue?`;
         const result = await handler({ query: 'fix', filterTags: 'important, api' });
 
         expect(fs.readFile).toHaveBeenCalledTimes(2);
-        expect(result.content[0].text).toContain('Found 1 entry'); // Only entry3 matches tags and query
-        expect(result.content[0].text).toContain('with tags [important, api]');
-        expect(result.content[0].text).toContain('- issues/entry3');
+        const resultText = result.content[0].text;
+        expect(resultText).toContain('Found 1 entry'); 
+        expect(resultText).toContain('with tags [important, api]');
+        expect(resultText).toContain('**issues/entry3**'); // Only entry3 matches tags AND query
+        expect(resultText).toContain('Need to fix the API authentication flow.');
     });
 
     it('should combine query, type, status, and tag filters', async () => {
@@ -175,13 +190,16 @@ Need to fix the API authentication flow. Login issue?`;
         });
 
         expect(fs.readFile).toHaveBeenCalledTimes(2);
-        expect(result.content[0].text).toContain('Found 2 entries'); // Both match all criteria
-        expect(result.content[0].text).toContain('matching "login"');
-        expect(result.content[0].text).toContain('with tags [important]');
-        expect(result.content[0].text).toContain('with status "open"');
-        expect(result.content[0].text).toContain(`in type '${type}'`);
-        expect(result.content[0].text).toContain('- bugs/entry1');
-        expect(result.content[0].text).toContain('- bugs/entry3');
+        const resultText = result.content[0].text;
+        expect(resultText).toContain('Found 2 entries'); 
+        expect(resultText).toContain('matching "login"');
+        expect(resultText).toContain('with tags [important]');
+        expect(resultText).toContain('with status "open"');
+        expect(resultText).toContain(`in type '${type}'`);
+        expect(resultText).toContain('**bugs/entry1**');
+        expect(resultText).toContain('Fix the main login button.');
+        expect(resultText).toContain('**bugs/entry3**');
+        expect(resultText).toContain('Login issue?'); // Contains 'login'
     });
 
     it('should return "not found" message if no entries match criteria', async () => {
@@ -207,6 +225,88 @@ Need to fix the API authentication flow. Login issue?`;
         const result = await handler({ query: 'test', type: type });
 
         expect(result.content[0].text).toContain(`Context type '${type}' not found.`);
+    });
+
+    // --- NEW TESTS FOR SNIPPETS --- 
+
+    it('should return context snippets correctly', async () => {
+        const handler = getToolHandler();
+        const type = 'docs';
+        const docContent = `Line 1: Intro.
+Line 2: Here is the keyword.
+Line 3: Some explanation.
+Line 4: Another mention of the keyword.
+Line 5: Conclusion.`;
+        const docDirents = [{ name: 'guide.md', isFile: () => true }];
+        fs.stat.mockResolvedValue({ isDirectory: () => true });
+        fs.readdir.mockResolvedValue(docDirents);
+        fs.readFile.mockResolvedValue(docContent);
+
+        const result = await handler({ query: 'keyword', type: type });
+        const resultText = result.content[0].text;
+
+        expect(resultText).toContain('Found 1 entry');
+        expect(resultText).toContain('**docs/guide**');
+        // Check first snippet
+        expect(resultText).toContain('  Line 1: Intro.\n  Line 2: Here is the keyword.\n  Line 3: Some explanation.');
+        expect(resultText).not.toContain('...\n  Line 1: Intro.'); // Should not have prefix ellipsis
+        // Check second snippet
+        expect(resultText).toContain('  Line 3: Some explanation.\n  Line 4: Another mention of the keyword.\n  Line 5: Conclusion.');
+        expect(resultText).not.toContain('Line 5: Conclusion.\n...'); // Should not have suffix ellipsis
+    });
+
+    it('should handle matches at the start and end of the file', async () => {
+        const handler = getToolHandler();
+        const type = 'logs';
+        const logContent = `Keyword at start.\nLine 2.\nLine 3.\nKeyword at end.`;
+        const logDirents = [{ name: 'daily.md', isFile: () => true }];
+        fs.stat.mockResolvedValue({ isDirectory: () => true });
+        fs.readdir.mockResolvedValue(logDirents);
+        fs.readFile.mockResolvedValue(logContent);
+
+        const result = await handler({ query: 'keyword', type: type });
+        const resultText = result.content[0].text;
+        // console.log("--- DEBUG START/END TEST ---");
+        // console.log(resultText);
+        // console.log("--- END DEBUG ---");
+
+        expect(resultText).toContain('Found 1 entry');
+        expect(resultText).toContain('**logs/daily**');
+        
+        // Define expected snippets precisely
+        const expectedSnippet1 = `  Keyword at start.\n  Line 2.`;
+        const expectedSnippet2 = `  Line 3.\n  Keyword at end.`;
+
+        // Check first snippet precisely (no prefix ellipsis)
+        expect(resultText).toContain(expectedSnippet1);
+        // Ensure it doesn't have the prefix ellipsis immediately before
+        expect(resultText).not.toContain(`...\n${expectedSnippet1}`); 
+
+        // Check second snippet precisely (no suffix ellipsis)
+        expect(resultText).toContain(expectedSnippet2);
+        // Ensure it doesn't have the suffix ellipsis immediately after
+        expect(resultText).not.toContain(`${expectedSnippet2}\n...`); 
+    });
+
+    it('should indicate when a match is found only in metadata', async () => {
+         const handler = getToolHandler();
+         const type = 'config';
+         const configContent = `---
+setting: keyword
+---
+
+Main content without the word.`;
+         const configDirents = [{ name: 'app.md', isFile: () => true }];
+         fs.stat.mockResolvedValue({ isDirectory: () => true });
+         fs.readdir.mockResolvedValue(configDirents);
+         fs.readFile.mockResolvedValue(configContent);
+
+         const result = await handler({ query: 'keyword', type: type });
+         const resultText = result.content[0].text;
+
+         expect(resultText).toContain('Found 1 entry');
+         expect(resultText).toContain('**config/app**');
+         expect(resultText).toContain('  (Match found in metadata)');
     });
 
 }); 

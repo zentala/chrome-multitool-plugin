@@ -63,49 +63,57 @@ export function registerSearchEntriesTool(server, contextDataPath) {
                     const rawContent = await fs.readFile(filePath, 'utf8');
                     const { metadata, mainContent } = parseFrontMatter(rawContent, filePath);
 
-                    // Apply metadata filters
+                    // Apply metadata filters FIRST
                     let metadataMatch = true;
                     if (metadata.parseError && (requiredTags.length > 0 || requiredStatus)) {
-                        metadataMatch = false; // Cannot match if parse failed
+                        metadataMatch = false; // Cannot match filters if parse failed
                     } else if (!metadata.parseError) {
+                        // Check status filter
                         if (requiredStatus && (!metadata.status || String(metadata.status).toLowerCase() !== requiredStatus)) {
                             metadataMatch = false;
                         }
+                        // Check tags filter (only if status filter passed or wasn't required)
                         if (metadataMatch && requiredTags.length > 0) {
                              const entryTags = Array.isArray(metadata.tags) ? metadata.tags.map(t => String(t).toLowerCase()) : [];
+                             // Check if ALL required tags are present
                              if (!requiredTags.every(reqTag => entryTags.includes(reqTag))) {
                                  metadataMatch = false;
                              }
                         }
                     }
 
-                    // Search content only if metadata matches
-                    if (metadataMatch && mainContent.toLowerCase().includes(queryLower)) { 
+                    // If metadata filters don't match, skip this file entirely
+                    if (!metadataMatch) continue; 
+
+                    // Metadata filters passed, now search content and rawContent (for metadata match fallback)
+                    let contentMatchFound = false;
+                    const snippets = [];
+                    if (mainContent.toLowerCase().includes(queryLower)) { 
+                       contentMatchFound = true;
                        const lines = mainContent.split('\n');
-                       const snippets = [];
                        for (let i = 0; i < lines.length; i++) {
                             if (lines[i].toLowerCase().includes(queryLower)) {
                                 const start = Math.max(0, i - CONTEXT_LINES);
                                 const end = Math.min(lines.length, i + CONTEXT_LINES + 1);
                                 const context = lines.slice(start, end).join('\n');
-                                // Add ellipsis if context doesn't start/end at the beginning/end of the section
                                 const prefix = start > 0 ? '...\n' : '';
                                 const suffix = end < lines.length ? '\n...' : '';
                                 snippets.push(prefix + context + suffix);
-                                // Avoid adding overlapping contexts, jump ahead
-                                i = end -1; 
+                                i = end - 1; // Avoid overlapping contexts
                             }
                        }
-                       if (snippets.length > 0) {
-                            results.push({ id: entryId, snippets });
-                       } else {
-                           // Fallback: if query is in rawContent but NOT mainContent (i.e., in metadata)
-                           // Still add the entry ID but without snippets
-                           if (rawContent.toLowerCase().includes(queryLower)) {
-                               results.push({ id: entryId, snippets: ["(Match found in metadata)"] });
-                           }
-                       }
                     }
+
+                    // If content matched, add with snippets
+                    if (contentMatchFound && snippets.length > 0) {
+                        results.push({ id: entryId, snippets });
+                    } 
+                    // If no content match BUT rawContent matches (metadata filters already passed)
+                    else if (!contentMatchFound && rawContent.toLowerCase().includes(queryLower)) {
+                        results.push({ id: entryId, snippets: ["(Match found in metadata)"] });
+                    }
+                    // Otherwise, no match found in this file respecting filters (already handled by initial metadata check)
+
                   } catch (readError) {
                      if (readError.code !== 'ENOENT') console.error(`Error reading ${filePath} during search:`, readError);
                   }
