@@ -79,8 +79,8 @@ ${originalContent}`;
         expect(writeFileCall[1]).toContain(newContent);
         expect(writeFileCall[1]).toContain(`status: ${originalMetadata.status}`); // Original status preserved
         expect(writeFileCall[1]).toContain(`owner: ${originalMetadata.owner}`); // Original owner preserved
-        expect(writeFileCall[1]).toContain(`createdAt: ${originalMetadata.createdAt}`); // Original createdAt preserved
-        expect(writeFileCall[1]).toContain(`updatedAt: ${mockDate.toISOString()}`); // Updated timestamp
+        expect(writeFileCall[1]).toContain(`createdAt: '${originalMetadata.createdAt}'`); // Original timestamp remains (quoted)
+        expect(writeFileCall[1]).toContain(`updatedAt: '${mockDate.toISOString()}'`); // Updated timestamp (quoted)
         expect(writeFileCall[2]).toBe('utf8');
 
         expect(result.content[0].text).toContain('Successfully updated');
@@ -100,8 +100,8 @@ ${originalContent}`;
         expect(writeFileCall[1]).toContain(`status: ${metadataUpdates.status}`); // Updated status
         expect(writeFileCall[1]).toContain(`priority: ${metadataUpdates.priority}`); // Added priority
         expect(writeFileCall[1]).toContain(`owner: ${originalMetadata.owner}`); // Original owner preserved
-        expect(writeFileCall[1]).toContain(`createdAt: ${originalMetadata.createdAt}`);
-        expect(writeFileCall[1]).toContain(`updatedAt: ${mockDate.toISOString()}`);
+        expect(writeFileCall[1]).toContain(`createdAt: '${originalMetadata.createdAt}'`);
+        expect(writeFileCall[1]).toContain(`updatedAt: '${mockDate.toISOString()}'`);
 
         expect(result.content[0].text).toContain('Successfully updated');
     });
@@ -120,8 +120,8 @@ ${originalContent}`;
         expect(writeFileCall[1]).toContain(newContent); // New content
         expect(writeFileCall[1]).toContain(`status: ${metadataUpdates.status}`); // Updated status
         expect(writeFileCall[1]).toContain(`owner: ${metadataUpdates.owner}`); // Updated owner
-        expect(writeFileCall[1]).toContain(`createdAt: ${originalMetadata.createdAt}`);
-        expect(writeFileCall[1]).toContain(`updatedAt: ${mockDate.toISOString()}`);
+        expect(writeFileCall[1]).toContain(`createdAt: '${originalMetadata.createdAt}'`);
+        expect(writeFileCall[1]).toContain(`updatedAt: '${mockDate.toISOString()}'`);
 
         expect(result.content[0].text).toContain('Successfully updated');
     });

@@ -64,7 +64,8 @@ export const formatWithFrontMatter = (metadata, content) => {
      });
 
      // Manually construct the final string to have full control over spacing
-     const separator = content && content.length > 0 ? '\n' : ''; // Add newline only if content exists
+     // Test expects TWO newlines if content exists
+     const separator = content && content.length > 0 ? '\n\n' : ''; // Add TWO newlines only if content exists
      return `---
 ${yamlString.trim()}
 ---${separator}${content}`;
