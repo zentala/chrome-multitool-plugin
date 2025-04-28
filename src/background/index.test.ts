@@ -1,11 +1,11 @@
-import { describe, it, expect, vi, beforeEach, Mock, afterEach, beforeAll } from 'vitest';
+import { describe, it, expect, vi, beforeEach, Mock, afterEach } from 'vitest';
 
 // --- Mock Dependencies --- //
 
 // Mock aiFacade
 vi.mock('../services/aiFacade', () => ({
   aiFacade: {
-    parseCurrencyInput: vi.fn(),
+    parseCurrency: vi.fn(),
     // Add other methods if aiFacade expands
   },
 }));
@@ -37,14 +37,14 @@ import './index';
 import './listeners';
 
 // --- Get Typed Mock Functions --- //
-const mockParseCurrencyInput = aiFacade.parseCurrencyInput as Mock;
+const mockParseCurrency = aiFacade.parseCurrency as Mock;
 const mockGetRate = exchangeRateService.getRate as Mock;
 
 // Mock chrome APIs (relying on setupTests.ts stubs)
 const mockCreateContextMenu = chrome.contextMenus.create as Mock;
 const mockRemoveContextMenu = chrome.contextMenus.remove as Mock;
 const mockCreateNotification = chrome.notifications.create as Mock;
-const mockSendMessage = chrome.runtime.sendMessage as Mock;
+// const mockSendMessage = chrome.runtime.sendMessage as Mock; // Remove unused variable
 const mockOnMessageAddListener = chrome.runtime.onMessage.addListener as Mock;
 const mockOnInstalledAddListener = chrome.runtime.onInstalled.addListener as Mock;
 const mockContextMenusOnClickedAddListener = chrome.contextMenus.onClicked.addListener as Mock;
@@ -55,7 +55,7 @@ describe('Background Script Integration Tests', () => {
     vi.clearAllMocks();
     // Re-run listener setup IF it was conditional or needs resetting. 
     // Assuming the top-level imports already added listeners via mocks once.
-    mockParseCurrencyInput.mockReset();
+    mockParseCurrency.mockReset();
     mockGetRate.mockReset();
     mockRemoveContextMenu.mockReset();
     mockCreateContextMenu.mockReset();
@@ -76,7 +76,7 @@ describe('Background Script Integration Tests', () => {
       const result = await handleCurrencyConversionRequest('');
       expect(result.success).toBe(false);
       expect(result.error).toBe('Input text is empty.');
-      expect(mockParseCurrencyInput).not.toHaveBeenCalled();
+      expect(mockParseCurrency).not.toHaveBeenCalled();
       expect(mockGetRate).not.toHaveBeenCalled();
     });
 
@@ -86,13 +86,13 @@ describe('Background Script Integration Tests', () => {
       const rate = 4.5;
       const expectedResult = { success: true, originalAmount: 100, originalCurrency: 'EUR', convertedAmount: 450, targetCurrency: 'PLN', rate: 4.5 };
 
-      mockParseCurrencyInput.mockResolvedValue(parsed);
+      mockParseCurrency.mockResolvedValue(parsed);
       mockGetRate.mockResolvedValue(rate);
 
       const result = await handleCurrencyConversionRequest(inputText);
 
       expect(result).toEqual(expectedResult);
-      expect(mockParseCurrencyInput).toHaveBeenCalledWith(inputText);
+      expect(mockParseCurrency).toHaveBeenCalledWith(inputText);
       expect(mockGetRate).toHaveBeenCalledWith('EUR', 'PLN');
     });
 
@@ -100,14 +100,14 @@ describe('Background Script Integration Tests', () => {
       const inputText = 'invalid text';
       const parsed = { success: false, error: 'Could not parse' };
 
-      mockParseCurrencyInput.mockResolvedValue(parsed);
+      mockParseCurrency.mockResolvedValue(parsed);
 
       const result = await handleCurrencyConversionRequest(inputText);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('AI parsing failed: Could not parse');
       expect(result.needsClarification).toBe(false); // Default if not specific parsing_failed error
-      expect(mockParseCurrencyInput).toHaveBeenCalledWith(inputText);
+      expect(mockParseCurrency).toHaveBeenCalledWith(inputText);
       expect(mockGetRate).not.toHaveBeenCalled();
     });
     
@@ -116,23 +116,26 @@ describe('Background Script Integration Tests', () => {
       // Simulate the specific error structure that triggers needsClarification
       const parsed = { success: false, error: 'parsing_failed: currency ambiguous' }; 
 
-      mockParseCurrencyInput.mockResolvedValue(parsed);
+      mockParseCurrency.mockResolvedValue(parsed);
 
       const result = await handleCurrencyConversionRequest(inputText);
 
       expect(result.success).toBe(false);
       expect(result.error).toContain('AI parsing failed: parsing_failed: currency ambiguous');
       expect(result.needsClarification).toBe(true); // Check the flag
-      expect(mockParseCurrencyInput).toHaveBeenCalledWith(inputText);
+      expect(mockParseCurrency).toHaveBeenCalledWith(inputText);
       expect(mockGetRate).not.toHaveBeenCalled();
     });
 
     it('should handle rate fetching failure', async () => {
+      // Arrange
+      // Remove unused variable
+      // const mockSendMessage = vi.fn(); 
+      mockParseCurrency.mockResolvedValue({ success: true, amount: 100, currency: 'USD' });
+      mockGetRate.mockRejectedValue(new Error('API Error'));
+
       const inputText = '200 CAD';
       const parsed = { success: true, amount: 200, currency: 'CAD' };
-
-      mockParseCurrencyInput.mockResolvedValue(parsed);
-      mockGetRate.mockResolvedValue(null); // Simulate rate service failure
 
       const result = await handleCurrencyConversionRequest(inputText);
 
@@ -140,7 +143,7 @@ describe('Background Script Integration Tests', () => {
       expect(result.error).toContain('Failed to get exchange rate for CAD to PLN');
       expect(result.originalAmount).toBe(200);
       expect(result.originalCurrency).toBe('CAD');
-      expect(mockParseCurrencyInput).toHaveBeenCalledWith(inputText);
+      expect(mockParseCurrency).toHaveBeenCalledWith(inputText);
       expect(mockGetRate).toHaveBeenCalledWith('CAD', 'PLN');
     });
 
@@ -194,10 +197,10 @@ describe('Background Script Integration Tests', () => {
        if (!onClickedCallback) return; // Add check
        const selectionText = '50 USD';
        const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'ZNTL_CONVERT_CURRENCY', selectionText: selectionText, editable: false, pageUrl: 'some_url' };
-       mockParseCurrencyInput.mockResolvedValue({ success: true, amount: 50, currency: 'USD' });
+       mockParseCurrency.mockResolvedValue({ success: true, amount: 50, currency: 'USD' });
        mockGetRate.mockResolvedValue(4.0);
        await onClickedCallback(mockInfo, undefined);
-       expect(mockParseCurrencyInput).toHaveBeenCalledWith(selectionText);
+       expect(mockParseCurrency).toHaveBeenCalledWith(selectionText);
        expect(mockGetRate).toHaveBeenCalledWith('USD', 'PLN');
        expect(mockCreateNotification).toHaveBeenCalledTimes(1);
        expect(mockCreateNotification).toHaveBeenCalledWith(expect.objectContaining({ title: 'ZNTL Konwerter Walut', message: '50 USD = 200.00 PLN' }));
@@ -210,7 +213,7 @@ describe('Background Script Integration Tests', () => {
        const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'ZNTL_CONVERT_CURRENCY', selectionText: selectionText, editable: false, pageUrl: 'some_url' };
        // Mock should return the raw error from the AI service
        const rawAiErrorMessage = 'Could not parse'; 
-       mockParseCurrencyInput.mockResolvedValue({ success: false, error: rawAiErrorMessage });
+       mockParseCurrency.mockResolvedValue({ success: false, error: rawAiErrorMessage });
        
        await onClickedCallback(mockInfo, undefined);
        
@@ -223,7 +226,7 @@ describe('Background Script Integration Tests', () => {
          title: 'Błąd Konwersji ZNTL',
          message: expectedFormattedErrorMessage 
        }));
-       expect(mockParseCurrencyInput).toHaveBeenCalledWith(selectionText);
+       expect(mockParseCurrency).toHaveBeenCalledWith(selectionText);
        expect(mockGetRate).not.toHaveBeenCalled();
      });
 
@@ -232,7 +235,7 @@ describe('Background Script Integration Tests', () => {
         if (!onClickedCallback) return; // Add check
         const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'WRONG_ID', selectionText: '100 EUR', editable: false, pageUrl: 'some_url' };
         await onClickedCallback(mockInfo, undefined);
-        expect(mockParseCurrencyInput).not.toHaveBeenCalled();
+        expect(mockParseCurrency).not.toHaveBeenCalled();
         expect(mockCreateNotification).not.toHaveBeenCalled();
      });
 
@@ -241,7 +244,7 @@ describe('Background Script Integration Tests', () => {
          if (!onClickedCallback) return; // Add check
          const mockInfo: chrome.contextMenus.OnClickData = { menuItemId: 'ZNTL_CONVERT_CURRENCY', editable: false, pageUrl: 'some_url' }; 
          await onClickedCallback(mockInfo, undefined);
-         expect(mockParseCurrencyInput).not.toHaveBeenCalled();
+         expect(mockParseCurrency).not.toHaveBeenCalled();
          expect(mockCreateNotification).not.toHaveBeenCalled();
      });
   });

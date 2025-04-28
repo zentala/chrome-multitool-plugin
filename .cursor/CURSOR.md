@@ -68,6 +68,12 @@ This project is a Chrome browser extension named "Zentala Chrome Multitool Plugi
 - Vendor libraries are split into a separate `vendors.js` chunk for better caching.
 - Scripts available: `npm run build` (production), `npm run dev` (development with watch), `npm test`, `npm run lint`.
 
+## Cloud Infrastructure
+
+- **Google Cloud Project:** `multitool-extension`
+  - **Link:** [https://console.cloud.google.com/welcome?project=multitool-extension](https://console.cloud.google.com/welcome?project=multitool-extension)
+  - **Used for:** Vertex AI (Gemini API)
+
 ## Potential Next Steps/Areas to Explore
 
 - Examine the code within `src/background`, `src/services`, `src/components`, `src/popup.tsx`, and `src/bookmarkManager.tsx` to understand the specific implementations of features.
