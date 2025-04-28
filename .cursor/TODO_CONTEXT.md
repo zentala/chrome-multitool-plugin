@@ -35,7 +35,7 @@ Lista zadań i pomysłów na ulepszenie serwera MCP `@context` do zarządzania k
 
 5.  **[x] Szablony**
     *   [x] Dodać narzędzie `create_from_template(type, template_name, variables?)` do tworzenia wpisów na podstawie szablonów Markdown (podstawowa wersja istnieje).
-    *   [ ] Zastępowanie zmiennych `{{placeholder}}` również w metadanych szablonu.
+    *   [x] Zastępowanie zmiennych `{{placeholder}}` również w metadanych szablonu.
     *   [ ] Rozważyć użycie silnika szablonów (np. Handlebars) dla bardziej zaawansowanej logiki.
     *   [x] Lepsza obsługa niezastąpionych placeholderów (pozostawiane zamiast usuwania).
     *   [x] Dodać/zweryfikować testy jednostkowe dla `create_from_template` (pokrycie podstawowe i przypadki błędów).
