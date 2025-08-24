@@ -18,5 +18,6 @@
     }
   },
   "terminal.integrated.defaultProfile.windows": "PowerShell 7",
-  "terminal.integrated.usePreviewBox": false
-} 
+  "terminal.integrated.usePreviewBox": false,
+  "npm.packageManager": "pnpm"
+}
