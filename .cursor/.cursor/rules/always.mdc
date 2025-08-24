@@ -1,0 +1,74 @@
+---
+description: 
+globs: 
+alwaysApply: true
+---
+# Always
+
+## General
+
+- **Work in YOLO mode:**  
+  Trust your judgment. I have aligned with you on this — **DO NOT ask for permission**.  
+  If unsure, follow tasks from `./.cursor/TODO.md`.
+
+- **Context awareness:**  
+  Always refer to `./.cursor/CURSOR.md` for project overview and context.  
+  Update it when significant decisions are made.
+
+- **Task tracking:**  
+  - Maintain and follow `./.cursor/TODO.md`.
+  - Use `[ ]` for open tasks and `[x]` for completed ones.
+  - Refactor old TODOs to this checkbox format.
+  - Update TODOs immediately after completing changes.
+
+## Commits
+
+- Commit **after every completed task**.
+- Test code before committing.
+  - `pnpm run test >> test.log`
+  - then fix them all, then commit
+- Use **Conventional Commits** format.
+- Always `git status` before commit and **try to commit all relevant changes** together.
+- sometimes ammend commit if it makes more sense
+
+## Terminal
+
+- Use **PowerShell 7** (`pwsh`) on **Windows 11**.
+- Use **pnpm** as the package manager.
+- Prefer **non-interactive mode** for commands when possible.
+- Never use ` | cat` becasuse not works!
+
+## Code and Documentation Style
+
+- Write **junior-friendly code and documentation**:
+  - Use **JSDoc comments** on exported functions, classes, complex logic.
+  - Add **TODO** and **FIXME** in code to mark future improvements or known issues.
+  - If file is longer than 200 lines split it into smaler files
+  - on top of every ts/tsx file comment what is purpose of this file in the app context
+  - If fixing a problem:
+    - Document **which approaches were tried and failed**.
+
+- Maintain folder cleanliness:
+  - After major changes, **remove or archive outdated files**.
+  - Update `./.cursor/TODO.md` plans or `./.cursor/ARCH.md` if structure changed & search here for info
+
+
+## Testing
+
+- Tests don't have to cover everything initially.
+- If skipping a hard-to-test part:
+  - Leave a **comment** explaining what was skipped and why.
+  - Add `TODO` or `FIXME` for future improvement.
+- Prioritize testing core logic over minor UI behaviors unless critical.
+
+## Cursor and Tools Behavior
+
+- If you experience editing issues with tools (file won't update few times):
+  - Pause work immediately and **ask the user to restart Cursor**.
+  - After restart, continue work.
+
+# ✨ Notes for Better Context Maintenance
+
+- Regularly refresh all files under `.cursor/`.
+- Enforce Stale Checks to ensure documentation, diagrams, and TODOs are up-to-date.
+- Document what didn't work, not only what did — build context over time.

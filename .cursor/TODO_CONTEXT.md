@@ -27,7 +27,7 @@ Lista zadań i pomysłów na ulepszenie serwera MCP `@context` do zarządzania k
 
 3.  **[ ] Ulepszone Wyszukiwanie**
     *   [x] Zwracanie fragmentów tekstu (kontekstu) w wynikach `search_entries` (ze wskaźnikiem linii i dopasowania).
-    *   [ ] (Opcjonalnie) Wsparcie dla bardziej zaawansowanych zapytań (operatory logiczne, regex).
+    *   [~] (Opcjonalnie) Wsparcie dla bardziej zaawansowanych zapytań (operatory logiczne, regex).
 
 4.  **[x] Powiązania Między Wpisami**
     *   [x] Dodać narzędzie `get_related_entries(type, id)` wykorzystujące pole `related` w metadanych.

@@ -60,6 +60,7 @@
     "@mui/styles": "^6.2.0",
     "@mui/system": "^6.2.0",
     "@mui/x-tree-view": "^8.1.0",
+    "js-yaml": "^4.1.0",
     "langchain": "^0.3.7",
     "limiter": "^3.0.0",
     "react": "^19.0.0",

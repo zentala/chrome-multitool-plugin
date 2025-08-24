@@ -1,30 +1,11 @@
 import { initializeContextMenu, setupContextMenuOnClickListener, setupRuntimeMessageListener } from './listeners';
-import { ConversionResult, IAIAdapter, ParseCurrencyOutput } from '../interfaces';
-import { GoogleAIAdapter } from '../services/ai/GoogleAIAdapter';
+import { ConversionResult, ParseCurrencyOutput } from '../interfaces';
 import { exchangeRateService } from '../services/exchangeRateService';
+import { getAIProvider } from './aiProvider';
 
 console.log('Background script loaded.');
 
 // --- AI Provider Initialization (Lazy Singleton) --- //
-let aiProviderInstance: IAIAdapter | null = null;
-
-function getAIProvider(): IAIAdapter {
-  if (!aiProviderInstance) {
-    console.log('Initializing AI Provider...');
-    try {
-      aiProviderInstance = new GoogleAIAdapter(); 
-      console.log('AI Provider Initialized: Google AI');
-    } catch (error) {
-        console.error("Failed to initialize AI Provider:", error);
-        // Fallback to a dummy provider that always returns errors?
-        // Or rethrow/handle differently based on desired behavior without API key
-        aiProviderInstance = {
-            parseCurrency: async () => ({ success: false, error: 'AI Provider not initialized correctly.' })
-        };
-    }
-  }
-  return aiProviderInstance;
-}
 
 // --- Event Listener Setup --- //
 
@@ -86,67 +67,62 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
  * Handles the entire currency conversion request process.
  *
  * @param text - The text potentially containing currency information.
+ * @param targetCurrency - Optional: The target currency code (ISO 4217). Defaults to PLN.
  * @returns A Promise resolving to a ConversionResult.
  */
 export async function handleCurrencyConversionRequest(
-  text: string
+  text: string,
+  targetCurrency = 'PLN'
 ): Promise<ConversionResult> {
-  console.log(`Handling conversion request for text: "${text}"`);
+  console.log(`Handling conversion request for text: "${text}" to ${targetCurrency}`);
   
-  // Get the AI provider instance (initializes on first call)
   const aiProvider = getAIProvider();
 
   try {
-    // Use the adapter's parseCurrency method directly
-    const parsed: ParseCurrencyOutput = await aiProvider.parseCurrency({ text });
+    // Pass only the text field as defined in ParseCurrencyInput
+    const parsed: ParseCurrencyOutput = await aiProvider.parseCurrency({ text }); 
     console.log('Parsed AI response:', parsed);
 
     if (!parsed.success) {
-      // Handle cases where parsing failed or needs clarification
-      if (parsed.needsClarification) {
-        console.log('AI requires clarification:', parsed.error); // Use error field for clarification message?
+      // Check if clarification is needed and prompt is a string
+      if (parsed.needsClarification && typeof parsed.clarificationPrompt === 'string') { 
         return {
           success: false,
           needsClarification: true,
-          clarificationQuestion: parsed.error || 'Unknown clarification needed.', // Assuming error holds the question
+          clarificationQuestion: parsed.clarificationPrompt, // We know it's a string here
           originalText: text,
           error: 'AI requires clarification.',
         };
       } else {
-        // General parsing failure
-        console.error('AI parsing failed:', parsed.error);
-        return { success: false, error: `AI parsing error: ${parsed.error || 'Unknown error'}` };
+        // Handle cases where parsing failed without needing clarification, or the prompt is missing/not a string
+        console.error('AI parsing failed or clarification prompt invalid:', parsed.error);
+        return { success: false, error: `AI parsing error: ${parsed.error || 'Unknown error or invalid/missing prompt'}` };
       }
     }
 
-    // If parsing succeeded, we have amount and currencyCode
     const validatedParsed = {
         amount: parsed.amount!,
-        currency: parsed.currencyCode! // Use currencyCode from ParseCurrencyOutput
+        currency: parsed.currencyCode! 
     };
     console.log('Parsed response validated:', validatedParsed);
 
-    // Fetch exchange rate using exchangeRateService
-    const rate = await exchangeRateService.getRate(validatedParsed.currency, 'PLN');
-    console.log(`Fetched exchange rate ${validatedParsed.currency} -> PLN:`, rate);
+    // Fetch exchange rate using the provided targetCurrency
+    const rate = await exchangeRateService.getRate(validatedParsed.currency, targetCurrency);
+    console.log(`Fetched exchange rate ${validatedParsed.currency} -> ${targetCurrency}:`, rate);
 
-    // Perform currency conversion directly
     const convertedAmount = validatedParsed.amount * rate;
     console.log('Calculated converted amount:', convertedAmount);
 
-    // Check if conversion was successful (rate is a valid number)
     if (typeof rate === 'number' && !isNaN(rate)) {
       return {
         success: true,
         originalAmount: validatedParsed.amount,
         originalCurrency: validatedParsed.currency,
-        convertedAmount: convertedAmount, // Use the calculated amount
-        targetCurrency: 'PLN',
-        rate: rate, // Include the rate used
-        // rateDate is not available here
+        convertedAmount: convertedAmount, 
+        targetCurrency: targetCurrency, // Return the used target currency
+        rate: rate,
       };
     } else {
-      // Handle cases where rate might not be valid (though getRate should throw)
       console.error('Invalid rate received:', rate);
       return {
         success: false,
@@ -156,7 +132,6 @@ export async function handleCurrencyConversionRequest(
   } catch (error: unknown) {
     console.error('Error during currency conversion request:', error);
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-    // Consider more specific error handling based on error type
     if (error instanceof Error && error.constructor.name === 'AIAdapterError') {
          return { success: false, error: `AI Service Error: ${errorMessage}` };
     }

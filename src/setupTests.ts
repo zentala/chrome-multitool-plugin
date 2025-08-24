@@ -4,9 +4,6 @@ import { vi } from 'vitest'; // Import vi
 // Import original jest-dom matchers
 import '@testing-library/jest-dom';
 
-// Remove unused import
-// import * as RealAdapterModule from '../services/ai/GoogleAIAdapter'; // Import type info
-
 // --- Workaround for Vitest/React 18 act warning --- //
 if (typeof globalThis !== 'undefined') {
   // Revert to any for simplicity in test setup
@@ -23,94 +20,145 @@ if (typeof self !== 'undefined') {
 
 // --- Manual Chrome API Mocks using Vitest --- //
 
-// Mock implementation for chrome.runtime.sendMessage
-const sendMessageMock = vi.fn((message, callback) => {
-  // Default mock: Immediately call callback if provided (for sync behavior)
-  // For async behavior, tests need to manually resolve the promise or mock implementation
-  if (callback) {
-    // Simulate async callback for testing
-    // setTimeout(() => callback({ success: true, mockResponse: 'mocked response' }), 0);
-    // Or return a default mock response immediately
-    // callback({ success: true, mockResponse: 'mocked response' });
-  }
-  // Return a promise for async message handling
-  return Promise.resolve({ success: true, mockResponse: 'mocked response' });
-});
-
-// Mock implementation for chrome.storage.local
-const storageLocalMock = {
-  get: vi.fn().mockResolvedValue({}), // Default mock resolves with empty object
-  set: vi.fn().mockResolvedValue(undefined),
-  remove: vi.fn().mockResolvedValue(undefined),
-  clear: vi.fn().mockResolvedValue(undefined),
-};
-
-// Mock implementation for chrome.contextMenus
-const contextMenusMock = {
-  create: vi.fn(),
-  update: vi.fn(),
-  remove: vi.fn((_menuItemId, callback) => { if (callback) callback(); }), // Call callback if provided
-  removeAll: vi.fn((callback) => { if (callback) callback(); }),
-  onClicked: {
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    hasListener: vi.fn().mockReturnValue(false),
-  },
-};
-
-// Mock implementation for chrome.notifications
-const notificationsMock = {
-  create: vi.fn().mockResolvedValue('mock-notification-id'),
-  update: vi.fn().mockResolvedValue(true),
-  clear: vi.fn().mockResolvedValue(true),
-  getAll: vi.fn().mockResolvedValue({}),
-  getPermissionLevel: vi.fn().mockResolvedValue('granted'),
-  onClicked: {
-    addListener: vi.fn(),
-    // ... other event listeners
-  },
-  // ... other notification events and methods
-};
-
-// Mock implementation for chrome.runtime
-const runtimeMock = {
-  sendMessage: sendMessageMock,
-  onMessage: {
-    addListener: vi.fn(),
-    removeListener: vi.fn(),
-    hasListener: vi.fn().mockReturnValue(false),
-  },
-  onInstalled: {
-      addListener: vi.fn(),
-      // ... other event listeners
-  },
-  getURL: vi.fn((path) => `chrome-extension://mock-id/${path}`),
-  lastError: undefined, // Can be set in tests if needed
-};
-
-// Mock implementation for chrome.tabs (if needed by other parts)
-const tabsMock = {
-    create: vi.fn().mockResolvedValue({ id: 123 }),
-    // ... other tab methods
-};
-
-// Use vi.stubGlobal to assign the mock to the global object
+// Use vi.stubGlobal to assign the mock directly
 vi.stubGlobal('chrome', {
-  runtime: runtimeMock,
-  storage: {
-    local: storageLocalMock,
-    // sync: { ... } // Mock sync storage if needed
+  runtime: {
+    sendMessage: vi.fn((message, callback) => {
+      // Default implementation, can be overridden in tests
+      if (callback) {
+        // Simulate async response if callback is provided
+        // setTimeout(() => callback({ success: true, mockResponse: 'mocked default response' }), 0);
+      }
+      // Return a promise for async usage
+      return Promise.resolve({ success: true, mockResponse: 'mocked default response' });
+    }),
+    onMessage: {
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      hasListener: vi.fn().mockReturnValue(false),
+    },
+    onInstalled: {
+        addListener: vi.fn(),
+        // Mock other onInstalled properties if needed
+    },
+    getURL: vi.fn((path) => `chrome-extension://mock-id/${path}`),
+    lastError: undefined, // Start as undefined
+    // Mock other necessary runtime properties
   },
-  contextMenus: contextMenusMock,
-  notifications: notificationsMock,
-  tabs: tabsMock,
-  // Add other needed chrome APIs here
+  storage: {
+    local: {
+      get: vi.fn().mockResolvedValue({}),
+      set: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+      clear: vi.fn().mockResolvedValue(undefined),
+    },
+    sync: {
+      get: vi.fn().mockImplementation((keys, callback) => {
+        // Simpler Default Implementation 
+        // This default implementation primarily supports the callback pattern.
+        // Tests needing specific resolved values should use mockImplementation.
+        const simpleResult = {}; // Always return empty by default via callback
+        
+        if (callback) {
+            // Simulate async callback behavior with the default empty object
+            // Tests needing specific data in callback MUST use mockImplementation
+            setTimeout(() => callback(simpleResult), 0); 
+        }
+        // The promise resolution can be controlled by mockResolvedValue in tests
+        // It might be disconnected from the callback value in this simple mock.
+        return Promise.resolve(simpleResult); 
+      }),
+      set: vi.fn((items, callback) => {
+        // Default mock: resolve promise, call callback if provided
+        if (callback) {
+          // Simulate async callback behavior
+          setTimeout(() => callback(), 0);
+        }
+        return Promise.resolve();
+      }),
+      clear: vi.fn((callback) => {
+        if (callback) {
+          // Simulate async callback behavior
+          setTimeout(() => callback(), 0);
+        }
+        return Promise.resolve();
+      }),
+      remove: vi.fn((keys, callback) => { // Added remove mock
+         if (callback) {
+             setTimeout(() => callback(), 0);
+         }
+         return Promise.resolve();
+      }),
+      // Mock other storage.sync properties if needed (e.g., QUOTA_BYTES)
+    },
+    // Mock storage.managed if needed
+    managed: {
+      get: vi.fn().mockResolvedValue({}),
+      set: vi.fn().mockResolvedValue(undefined),
+      remove: vi.fn().mockResolvedValue(undefined),
+      clear: vi.fn().mockResolvedValue(undefined),
+    },
+    // Mock storage.session if needed (available in Manifest V3)
+    session: {
+        get: vi.fn().mockResolvedValue({}),
+        set: vi.fn().mockResolvedValue(undefined),
+        remove: vi.fn().mockResolvedValue(undefined),
+        clear: vi.fn().mockResolvedValue(undefined),
+    }
+  },
+  contextMenus: {
+    create: vi.fn((createProperties, callback) => {
+      if (callback) setTimeout(() => callback(), 0);
+      // No return value needed based on types
+    }),
+    update: vi.fn((id, updateProperties, callback) => {
+      if (callback) setTimeout(() => callback(), 0);
+      // No return value needed based on types
+    }),
+    remove: vi.fn((menuItemId, callback) => {
+      if (callback) setTimeout(() => callback(), 0);
+      // No return value needed based on types
+    }),
+    removeAll: vi.fn((callback) => {
+      if (callback) setTimeout(() => callback(), 0);
+      // No return value needed based on types
+    }),
+    onClicked: {
+      addListener: vi.fn(),
+      removeListener: vi.fn(),
+      hasListener: vi.fn().mockReturnValue(false),
+    },
+    // Mock other contextMenus properties if needed
+  },
+  notifications: {
+    create: vi.fn((optionsOrId, optionsOrCallback, callback) => {
+        const notificationId = typeof optionsOrId === 'string' ? optionsOrId : `mock-notification-${Date.now()}`;
+        if (typeof optionsOrCallback === 'function') optionsOrCallback(notificationId);
+        if (typeof callback === 'function') callback(notificationId);
+        return Promise.resolve(notificationId);
+    }),
+    update: vi.fn().mockResolvedValue(true),
+    clear: vi.fn().mockResolvedValue(true),
+    getAll: vi.fn().mockResolvedValue({}),
+    getPermissionLevel: vi.fn().mockResolvedValue('granted'),
+    onClicked: {
+      addListener: vi.fn(),
+      // Mock other notification events if needed
+    },
+    // Mock other notification methods if needed
+  },
+  tabs: {
+      create: vi.fn().mockResolvedValue({ id: 123, url: 'mock_url' }), // Added url for more complete mock
+      query: vi.fn().mockResolvedValue([{ id: 123, url: 'mock_url', active: true, windowId: 1 }]), // Mock query result
+      sendMessage: vi.fn().mockResolvedValue({ success: true, response: 'mock tab response' }), // Mock tabs.sendMessage
+      // Mock other tabs methods/events if needed (e.g., onUpdated, executeScript)
+  },
+  // Mock other top-level chrome APIs if necessary (e.g., action, commands, i18n)
+  action: { // Mock chrome.action (Manifest V3 badge API)
+    setBadgeText: vi.fn().mockResolvedValue(undefined),
+    setBadgeBackgroundColor: vi.fn().mockResolvedValue(undefined),
+    // Mock other action methods/events if needed
+  }
 });
 
-// --- Mock Environment Variables for Tests --- //
-// Remove the stubEnv for GEMINI_API_KEY as the library itself is mocked now
-
-// Keep the AI Adapter mock using factory (or remove if fully handled in test file)
-// vi.mock(...) - This should be removed if the mock was moved to index.test.ts
-
-console.log('Setup file loaded with Chrome mocks and Env Var mock potentially removed.'); 
+console.log('Setup file loaded with manual Chrome API mocks.');

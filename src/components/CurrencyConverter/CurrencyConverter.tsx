@@ -1,16 +1,42 @@
 // src/components/CurrencyConverter/CurrencyConverter.tsx
 
-import React, { useState, useCallback } from 'react';
+import React, { useState, useCallback, useEffect } from 'react';
 import { ConversionResult } from '../../interfaces'; // Import the interface
 import styles from './CurrencyConverter.module.css'; // Import CSS module
+import Select, { SelectChangeEvent } from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
+
+// Define supported target currencies
+const SUPPORTED_TARGET_CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CHF'];
+const DEFAULT_TARGET_CURRENCY = 'PLN';
+const STORAGE_KEY = 'targetCurrency'; // Key for chrome.storage
 
 export const CurrencyConverter: React.FC = () => {
   const [inputValue, setInputValue] = useState<string>('');
+  const [targetCurrency, setTargetCurrency] = useState<string>(DEFAULT_TARGET_CURRENCY);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [isClarifying, setIsClarifying] = useState<boolean>(false); // Separate loading state for clarification
   const [result, setResult] = useState<ConversionResult | null>(null);
   const [showClarificationInput, setShowClarificationInput] = useState<boolean>(false);
   const [clarificationValue, setClarificationValue] = useState<string>('');
+
+  // --- Load saved target currency on mount --- //
+  useEffect(() => {
+    chrome.storage.sync.get([STORAGE_KEY], (result) => {
+      if (chrome.runtime.lastError) {
+        console.error('Error reading target currency:', chrome.runtime.lastError);
+        return;
+      }
+      const savedCurrency = result[STORAGE_KEY];
+      if (savedCurrency && SUPPORTED_TARGET_CURRENCIES.includes(savedCurrency)) {
+        console.log('Loaded target currency from storage:', savedCurrency);
+        setTargetCurrency(savedCurrency);
+      } else {
+        console.log('No valid target currency found in storage, using default:', DEFAULT_TARGET_CURRENCY);
+      }
+    });
+  }, []); // Empty dependency array means run only on mount
 
   const resetState = (keepInput = false) => {
     setIsLoading(false);
@@ -32,6 +58,23 @@ export const CurrencyConverter: React.FC = () => {
     setClarificationValue(event.target.value);
   };
 
+  const handleTargetCurrencyChange = (event: SelectChangeEvent<string>) => {
+    const newCurrency = event.target.value;
+    if (SUPPORTED_TARGET_CURRENCIES.includes(newCurrency)) {
+      setTargetCurrency(newCurrency);
+      // Save to storage
+      chrome.storage.sync.set({ [STORAGE_KEY]: newCurrency }, () => {
+        if (chrome.runtime.lastError) {
+          console.error('Error saving target currency:', chrome.runtime.lastError);
+        } else {
+          console.log('Target currency saved:', newCurrency);
+        }
+      });
+    } else {
+      console.warn('Attempted to set unsupported target currency:', newCurrency);
+    }
+  };
+
   // Handles the initial conversion request
   const handleConvertClick = useCallback(async () => {
     if (!inputValue.trim()) {
@@ -45,10 +88,11 @@ export const CurrencyConverter: React.FC = () => {
     setClarificationValue('');
 
     try {
-      console.log('Sending message to background:', { action: 'parseAndConvertCurrency', text: inputValue });
+      console.log('Sending message to background:', { action: 'parseAndConvertCurrency', text: inputValue, targetCurrency });
       const response: ConversionResult = await chrome.runtime.sendMessage({
         action: 'parseAndConvertCurrency',
         text: inputValue,
+        targetCurrency: targetCurrency, // Include target currency
       });
       console.log('Received response from background:', response);
       setResult(response);
@@ -65,7 +109,7 @@ export const CurrencyConverter: React.FC = () => {
     } finally {
       setIsLoading(false);
     }
-  }, [inputValue]);
+  }, [inputValue, targetCurrency]);
 
   // Handles submitting the clarification
   const handleClarificationSubmit = useCallback(async () => {
@@ -133,7 +177,7 @@ export const CurrencyConverter: React.FC = () => {
   return (
     <div className={styles.container}>
       <h4 className={styles.title}>Currency Converter</h4>
-      {/* Main Input */}
+      {/* Main Input & Target Currency Selector */}
       <div className={styles.inputRow}>
         <input
           type="text"
@@ -141,11 +185,34 @@ export const CurrencyConverter: React.FC = () => {
           onChange={handleInputChange}
           onKeyDown={handleKeyDown}
           placeholder="e.g., 100 USD, €50.99, 3.5M IDR"
-          disabled={isLoading || isClarifying} // Disable if any loading
+          disabled={isLoading || isClarifying} 
           className={styles.inputField}
+          style={{ flexGrow: 3 }} // Give input more space
         />
-        <button onClick={handleConvertClick} disabled={isLoading || isClarifying || showClarificationInput} className={styles.button}>
-          {isLoading && !isClarifying ? <span className={styles.spinner} data-testid="spinner"></span> : 'Convert to PLN'}
+        {/* Target Currency Select */}
+        <FormControl size="small" className={styles.targetCurrencySelect} style={{ flexGrow: 1 }}>
+          {/* <InputLabel id="target-currency-label">To</InputLabel> */}
+          <Select
+            labelId="target-currency-label"
+            id="target-currency-select"
+            value={targetCurrency}
+            onChange={handleTargetCurrencyChange}
+            disabled={isLoading || isClarifying || showClarificationInput} // Disable during loading/clarification
+            variant="outlined"
+          >
+            {SUPPORTED_TARGET_CURRENCIES.map((currency) => (
+              <MenuItem key={currency} value={currency}>
+                {currency}
+              </MenuItem>
+            ))}
+          </Select>
+        </FormControl>
+      </div>
+
+      {/* Convert Button (moved below input row) */}
+      <div className={styles.buttonRow}>
+        <button onClick={handleConvertClick} disabled={isLoading || isClarifying || showClarificationInput} className={styles.buttonFullWidth}>
+          {isLoading && !isClarifying ? <span className={styles.spinner} data-testid="spinner"></span> : `Convert to ${targetCurrency}`}
         </button>
       </div>
 

@@ -1,0 +1,18 @@
+{
+  "manifest_version": 3,
+  "name": "zentala-yt",
+  "version": "1.0",
+  "description": "Rozszerzenie do pobierania napisów z YT, sidebar w stylu Glasp i wysyłania do ChatGPT",
+  "permissions": ["storage"],
+  "content_scripts": [
+    {
+      "matches": ["https://www.youtube.com/*"],
+      "js": ["content-script.js"],
+      "css": ["content-style.css"]
+    },
+    {
+      "matches": ["https://chat.openai.com/*"],
+      "js": ["gpt-inject.js"]
+    }
+  ]
+} 

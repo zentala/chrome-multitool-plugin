@@ -4,6 +4,8 @@ import { handleCurrencyClarificationRequest } from './index';
 
 const CONTEXT_MENU_ID = 'ZNTL_CONVERT_CURRENCY';
 const DEFAULT_ICON_URL = 'icons/icon128.png'; // Default icon for notifications
+const STORAGE_KEY_TARGET_CURRENCY = 'targetCurrency'; // Use the same key as in popup
+const DEFAULT_TARGET_CURRENCY = 'PLN'; // Use the same default
 
 /**
  * Initializes the context menu for currency conversion.
@@ -34,21 +36,59 @@ export function setupContextMenuOnClickListener() {
       const selectedText = info.selectionText;
       if (selectedText) {
         try {
-          const result = await handleCurrencyConversionRequest(selectedText);
+          // Get target currency from storage
+          let targetCurrency = DEFAULT_TARGET_CURRENCY;
+          try {
+            const storageResult = await chrome.storage.sync.get(STORAGE_KEY_TARGET_CURRENCY);
+            if (storageResult[STORAGE_KEY_TARGET_CURRENCY]) {
+               targetCurrency = storageResult[STORAGE_KEY_TARGET_CURRENCY];
+               console.log('Context Menu: Using target currency from storage:', targetCurrency);
+            } else {
+               console.log('Context Menu: No target currency in storage, using default:', targetCurrency);
+            }
+          } catch (storageError) {
+              console.error('Context Menu: Error reading target currency from storage:', storageError);
+              // Show the SAME generic error notification as the main catch block
+              chrome.notifications.create(`zntl-generic-error-${Date.now()}`, {
+                  type: 'basic',
+                  iconUrl: DEFAULT_ICON_URL,
+                  title: 'Błąd Rozszerzenia ZNTL',
+                  message: 'Wystąpił nieoczekiwany błąd.', // Generic message
+              });
+              return; // Stop further execution
+          }
+          
+          // Pass targetCurrency to the handler
+          const result = await handleCurrencyConversionRequest(selectedText, targetCurrency);
+          
           if (result.success) {
             chrome.notifications.create(`zntl-conversion-${Date.now()}`, {
               type: 'basic',
               iconUrl: DEFAULT_ICON_URL,
               title: 'ZNTL Konwerter Walut',
-              message: `${selectedText} = ${result.convertedAmount?.toFixed(2)} PLN`,
+              // Display result with the correct target currency
+              message: `${selectedText} = ${result.convertedAmount?.toFixed(2)} ${result.targetCurrency}`,
             });
           } else {
-            chrome.notifications.create(`zntl-error-${Date.now()}`, {
-              type: 'basic',
-              iconUrl: DEFAULT_ICON_URL,
-              title: 'Błąd Konwersji ZNTL',
-              message: result.error || 'Nie udało się przeliczyć waluty.',
-            });
+             // Handle clarification needed from context menu?
+             if (result.needsClarification) {
+                // Less ideal from context menu, perhaps show a specific error?
+                chrome.notifications.create(`zntl-clarify-${Date.now()}`, {
+                    type: 'basic',
+                    iconUrl: DEFAULT_ICON_URL,
+                    title: 'ZNTL: Potrzebne Doprecyzowanie',
+                    // Include the question from the result
+                    message: result.clarificationQuestion || 'AI wymaga doprecyzowania.',
+                });
+             } else {
+                // General error
+                chrome.notifications.create(`zntl-error-${Date.now()}`, {
+                  type: 'basic',
+                  iconUrl: DEFAULT_ICON_URL,
+                  title: 'Błąd Konwersji ZNTL',
+                  message: result.error || 'Nie udało się przeliczyć waluty.',
+                });
+             }
           }
         } catch (error) {
           console.error('Error handling context menu click:', error);

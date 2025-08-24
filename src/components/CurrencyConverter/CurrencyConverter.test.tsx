@@ -3,40 +3,25 @@
 import React from 'react';
 import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
-import { describe, it, expect, vi, beforeEach, Mock } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
+import Select from '@mui/material/Select';
+import MenuItem from '@mui/material/MenuItem';
+import FormControl from '@mui/material/FormControl';
 
 import { CurrencyConverter } from './CurrencyConverter';
 
-// --- Mock chrome API globalnie dla tego pliku testowego --- //
-const mockSendMessageFn = vi.fn();
-const mockStorage = {
-  local: {
-    get: vi.fn().mockResolvedValue({}),
-    set: vi.fn().mockResolvedValue(undefined),
-  }
-};
-
-vi.stubGlobal('chrome', {
-  runtime: {
-    sendMessage: mockSendMessageFn,
-    // Mock inne potrzebne części runtime, jeśli są używane
-  },
-  storage: mockStorage,
-  // Mock inne potrzebne API chrome
-});
-
-// --- Uzyskanie dostępu do zamockowanej funkcji --- //
-// Teraz TypeScript powinien "widzieć" chrome dzięki stubGlobal i @types/chrome
-const mockSendMessage = chrome.runtime.sendMessage as Mock; // Użyj Mock zamiast MockInstance dla kompatybilności
+// Remove import - rely on global chrome mocked by setupTests.ts
+// import { chrome } from 'vitest-chrome';
 
 describe('CurrencyConverter Component', () => {
   beforeEach(() => {
-    // Reset mocka przed każdym testem
-    mockSendMessage.mockReset();
-    // Możesz też zresetować inne mocki, np. storage
-    vi.mocked(chrome.storage.local.get).mockClear();
-    vi.mocked(chrome.storage.local.set).mockClear();
+    // Reset mocks on the *global* chrome object
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockClear();
+    (chrome.storage.sync.get as ReturnType<typeof vi.fn>).mockClear().mockResolvedValue({}); 
+    (chrome.storage.sync.set as ReturnType<typeof vi.fn>).mockClear();
+    (chrome.storage.local.get as ReturnType<typeof vi.fn>).mockClear(); 
+    (chrome.storage.local.set as ReturnType<typeof vi.fn>).mockClear(); 
   });
 
   it('renders initial state correctly', () => {
@@ -51,6 +36,14 @@ describe('CurrencyConverter Component', () => {
     expect(screen.queryByText(/Error:/i)).not.toBeInTheDocument();
     // Check clarification input is not present
     expect(screen.queryByLabelText(/AI couldn't recognize/i)).not.toBeInTheDocument();
+  });
+
+  it('renders initial state correctly with target currency select', () => {
+    render(<CurrencyConverter />);
+    // Check for target currency select (defaulting to PLN)
+    expect(screen.getByRole('combobox')).toBeInTheDocument(); // MUI Select renders as combobox
+    // Check the displayed text content instead of value for MUI Select
+    expect(screen.getByRole('combobox')).toHaveTextContent('PLN');
   });
 
   it('updates input value on change', async () => {
@@ -74,7 +67,8 @@ describe('CurrencyConverter Component', () => {
       targetCurrency: 'PLN',
       rate: 4.335,
     };
-    mockSendMessage.mockResolvedValueOnce(mockSuccessResponse);
+    // Mock the global chrome object
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockSuccessResponse);
 
     // Initialize userEvent
     const user = userEvent.setup();
@@ -95,11 +89,13 @@ describe('CurrencyConverter Component', () => {
         expect(screen.getByText(/\(Rate: 4.3350\)/i)).toBeInTheDocument();
     });
 
-    // Verify sendMessage call
-    expect(mockSendMessage).toHaveBeenCalledTimes(1);
-    expect(mockSendMessage).toHaveBeenCalledWith({
+    // Verify sendMessage call on global chrome mock
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(1);
+    // Add targetCurrency to the expected message
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
       action: 'parseAndConvertCurrency',
       text: '150 EUR',
+      targetCurrency: 'PLN', // Add default target currency
     });
 
     // Check loading state finished (button enabled)
@@ -111,7 +107,8 @@ describe('CurrencyConverter Component', () => {
       success: false,
       error: 'AI parsing failed: currency not recognized',
     };
-    mockSendMessage.mockResolvedValueOnce(mockErrorResponse);
+    // Mock the global chrome object
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockErrorResponse);
 
     // Initialize userEvent
     const user = userEvent.setup();
@@ -130,11 +127,13 @@ describe('CurrencyConverter Component', () => {
         expect(screen.getByText(/Error: AI parsing failed: currency not recognized/i)).toBeInTheDocument();
     });
 
-    // Verify sendMessage call
-    expect(mockSendMessage).toHaveBeenCalledTimes(1);
-    expect(mockSendMessage).toHaveBeenCalledWith({
+    // Verify sendMessage call on global chrome mock
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(1);
+    // Add targetCurrency to the expected message
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         action: 'parseAndConvertCurrency',
         text: 'only 200',
+        targetCurrency: 'PLN', // Add default target currency
       });
   });
 
@@ -145,7 +144,8 @@ describe('CurrencyConverter Component', () => {
       error: 'AI parsing failed', // Keep error simple
       needsClarification: clarificationText, // Pass the string message
     };
-    mockSendMessage.mockResolvedValueOnce(mockClarifyResponse);
+    // Mock the global chrome object
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockClarifyResponse);
 
     // Initialize userEvent
     const user = userEvent.setup();
@@ -179,7 +179,21 @@ describe('CurrencyConverter Component', () => {
       error: 'AI parsing failed',
       needsClarification: clarificationText,
     };
-    mockSendMessage.mockResolvedValueOnce(mockClarifyResponse);
+    const mockSuccessAfterClarify = {
+        success: true,
+        originalAmount: 100,
+        originalCurrency: 'MXN',
+        convertedAmount: 30.50,
+        targetCurrency: 'PLN',
+        rate: 0.305,
+      };
+
+    // Mock the global chrome object
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce(mockClarifyResponse) // First call
+        .mockImplementationOnce(async () => { // Second call (clarification)
+            await new Promise(resolve => setTimeout(resolve, 10)); 
+            return mockSuccessAfterClarify;
+        });
 
     // Initialize userEvent
     const user = userEvent.setup();
@@ -202,22 +216,6 @@ describe('CurrencyConverter Component', () => {
     const retryButton = await screen.findByRole('button', { name: /Retry/i });
 
     // 2. User provides clarification and clicks retry
-    const mockSuccessAfterClarify = {
-        success: true,
-        originalAmount: 100,
-        originalCurrency: 'MXN',
-        convertedAmount: 30.50,
-        targetCurrency: 'PLN',
-        rate: 0.305,
-      };
-    // Introduce a small delay in the mock response for clarification
-    mockSendMessage.mockImplementationOnce(async () => {
-        await new Promise(resolve => setTimeout(resolve, 10)); // Small delay
-        return mockSuccessAfterClarify;
-    });
-    // mockSendMessage.mockResolvedValueOnce(mockSuccessAfterClarify); // Original immediate resolve
-
-    // Perform clarification actions using userEvent
     await user.clear(clarificationInput); // Clear before typing
     await user.type(clarificationInput, 'MXN');
     await user.click(retryButton);
@@ -230,26 +228,26 @@ describe('CurrencyConverter Component', () => {
         expect(screen.queryByText(clarificationText)).not.toBeInTheDocument();
     });
 
-    // Verify *both* sendMessage calls
-    expect(mockSendMessage).toHaveBeenCalledTimes(2);
-    // First call
-    expect(mockSendMessage).toHaveBeenCalledWith({
+    // Verify calls directly on global chrome mock
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(2);
+    // First call - add targetCurrency
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         action: 'parseAndConvertCurrency',
         text: '100 pesos',
+        targetCurrency: 'PLN', // Add default target currency
     });
-    // Second call (clarification)
-    expect(mockSendMessage).toHaveBeenCalledWith({
+    // Second call (clarification) - remains the same
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
         action: 'clarifyAndConvertCurrency',
         originalText: '100 pesos',
         clarification: 'MXN',
     });
     // Check retry button is enabled again (wait for it explicitly)
     await waitFor(() => expect(retryButton).toBeEnabled());
-    // expect(retryButton).toBeEnabled(); // Original immediate check
   });
 
   it('triggers conversion on Enter key press in main input', async () => {
-    mockSendMessage.mockResolvedValueOnce({ success: true, originalAmount: 50, originalCurrency: 'GBP', convertedAmount: 250, targetCurrency:'PLN', rate: 5 });
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ success: true, originalAmount: 50, originalCurrency: 'GBP', convertedAmount: 250, targetCurrency:'PLN', rate: 5 });
     
     // Initialize userEvent
     const user = userEvent.setup();
@@ -262,15 +260,20 @@ describe('CurrencyConverter Component', () => {
     await user.type(input, '50 GBP{enter}'); // Simulate typing and pressing Enter
 
     await waitFor(() => {
-        expect(mockSendMessage).toHaveBeenCalledTimes(1);
-        expect(mockSendMessage).toHaveBeenCalledWith({ action: 'parseAndConvertCurrency', text: '50 GBP' });
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(1);
+        // Add targetCurrency to the expected message
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ 
+            action: 'parseAndConvertCurrency', 
+            text: '50 GBP',
+            targetCurrency: 'PLN' // Add default target currency
+        });
     });
   });
 
   it('triggers retry on Enter key press in clarification input', async () => {
     // Setup state to show clarification input
     const clarificationText = 'Specify currency code';
-    mockSendMessage.mockResolvedValueOnce({ success: false, needsClarification: clarificationText });
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ success: false, needsClarification: clarificationText });
     render(<CurrencyConverter />);
     const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
     const convertButton = screen.getByRole('button', { name: /Convert to PLN/i });
@@ -285,17 +288,97 @@ describe('CurrencyConverter Component', () => {
     await userEvent.type(clarificationInput, 'CAD');
 
     // Mock the response for the retry call
-    mockSendMessage.mockResolvedValueOnce({ success: true, originalAmount: 200, originalCurrency: 'CAD', convertedAmount: 600, targetCurrency: 'PLN', rate: 3 });
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ success: true, originalAmount: 200, originalCurrency: 'CAD', convertedAmount: 600, targetCurrency: 'PLN', rate: 3 });
 
     // Press Enter in clarification input
     await userEvent.type(clarificationInput, '{enter}');
 
     await waitFor(() => {
         // Should have been called twice: once initial, once for clarification
-        expect(mockSendMessage).toHaveBeenCalledTimes(2);
-        expect(mockSendMessage).toHaveBeenCalledWith({ action: 'clarifyAndConvertCurrency', originalText: '200 something', clarification: 'CAD' });
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledTimes(2);
+        expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({ action: 'clarifyAndConvertCurrency', originalText: '200 something', clarification: 'CAD' });
         // Check if result is displayed after Enter press
         expect(screen.getByText(/200 CAD ≈/i)).toBeInTheDocument(); 
+    });
+  });
+
+  it('loads default target currency from storage on mount', async () => {
+    // Arrange: Use mockImplementationOnce to control the callback value
+    (chrome.storage.sync.get as ReturnType<typeof vi.fn>).mockImplementationOnce((keys, callback) => {
+      // Simulate async callback with the desired data
+      if (callback) {
+        setTimeout(() => callback({ targetCurrency: 'EUR' }), 0); 
+      }
+      // Return a promise (can resolve with anything, as component uses callback)
+      return Promise.resolve({ targetCurrency: 'EUR' }); 
+    });
+
+    // Act
+    render(<CurrencyConverter />);
+
+    // Assert: Wait specifically for the combobox text to update
+    const comboBox = await screen.findByRole('combobox');
+    await waitFor(() => expect(comboBox).toHaveTextContent('EUR')); 
+    expect(await screen.findByRole('button', { name: /Convert to EUR/i })).toBeInTheDocument();
+    
+    // Verify call on global chrome mock with the correct key
+    expect(chrome.storage.sync.get).toHaveBeenCalledWith(['targetCurrency'], expect.any(Function)); // Check key and that callback was passed
+  });
+
+  it('saves selected target currency to storage on change', async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(<CurrencyConverter />);
+    const select = screen.getByRole('combobox');
+    
+    // Verify initial state (PLN) using text content and clear mocks for set
+    expect(select).toHaveTextContent('PLN'); 
+    // Clear the global mock
+    (chrome.storage.sync.set as ReturnType<typeof vi.fn>).mockClear();
+
+    // Act: Change the selection using userEvent
+    await user.click(select);
+    // Wait for the dropdown menu to appear and click the 'GBP' option
+    const optionGBP = await screen.findByRole('option', { name: /GBP/i });
+    await user.click(optionGBP);
+
+    // Assert
+    await waitFor(() => {
+        // Check text content again
+        expect(select).toHaveTextContent('GBP'); 
+        expect(screen.getByRole('button', { name: /Convert to GBP/i })).toBeInTheDocument();
+    });
+
+    // Verify call on global mock
+    expect(chrome.storage.sync.set).toHaveBeenCalledTimes(1);
+    // Correct the key to 'targetCurrency' and expect a callback function
+    expect(chrome.storage.sync.set).toHaveBeenCalledWith({ targetCurrency: 'GBP' }, expect.any(Function)); 
+  });
+
+  it('sends correct target currency in message on convert click', async () => {
+    const user = userEvent.setup();
+    render(<CurrencyConverter />);
+    const input = screen.getByPlaceholderText(/e.g., 100 USD/i);
+    const convertButton = screen.getByRole('button', { name: /Convert to/i }); // More generic name
+    const select = screen.getByRole('combobox');
+
+    // Change target currency to USD
+    await user.click(select);
+    await user.click(await screen.findByRole('option', { name: 'USD' }));
+
+    // Mock response for the conversion call
+    (chrome.runtime.sendMessage as ReturnType<typeof vi.fn>).mockResolvedValueOnce({ success: true, convertedAmount: 55 });
+
+    // Perform conversion
+    await user.clear(input);
+    await user.type(input, '50 EUR');
+    await user.click(convertButton);
+
+    // Verify sendMessage call includes the selected target currency
+    expect(chrome.runtime.sendMessage).toHaveBeenCalledWith({
+        action: 'parseAndConvertCurrency',
+        text: '50 EUR',
+        targetCurrency: 'USD', // Check for selected currency
     });
   });
 }); 

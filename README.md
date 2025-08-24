@@ -29,10 +29,9 @@ Personal browser extension with custom shortcuts, automations, integrations and 
 ## 🏗️ Installation
 
 ```bash
-npm install
-npm run build
-npm run dev
-Run tests
-npm test
-npm run lint
+pnpm install
+pnpm run build
+pnpm run dev
+pnpm test
+pnpm run lint
 ```
