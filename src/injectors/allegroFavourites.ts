@@ -1,8 +1,17 @@
-import { logViewer } from './logViewer';
+import { logViewer } from '../components/Shared/logViewer';
 import { storageService } from '../services/storage.service';
-import { FavouritesWrapper } from '../components/FavouritesWrapper';
+import { FavouritesWrapper } from '../components/FavouritiesAllegro/components/FavouritesWrapper';
 import { createRoot } from 'react-dom/client';
+import { AllegroFavourite } from '../components/FavouritiesAllegro/types';
 import React from 'react';
+
+interface AllegroRawFavourite {
+  id: string;
+  name: string;
+  price: string;
+  thumbnailUrl: string;
+  url: string;
+}
 
 class AllegroFavouritesPageInjector {
   constructor() {
@@ -37,11 +46,11 @@ class AllegroFavouritesPageInjector {
 
   private async renderFavouritesContent(container: Element): Promise<void> {
     try {
-      const favourites = await storageService.getAllFavourites();
+      const favourites = await storageService.getAll<AllegroRawFavourite>();
       logViewer.log(`Pobrano ${favourites.length} ulubionych produktów`);
 
       // Przekształć AllegroFavourite[] na FavouriteItem[]
-      const favouriteItems = favourites.map(item => ({
+      const favouriteItems: AllegroFavourite[] = favourites.map((item: AllegroRawFavourite) => ({
         id: item.id,
         title: item.name || 'Brak tytułu',
         imageUrl: item.thumbnailUrl || '',

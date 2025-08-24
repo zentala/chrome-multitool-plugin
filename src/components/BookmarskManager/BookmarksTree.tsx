@@ -4,9 +4,14 @@ import ChevronRightIcon from '@mui/icons-material/ChevronRight';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
 import { IconButton, Typography } from '@mui/material';
 import EditIcon from '@mui/icons-material/Edit';
+<<<<<<< HEAD:src/components/BookmarksTree.tsx
 import { BookmarkEntity } from '../types/bookmarks.types';
 import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
 // import { Button } from "./ui/button"; // Remove unused import
+=======
+import { BookmarkEntity } from '../../types/bookmarks.types';
+import { BookmarkExtendedData, FolderExtendedData } from '../../types/storage.types';
+>>>>>>> 89f13248800a1506a751c4e88cc781878401eb44:src/components/BookmarskManager/BookmarksTree.tsx
 
 interface BookmarksTreeProps {
   bookmarks: BookmarkEntity[];

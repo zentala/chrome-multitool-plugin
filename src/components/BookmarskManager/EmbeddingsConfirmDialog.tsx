@@ -10,7 +10,7 @@ import AccordionSummary from '@mui/material/AccordionSummary';
 import AccordionDetails from '@mui/material/AccordionDetails';
 import Typography from '@mui/material/Typography';
 import ExpandMoreIcon from '@mui/icons-material/ExpandMore';
-import { BookmarkEntity } from '../types/bookmarks.types';
+import { BookmarkEntity } from '../../types/bookmarks.types';
 
 interface EmbeddingsConfirmDialogProps {
   open: boolean;

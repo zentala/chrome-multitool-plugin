@@ -21,7 +21,7 @@
     "service_worker": "background.js"
   },
   "web_accessible_resources": [{
-    "resources": ["bookmarkManager.html"],
+    "resources": ["bookmarkManager.html", "favouritesAllegro.html"],
     "matches": ["<all_urls>"]
   }],
   "content_security_policy": {
@@ -31,9 +31,9 @@
   "content_scripts": [
     {
       "matches": ["*://*.allegro.pl/*"],
-      "css": [
-        "https://fonts.googleapis.com/icon?family=Material+Icons"
-      ]
+      "css": ["https://fonts.googleapis.com/icon?family=Material+Icons"],
+      "js": ["dist/allegroCartPageInjector.js"],
+      "run_at": "document_idle"
     }
   ]
 } 

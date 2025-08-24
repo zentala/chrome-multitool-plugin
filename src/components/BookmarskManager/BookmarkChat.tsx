@@ -12,12 +12,12 @@ import SendIcon from '@mui/icons-material/Send';
 import { ChatOpenAI } from "@langchain/openai";
 import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
-import { settingsService } from '../services/settings.service';
-import { BookmarkEntity } from '../types/bookmarks.types';
-import { vectorStoreService } from '../services/vectorStore.service';
+import { settingsService } from '../../services/settings.service';
+import { BookmarkEntity } from '../../types/bookmarks.types';
+import { vectorStoreService } from '../../services/vectorStore.service';
 import { EmbeddingsConfirmDialog } from './EmbeddingsConfirmDialog';
 import { SearchResults, SearchResult } from './SearchResults';
-import { DebugPanel } from './DebugPanel'
+import { DebugPanel } from '../FavouritiesAllegro/components/DebugPanel'
 
 interface Message {
   role: 'user' | 'assistant' | 'system';
@@ -119,6 +119,8 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
 
         // Dodawanie zakładek do bazy
         if (bookmarks.length > 0) {
+          console.log('[BookmarkChat] Stan debug mode przed dodaniem zakładek:', 
+            await vectorStoreService.getDebugInfo());
           await vectorStoreService.addBookmarks(bookmarks);
         }
 

@@ -63,7 +63,7 @@ export const SearchResults: React.FC<SearchResultsProps> = ({ results }) => {
       {results.map((result, index) => (
         <StyledCard key={result.metadata.bookmarkId || index}>
           <CardContent>
-            <Typography variant="h6" component="h2" gutterBottom>
+            <Typography variant="h6" gutterBottom>
               <Link 
                 href={result.metadata.url} 
                 target="_blank" 

@@ -1,13 +1,4 @@
 // Typy
-export interface AllegroFavourite {
-  id: string;
-  name: string;
-  price: string;
-  thumbnailUrl: string;
-  url: string;
-  addedAt: string;
-}
-
 export interface StorageResponse {
   success: boolean;
   message: string;
@@ -17,34 +8,34 @@ export interface StorageResponse {
 class StorageService {
   private readonly STORAGE_KEY = 'allegro_favourites';
 
-  // Pobierz wszystkie ulubione
-  async getAllFavourites(): Promise<AllegroFavourite[]> {
+  // Generic method to fetch data
+  async getAll<T>(): Promise<T[]> {
     try {
       const result = await chrome.storage.local.get(this.STORAGE_KEY);
       return result[this.STORAGE_KEY] || [];
     } catch (error) {
-      console.error('Error getting favourites:', error);
+      console.error('Error getting data:', error);
       return [];
     }
   }
 
-  // Dodaj do ulubionych
-  async addToFavourites(item: AllegroFavourite): Promise<StorageResponse> {
+  // Add to favourites logic remains the same
+  async addToFavourites(item: any): Promise<StorageResponse> {
     try {
-      const favourites = await this.getAllFavourites();
+      const favourites = await this.getAll<any>();
       
-      // Sprawdź czy już istnieje
-      if (favourites.some(fav => fav.id === item.id)) {
+      // Check if it already exists
+      if (favourites.some((fav: any) => fav.id === item.id)) {
         return {
           success: false,
           message: 'Ta aukcja jest już w ulubionych'
         };
       }
 
-      // Dodaj nowy element
+      // Add new item
       const updatedFavourites = [...favourites, item];
       
-      // Zapisz do storage
+      // Save to storage
       await chrome.storage.local.set({
         [this.STORAGE_KEY]: updatedFavourites
       });
@@ -62,11 +53,11 @@ class StorageService {
     }
   }
 
-  // Usuń z ulubionych
+  // Remove from favourites logic remains the same
   async removeFromFavourites(id: string): Promise<StorageResponse> {
     try {
-      const favourites = await this.getAllFavourites();
-      const updatedFavourites = favourites.filter(fav => fav.id !== id);
+      const favourites = await this.getAll<any>();
+      const updatedFavourites = favourites.filter((fav: any) => fav.id !== id);
       
       await chrome.storage.local.set({
         [this.STORAGE_KEY]: updatedFavourites
@@ -84,10 +75,10 @@ class StorageService {
     }
   }
 
-  // Sprawdź czy jest w ulubionych
+  // Check if an item is in favourites
   async isInFavourites(id: string): Promise<boolean> {
-    const favourites = await this.getAllFavourites();
-    return favourites.some(fav => fav.id === id);
+    const favourites = await this.getAll<any>();
+    return favourites.some((fav: any) => fav.id === id);
   }
 }
 

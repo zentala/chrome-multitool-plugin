@@ -8,6 +8,11 @@ module.exports = {
   entry: {
     popup: './src/popup.tsx',
     background: './src/background/index.ts',
+    bookmarkManager: './src/bookmarkManager.tsx',
+    favouritesAllegro: './src/favouritesAllegro.tsx',
+    allegroCartPageInjector: './src/injectors/allegroCart.ts',
+    globalInjector: './src/injectors/global.ts',
+    youtube: './src/injectors/youtube.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),
@@ -53,11 +58,21 @@ module.exports = {
       filename: 'popup.html',
       chunks: ['popup'],
     }),
+    new HtmlWebpackPlugin({
+      template: './public/bookmarkManager.html',
+      filename: 'bookmarkManager.html',
+      chunks: ['bookmarkManager'],
+    }),
+    new HtmlWebpackPlugin({
+      template: './public/favouritesAllegro.html',
+      filename: 'favouritesAllegro.html',
+      chunks: ['favouritesAllegro'],
+    }),
     new CopyPlugin({
       patterns: [
         { from: "public/manifest.json", to: "manifest.json" },
         // { from: "public/icons", to: "icons" }, // Commenting out as public/icons doesn't exist yet
       ],
-    }),
+    })
   ],
 }; 

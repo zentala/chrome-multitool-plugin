@@ -8,13 +8,13 @@ import {
   Box
 } from '@mui/material';
 import SettingsIcon from '@mui/icons-material/Settings';
-import { BookmarkEntity, FolderEntity } from '../types/bookmarks.types';
-import { BookmarkExtendedData, FolderExtendedData } from '../types/storage.types';
-import { bookmarkExtensionService } from '../services';
+import { BookmarkEntity, FolderEntity } from '../../types/bookmarks.types';
+import { BookmarkExtendedData, FolderExtendedData } from '../../types/storage.types';
+import { bookmarkExtensionService } from '../../services';
 import { Theme } from '@mui/material/styles';
 import { makeStyles } from '@mui/styles';
 import { EditDataDialog } from './EditDataDialog';
-import { localStorageService } from '../services/localStorage.service';
+import { localStorageService } from '../../services/localStorage.service';
 import { BookmarkChat } from './BookmarkChat';
 import { SettingsDialog } from './SettingsDialog';
 import { BookmarksTree } from './BookmarksTree';
@@ -242,8 +242,10 @@ export const BookmarkManagerApp: React.FC = () => {
       return [];
     }
     
+    const limitedNodes = nodes.slice(0, 100);
+    
     const enrichedNodes = await Promise.all(
-      nodes.map(async (node) => {
+      limitedNodes.map(async (node) => {
         const enrichedNode: BookmarkEntity = { ...node };
         
         if (node.url) {
