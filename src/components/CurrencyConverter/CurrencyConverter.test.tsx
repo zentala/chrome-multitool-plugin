@@ -5,9 +5,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import userEvent from '@testing-library/user-event';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import '@testing-library/jest-dom/vitest';
-import Select from '@mui/material/Select';
-import MenuItem from '@mui/material/MenuItem';
-import FormControl from '@mui/material/FormControl';
+
 
 import { CurrencyConverter } from './CurrencyConverter';
 
@@ -381,4 +379,4 @@ describe('CurrencyConverter Component', () => {
         targetCurrency: 'USD', // Check for selected currency
     });
   });
-}); 
+});

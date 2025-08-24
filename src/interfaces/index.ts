@@ -4,4 +4,5 @@ export * from './ConversionResult';
 export * from './IAIAdapter';
 export * from './IAiFacade';
 export * from './CurrencyParseResult';
-// Export other interfaces as needed 
+export * from './ModuleSettings';
+export * from './YouTubeCaptionData';
