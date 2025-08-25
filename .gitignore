@@ -14,6 +14,7 @@ keys
 .github\instructions\codacy.instructions.md
 
 # Playwright Tests Artifccts
-test-results.*
+test-results.xml
+text-results.json
 test-results/
 playwright-report/

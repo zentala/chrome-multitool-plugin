@@ -10,6 +10,16 @@ This project uses **Manifest V2** instead of MV3 because:
 
 See [ADR 001](ADR/001-manifest-v2-over-v3.md) for detailed decision rationale.
 
+## Fallback Extension ID Strategy
+
+When real extension ID detection fails, we use a **fallback strategy**:
+
+1. **Fallback ID**: Uses static `fallback-extension-id` when real detection fails
+2. **File URLs**: Opens popup via `file://` protocol for testing
+3. **Reliable Testing**: Ensures tests always work regardless of detection issues
+
+See [ADR 003](ADR/003-fallback-extension-id-strategy.md) for detailed strategy rationale.
+
 ## Overview
 This project uses **Manifest V2** for reliable E2E testing with Playwright. All tests run in **headful mode** (`headless: false`).
 

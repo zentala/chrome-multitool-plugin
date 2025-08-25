@@ -10,17 +10,6 @@
 
 Personal browser extension with custom shortcuts, automations, integrations and productivity tools.
 
-## 🏗️ Architecture Decisions
-
-### Manifest Version: V2 vs V3
-📄 **[ADR 001: Use Manifest V2 instead of Manifest V3](ADR/001-manifest-v2-over-v3.md)**
-
-**Why MV2?** Playwright has limited support for MV3 service workers. We use MV2 for reliable E2E testing and will migrate to MV3 when Playwright support improves.
-
-### E2E Testing: Always headless: false
-📄 **[ADR 002: Always Use headless: false for Extension E2E Tests](ADR/002-always-headless-false-for-extension-testing.md)**
-
-**Why always headful?** Chrome Extensions cannot load in headless mode. Use `xvfb-run` for CI environments.
 
 ## 🚀 Features
 
@@ -47,3 +36,9 @@ pnpm run dev
 pnpm test
 pnpm run lint
 ```
+
+## Agent Self Documentation Strategy
+
+Project is developed with Cursor IDE, therefore we document project important information in [cursor Rules](.cursor/rules/), in order to maitain single source of truth for agent context and developer. 
+
+* [🏗️ ADRs list](.cursor\rules\adr.mdc)
