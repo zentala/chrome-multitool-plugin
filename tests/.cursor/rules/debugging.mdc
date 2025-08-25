@@ -1,0 +1,207 @@
+---
+description: Debugging guidelines and troubleshooting for E2E tests
+globs: ["tests/**", "playwright-report/**", "test-results/**"]
+alwaysApply: false
+---
+
+# 🔍 E2E Testing - Debugging & Troubleshooting
+
+## Debug Commands
+
+### Browser Debugging
+```bash
+# Run tests with browser visible
+pnpm test:e2e:headed
+
+# Debug specific test
+npx playwright test tests/e2e/debug-simple.spec.ts --headed
+
+# Step-by-step execution
+pnpm test:e2e:debug
+```
+
+### Extension-Specific Debugging
+
+#### Check Extension Loading
+```typescript
+// In test file - verify extension is loaded
+test('debug extension loading', async () => {
+  const context = await browser.newContext();
+  const page = await context.newPage();
+
+  // Navigate to chrome extensions page
+  await page.goto('chrome://extensions/');
+
+  // Check if our extension is loaded
+  const extensionElement = page.locator('[data-extension-id]');
+  await expect(extensionElement).toBeVisible();
+
+  await context.close();
+});
+```
+
+#### Debug Background Scripts
+```typescript
+// Access background page directly
+const backgroundPage = context.backgroundPages()[0];
+if (backgroundPage) {
+  // Check background script logs
+  backgroundPage.on('console', msg => console.log('BG:', msg.text()));
+}
+```
+
+## Common Error Patterns
+
+### 1. Extension ID Detection Issues
+```bash
+Error: Could not detect extension ID
+```
+
+**Debug Steps:**
+1. Verify `headless: false` in playwright.config.ts
+2. Check if extension builds successfully
+3. Use fallback ID strategy if needed
+4. Check browser logs for extension loading errors
+
+### 2. Content Script Not Working
+```bash
+Error: Content script elements not found
+```
+
+**Debug Steps:**
+1. Verify content script permissions in manifest.json
+2. Check if content script injects on correct pages
+3. Use browser dev tools to inspect injected elements
+4. Check for CSP (Content Security Policy) conflicts
+
+### 3. Background Script Communication
+```bash
+Error: Background script not responding
+```
+
+**Debug Steps:**
+1. Verify background script loads in MV2 mode
+2. Check message passing API usage
+3. Use browser dev tools to debug background script
+4. Verify message format matches between scripts
+
+## Logging & Monitoring
+
+### Test Logs
+```bash
+# View detailed test execution
+npx playwright test --reporter=line
+
+# Generate HTML report
+npx playwright show-report
+
+# Save test results
+pnpm test:e2e >> test-execution.log
+```
+
+### Browser Logs
+```typescript
+// Capture browser console logs
+page.on('console', msg => {
+  console.log(`PAGE LOG: ${msg.text()}`);
+});
+
+// Capture network requests
+page.on('request', request => {
+  console.log(`REQUEST: ${request.url()}`);
+});
+```
+
+## Performance Debugging
+
+### Slow Test Execution
+```bash
+# Measure test timing
+test('performance test', async () => {
+  const start = Date.now();
+
+  // Your test code here
+
+  const duration = Date.now() - start;
+  console.log(`Test took ${duration}ms`);
+});
+```
+
+### Memory Issues
+```bash
+# Check for memory leaks in long-running tests
+test.afterEach(async () => {
+  // Force garbage collection if needed
+  if (global.gc) {
+    global.gc();
+  }
+});
+```
+
+## CI/CD Debugging
+
+### xvfb Issues
+```bash
+# Test xvfb setup locally
+xvfb-run -a google-chrome --version
+
+# Check display settings
+echo $DISPLAY
+```
+
+### Parallel Execution Issues
+```bash
+# Disable parallel execution for debugging
+# playwright.config.ts
+export default defineConfig({
+  workers: 1,  // Single worker for debugging
+  fullyParallel: false,
+});
+```
+
+## Best Practices
+
+### 1. Always Use Headed Mode for Local Development
+```typescript
+// playwright.config.ts
+export default defineConfig({
+  use: {
+    headless: false,  // Always visible during development
+  },
+});
+```
+
+### 2. Use Descriptive Test Names
+```typescript
+test.describe('Currency Converter', () => {
+  test('should convert USD to PLN with current rate', async () => {
+    // Test implementation
+  });
+
+  test('should handle invalid currency codes gracefully', async () => {
+    // Test implementation
+  });
+});
+```
+
+### 3. Screenshot on Failure
+```typescript
+test.afterEach(async ({ page }, testInfo) => {
+  if (testInfo.status === 'failed') {
+    await page.screenshot({
+      path: `test-results/failure-${testInfo.title}.png`
+    });
+  }
+});
+```
+
+## Troubleshooting Checklist
+
+- [ ] Extension builds successfully (`pnpm build:test`)
+- [ ] Playwright browsers installed (`npx playwright install`)
+- [ ] MV2 manifest is valid
+- [ ] No CSP conflicts
+- [ ] Correct permissions in manifest.json
+- [ ] Content scripts match intended pages
+- [ ] Background script loads properly
+- [ ] Message passing works between scripts

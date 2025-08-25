@@ -12,7 +12,7 @@ module.exports = {
     favouritesAllegro: './src/favouritesAllegro.tsx',
     allegroCartPageInjector: './src/injectors/allegroCart.ts',
     globalInjector: './src/injectors/global.ts',
-    youtube: './src/injectors/youtube.ts'
+    youtube: './src/content/youtube/youtube-content.ts'
   },
   output: {
     path: path.resolve(__dirname, 'dist'),

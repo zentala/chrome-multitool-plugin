@@ -60,6 +60,32 @@ chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
       return true; // Indicate async response
   }
 
+  // Handle YouTube messages
+  else if (message.type === 'PROCESS_YOUTUBE_WITH_AI') {
+    handleYouTubeAIProcessing(message)
+      .then(sendResponse)
+      .catch((error) => {
+        console.error('Background: Error processing YouTube with AI:', error);
+        sendResponse({ success: false, error: 'Error processing YouTube with AI' });
+      });
+    return true; // Indicate async response
+
+  } else if (message.type === 'OPEN_YOUTUBE_AI') {
+    handleOpenYouTubeAI(message);
+    sendResponse({ success: true });
+    return false;
+
+  } else if (message.type === 'OPEN_YOUTUBE_SETTINGS') {
+    handleOpenYouTubeSettings();
+    sendResponse({ success: true });
+    return false;
+
+  } else if (message.type === 'OPEN_YOUTUBE_MODULE') {
+    handleOpenYouTubeModule();
+    sendResponse({ success: true });
+    return false;
+  }
+
   // Add handlers for other message types here...
 });
 
@@ -162,6 +188,137 @@ export async function handleCurrencyClarificationRequest(
      originalAmount: 123, originalCurrency: 'USD', convertedAmount: 456.78, targetCurrency: 'PLN',
      rateDate: new Date().toISOString().split('T')[0],
    };
+}
+
+/**
+ * Handles YouTube AI processing requests
+ */
+async function handleYouTubeAIProcessing(message: any): Promise<any> {
+  console.log('Background: Processing YouTube with AI:', message);
+
+  const { videoId, transcript } = message;
+
+  if (!transcript || transcript.length < 50) {
+    return { success: false, error: 'Transcript too short for meaningful analysis' };
+  }
+
+  try {
+    // Import YouTube transcription service
+    const { transcriptionService } = await import('../services/youtube/transcription.service');
+
+    // Get AI settings from storage
+    const aiSettings = await getAISettings();
+
+    // Process the transcript with AI
+    const analysis = await transcriptionService.processTranscription(
+      transcript,
+      aiSettings,
+      'Please analyze this YouTube video transcript and provide a summary with key points.'
+    );
+
+    return {
+      success: true,
+      videoId,
+      analysis,
+      transcriptLength: transcript.length
+    };
+
+  } catch (error) {
+    console.error('Background: Error in YouTube AI processing:', error);
+    return {
+      success: false,
+      error: error instanceof Error ? error.message : 'Unknown error in AI processing'
+    };
+  }
+}
+
+/**
+ * Handles opening YouTube AI interface
+ */
+function handleOpenYouTubeAI(message: any): void {
+  console.log('Background: Opening YouTube AI interface:', message);
+
+  // Open the extension popup and navigate to YouTube module
+  chrome.windows.create({
+    url: chrome.runtime.getURL('popup.html'),
+    type: 'popup',
+    width: 400,
+    height: 600
+  }, (window) => {
+    if (window) {
+      // Send message to popup to open YouTube module with the provided data
+      setTimeout(() => {
+        chrome.tabs.sendMessage(window.tabs![0].id!, {
+          type: 'OPEN_YOUTUBE_MODULE_WITH_DATA',
+          data: message
+        });
+      }, 1000); // Wait for popup to load
+    }
+  });
+}
+
+/**
+ * Handles opening YouTube settings
+ */
+function handleOpenYouTubeSettings(): void {
+  console.log('Background: Opening YouTube settings');
+
+  // Open the extension popup and navigate to settings
+  chrome.windows.create({
+    url: chrome.runtime.getURL('popup.html'),
+    type: 'popup',
+    width: 400,
+    height: 600
+  }, (window) => {
+    if (window) {
+      // Send message to popup to open settings
+      setTimeout(() => {
+        chrome.tabs.sendMessage(window.tabs![0].id!, {
+          type: 'OPEN_SETTINGS'
+        });
+      }, 1000); // Wait for popup to load
+    }
+  });
+}
+
+/**
+ * Handles opening YouTube module
+ */
+function handleOpenYouTubeModule(): void {
+  console.log('Background: Opening YouTube module');
+
+  // Open the extension popup and navigate to YouTube module
+  chrome.windows.create({
+    url: chrome.runtime.getURL('popup.html'),
+    type: 'popup',
+    width: 400,
+    height: 600
+  }, (window) => {
+    if (window) {
+      // Send message to popup to open YouTube module
+      setTimeout(() => {
+        chrome.tabs.sendMessage(window.tabs![0].id!, {
+          type: 'OPEN_YOUTUBE_MODULE'
+        });
+      }, 1000); // Wait for popup to load
+    }
+  });
+}
+
+/**
+ * Get AI settings from storage
+ */
+async function getAISettings(): Promise<any> {
+  return new Promise((resolve) => {
+    chrome.storage.sync.get(['aiSettings'], (result) => {
+      resolve(result.aiSettings || {
+        provider: 'gemini',
+        apiKey: '',
+        model: 'gemini-pro',
+        temperature: 0.7
+      });
+    });
+  });
 }
 
 // TODO: Add functions for saving/retrieving API keys via storage

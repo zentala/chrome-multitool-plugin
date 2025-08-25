@@ -1,0 +1,140 @@
+---
+description: Local E2E testing guidelines and project-specific patterns
+globs: ["tests/e2e/**", "tests/fixtures/**", "playwright.config.ts"]
+alwaysApply: true
+---
+
+# 🧪 E2E Testing - Project Specific
+
+## Quick Start Commands
+
+### Main Test Commands
+```bash
+# Run all E2E tests (headless mode)
+pnpm test:e2e
+
+# Run with browser visible (headed mode)
+pnpm test:e2e:headed
+
+# Debug mode (step-by-step execution)
+pnpm test:e2e:debug
+
+# Visual test runner (UI mode)
+pnpm test:e2e:ui
+```
+
+### Specific Module Tests
+```bash
+# Currency converter tests
+pnpm test:e2e:currency
+
+# Allegro integration tests
+pnpm test:e2e:allegro
+
+# Popup functionality tests
+pnpm test:e2e:popup
+
+# Stable popup tests
+pnpm test:e2e:stable
+```
+
+### CI/CD Commands
+```bash
+# CI mode with xvfb (headless display emulation)
+pnpm test:e2e:ci
+
+# View test reports
+pnpm test:e2e:report
+```
+
+## Testing Patterns
+
+### 1. Stable Extension Loading
+```typescript
+import { launchStableExtension, getPopupPage } from './fixtures/stable-extension';
+
+test('popup test', async () => {
+  const { context, extensionId } = await launchStableExtension();
+  const popup = await getPopupPage();
+
+  // Test popup functionality
+  await expect(popup.locator('body')).toBeVisible();
+
+  await context.close();
+});
+```
+
+### 2. Background Script Testing
+```typescript
+// MV2 background pages are visible to Playwright
+const pages = context.pages();
+const backgroundPage = pages.find(p => p.url().includes('background'));
+
+// Can send messages to background
+await backgroundPage.evaluate(() => {
+  chrome.runtime.sendMessage({ action: 'test' });
+});
+```
+
+### 3. Content Script Testing
+```typescript
+// Test content scripts on real pages
+const page = await context.newPage();
+await page.goto('https://example.com');
+
+// Content script should inject elements
+await expect(page.locator('.extension-element')).toBeVisible();
+```
+
+## Debugging
+
+### Extension Loading Issues
+```bash
+# Check if extension loads
+npx playwright test tests/e2e/debug-mv2-manifest.spec.ts
+
+# Debug extension detection
+npx playwright test tests/e2e/debug-simple.spec.ts --headed
+```
+
+### Common Issues
+
+#### 1. Extension Not Found
+```bash
+❌ Could not detect extension ID
+```
+**Solution**: Check if `headless: false` is set, verify extension builds correctly.
+
+#### 2. Background Page Not Found
+```bash
+⚠️ Background page detection failed
+```
+**Solution**: Extension uses MV2, background pages should be available.
+
+#### 3. CI Test Failures
+```bash
+xvfb-run: command not found
+```
+**Solution**: Install xvfb package in CI environment.
+
+## File Structure
+
+```
+tests/
+├── e2e/                          # E2E test files
+│   ├── currency-converter.spec.ts   # Currency conversion tests
+│   ├── allegro-integration.spec.ts  # Allegro integration tests
+│   ├── popup.spec.ts               # Extension popup tests
+│   └── stable-popup.spec.ts        # Stable popup functionality
+├── fixtures/                     # Test helpers and utilities
+│   ├── extension-helpers.ts         # Extension loading utilities
+│   ├── shared-browser.ts           # Browser setup helpers
+│   └── stable-extension.ts         # Stable extension fixtures
+└── global-setup.ts               # Global test configuration
+```
+
+## References
+
+- [Global E2E Testing Standards](../../.cursor/rules/testing.e2e.mdc)
+- [Architecture Decisions](../../ADR/)
+- [Playwright Documentation](https://playwright.dev/docs/chrome-extensions)

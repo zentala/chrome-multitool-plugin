@@ -53,14 +53,39 @@ export class AIServiceManager {
   /**
    * Send prompt to AI service
    */
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   public async sendPrompt(prompt: string): Promise<string> {
     if (!this.currentSettings) {
       throw new Error('AI service not configured');
     }
 
-    // TODO: Implement AI provider routing based on settings
-    throw new Error('AI prompt sending not yet implemented');
+    // For now, implement a simple general-purpose AI processing
+    // This can be expanded to route to different providers based on settings
+    return this.processWithGeneralAI(prompt);
+  }
+
+  /**
+   * Process text with AI using the configured provider
+   */
+  public async processWithAI(text: string, prompt?: string): Promise<string> {
+    const fullPrompt = prompt ? `${prompt}\n\n${text}` : text;
+    return this.sendPrompt(fullPrompt);
+  }
+
+  /**
+   * General AI processing (temporary implementation)
+   */
+  private async processWithGeneralAI(prompt: string): Promise<string> {
+    // This is a temporary implementation
+    // In a real implementation, this would call the appropriate AI provider
+    // based on the currentSettings.provider
+
+    if (this.currentSettings?.provider === 'gemini' && this.currentSettings.apiKey) {
+      // We could implement a general Gemini call here
+      // For now, return a placeholder response
+      return `AI Analysis for: "${prompt.substring(0, 100)}..."`;
+    }
+
+    return `Processed with ${this.currentSettings?.provider || 'unknown'} provider: "${prompt.substring(0, 100)}..."`;
   }
 
   /**

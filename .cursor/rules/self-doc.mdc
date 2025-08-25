@@ -18,7 +18,8 @@ alwaysApply: true
 
 ### Single Source of Truth & References
 - **`.cursor/rules/adr.mdc`** - Architecture Decision Records
-- **`.cursor/rules/tasks&goals.mdc`** - Tasks, goals, implementation checklists
+- **`.cursor/rules/goals.mdc`** - Project goals and success criteria
+- **`.cursor/rules/tasks.mdc`** - Implementation tasks and development roadmap
 - **`.cursor/rules/architecture.mdc`** - High-level architecture overview
 - **`.cursor/rules/testing.mdc`** - General testing standards
 - **`.cursor/rules/testing.e2e.mdc`** - E2E testing guidelines
@@ -27,7 +28,8 @@ alwaysApply: true
 
 Use these patterns to reference other files:
 - `[See ADR documentation](.cursor/rules/adr.mdc)` - for architecture decisions
-- `[See Tasks & Goals](.cursor/rules/tasks&goals.mdc)` - for implementation status
+- `[See Project Goals](.cursor/rules/goals.mdc)` - for project goals and success criteria
+- `[See Implementation Tasks](.cursor/rules/tasks.mdc)` - for development roadmap
 - `[See E2E Testing](.cursor/rules/testing.e2e.mdc)` - for testing guidelines
 - `[See General Testing](.cursor/rules/testing.mdc)` - for test practices
 - `[See CI/CD Standards](.cursor/rules/ci.mdc)` - for pipeline setup

@@ -21,6 +21,8 @@ git status
 # Stage relevant changes
 git add <specific-files>
 
+# avoid commiting all files, try to add only files you created/modified as multiple agents may be working on the same project in the same time with you
+
 # Commit with conventional format
 git commit -m "feat: add user authentication"
 git commit -m "test(e2e): user authentication"

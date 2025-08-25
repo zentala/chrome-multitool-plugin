@@ -14,6 +14,7 @@ import { youtubeTranscriptionService } from '../../services/youtube/youtube.serv
 interface YouTubeCaptionTrack {
   baseUrl: string;
   kind?: string;
+  languageCode?: string;
   name?: {
     simpleText: string;
   };
@@ -292,7 +293,7 @@ class YouTubeContentScript {
     }
 
     try {
-      // For now, use the original caption finding logic
+      // Find caption URL using the improved logic from the old plugin
       const captionUrl = await this.findCaptionUrl();
       if (!captionUrl) {
         alert('No captions found for this video');
@@ -307,9 +308,11 @@ class YouTubeContentScript {
       document.body.appendChild(a);
       a.click();
       document.body.removeChild(a);
+
+      console.log('Zentala-YT: Captions downloaded successfully');
     } catch (error) {
       console.error('Error downloading captions:', error);
-      alert('Error downloading captions');
+      alert('Error downloading captions: ' + error);
     }
   }
 
@@ -322,11 +325,44 @@ class YouTubeContentScript {
       return;
     }
 
-    // Send message to extension popup to process with AI
-    chrome.runtime.sendMessage({
-      type: 'PROCESS_YOUTUBE_WITH_AI',
-      videoId: this.currentVideoId
-    });
+    try {
+      // First, get the captions
+      const captionUrl = await this.findCaptionUrl();
+      if (!captionUrl) {
+        alert('No captions found for this video to process with AI');
+        return;
+      }
+
+      // Download the VTT content
+      const vttUrl = captionUrl + '&fmt=vtt';
+      const response = await fetch(vttUrl);
+      const vttContent = await response.text();
+
+      if (!vttContent || vttContent.trim().length === 0) {
+        alert('No caption content found');
+        return;
+      }
+
+      // Extract text content from VTT (remove timestamps and formatting)
+      const textContent = this.extractTextFromVTT(vttContent);
+
+      if (textContent.length < 50) {
+        alert('Caption content too short for meaningful AI analysis');
+        return;
+      }
+
+      // Send message to extension popup to process with AI
+      chrome.runtime.sendMessage({
+        type: 'PROCESS_YOUTUBE_WITH_AI',
+        videoId: this.currentVideoId,
+        transcript: textContent
+      });
+
+      console.log('Zentala-YT: Sent transcript to AI processing');
+    } catch (error) {
+      console.error('Error processing with AI:', error);
+      alert('Error processing with AI: ' + error);
+    }
   }
 
   /**
@@ -359,7 +395,32 @@ class YouTubeContentScript {
   }
 
   /**
-   * Find caption URL (adapted from original extension)
+   * Extract text content from VTT format
+   */
+  private extractTextFromVTT(vttContent: string): string {
+    const lines = vttContent.split('\n');
+    const textLines: string[] = [];
+
+    // Skip the first line (WEBVTT header) and process each cue
+    for (let i = 1; i < lines.length; i++) {
+      const line = lines[i].trim();
+
+      // Skip empty lines, timestamps, and cue numbers
+      if (line === '' || line.includes('-->') || /^\d+$/.test(line)) {
+        continue;
+      }
+
+      // Add non-empty text lines
+      if (line.length > 0) {
+        textLines.push(line);
+      }
+    }
+
+    return textLines.join(' ').trim();
+  }
+
+  /**
+   * Find caption URL (enhanced version with better error handling)
    */
   private async findCaptionUrl(): Promise<string | null> {
     try {
@@ -367,32 +428,65 @@ class YouTubeContentScript {
       let playerResponse = window.ytInitialPlayerResponse;
 
       if (!playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks) {
-        console.log('Zentala-YT: ytInitialPlayerResponse not found, fetching page source...');
+        console.log('Zentala-YT: ytInitialPlayerResponse not found on window, fetching page source...');
         const videoId = new URLSearchParams(window.location.search).get('v');
         if (!videoId) {
           console.error('Zentala-YT: Could not get video ID from URL.');
           return null;
         }
 
-        const pageSource = await fetch(`https://www.youtube.com/watch?v=${videoId}`).then(res => res.text());
-        const playerResponseMatch = pageSource.match(/ytInitialPlayerResponse\s*=\s*({.+?})\s*;/);
+        try {
+          const pageSource = await fetch(`https://www.youtube.com/watch?v=${videoId}`).then(res => res.text());
+          const playerResponseMatch = pageSource.match(/ytInitialPlayerResponse\s*=\s*({.+?})\s*;/);
 
-        if (playerResponseMatch && playerResponseMatch[1]) {
-          playerResponse = JSON.parse(playerResponseMatch[1]);
-        } else {
-          console.error('Zentala-YT: Could not find ytInitialPlayerResponse in page source.');
+          if (playerResponseMatch && playerResponseMatch[1]) {
+            playerResponse = JSON.parse(playerResponseMatch[1]);
+          } else {
+            console.error('Zentala-YT: Could not find ytInitialPlayerResponse in page source.');
+            return null;
+          }
+        } catch (fetchError) {
+          console.error('Zentala-YT: Failed to fetch page source:', fetchError);
           return null;
         }
       }
 
       const tracks = playerResponse?.captions?.playerCaptionsTracklistRenderer?.captionTracks;
-      if (!tracks) {
-        console.error('Zentala-YT: Caption tracks not found in playerResponse.');
+      if (!tracks || !Array.isArray(tracks)) {
+        console.error('Zentala-YT: Caption tracks not found or not an array in playerResponse.');
         return null;
       }
 
-      const autoTrack = tracks.find((t: YouTubeCaptionTrack) => t.kind === 'asr' || t.name?.simpleText?.toLowerCase().includes('auto'));
-      return autoTrack ? autoTrack.baseUrl : null;
+      console.log('Zentala-YT: Found', tracks.length, 'caption tracks');
+
+      // First, try to find auto-generated captions (ASR)
+      let selectedTrack = tracks.find((t: YouTubeCaptionTrack) =>
+        t.kind === 'asr' ||
+        t.name?.simpleText?.toLowerCase().includes('auto') ||
+        t.name?.simpleText?.toLowerCase().includes('automatic')
+      );
+
+      // If no auto captions, try to find English captions
+      if (!selectedTrack) {
+        selectedTrack = tracks.find((t: YouTubeCaptionTrack) =>
+          t.languageCode === 'en' ||
+          t.name?.simpleText?.toLowerCase().includes('english')
+        );
+      }
+
+      // If still no captions, use the first available track
+      if (!selectedTrack && tracks.length > 0) {
+        selectedTrack = tracks[0];
+        console.log('Zentala-YT: Using first available caption track:', selectedTrack.name?.simpleText);
+      }
+
+      if (!selectedTrack || !selectedTrack.baseUrl) {
+        console.error('Zentala-YT: No suitable caption track found');
+        return null;
+      }
+
+      console.log('Zentala-YT: Selected caption track:', selectedTrack.name?.simpleText, '(', selectedTrack.languageCode, ')');
+      return selectedTrack.baseUrl;
 
     } catch (error) {
       console.error('Zentala-YT: An error occurred while finding the caption URL:', error);
