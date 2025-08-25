@@ -9,39 +9,136 @@
 import { Page, BrowserContext } from '@playwright/test';
 
 /**
- * Test data for YouTube videos with different caption types
+ * Stable YouTube videos for testing - these should be more reliable
+ * Using TED Talks, educational content, and popular stable videos
  */
 export const YOUTUBE_TEST_VIDEOS = {
-  // Video with auto-generated English captions (ASR)
-  autoCaptions: {
-    url: 'https://www.youtube.com/watch?v=jNQXAC9IVRw', // TED Talk with auto captions
-    title: 'Auto-generated captions test',
+  // TED Talk - usually very stable with good captions
+  tedTalk: {
+    url: 'https://www.youtube.com/watch?v=6Af6b_wyiwI', // "The power of vulnerability" by Brené Brown
+    title: 'TED Talk - The power of vulnerability',
     hasCaptions: true,
-    captionType: 'asr'
+    captionType: 'manual',
+    duration: '20:00'
   },
 
-  // Video with manual English captions
-  manualCaptions: {
-    url: 'https://www.youtube.com/watch?v=8aGhZQkoFbQ', // Short video with manual captions
-    title: 'Manual captions test',
+  // Kurzgesagt - educational content, usually stable
+  kurzgesagt: {
+    url: 'https://www.youtube.com/watch?v=0Z760bYny9c', // "The Egg" - very short and stable
+    title: 'Kurzgesagt - The Egg',
     hasCaptions: true,
-    captionType: 'manual'
+    captionType: 'manual',
+    duration: '3:00'
   },
 
-  // Video without captions
-  noCaptions: {
-    url: 'https://www.youtube.com/watch?v=dQw4w9WgXcQ', // Rick Roll (may not have captions)
-    title: 'No captions test',
-    hasCaptions: false
+  // Khan Academy - educational, stable
+  khanAcademy: {
+    url: 'https://www.youtube.com/watch?v=h6cVyoMH4Ec', // "Introduction to limits"
+    title: 'Khan Academy - Introduction to limits',
+    hasCaptions: true,
+    captionType: 'manual',
+    duration: '8:00'
   },
 
-  // Short video for quick testing
+  // Vsauce - science content, usually stable
+  vsauce: {
+    url: 'https://www.youtube.com/watch?v=9C2-GcggqbQ', // "Is Your Red The Same as My Red?"
+    title: 'Vsauce - Is Your Red The Same as My Red?',
+    hasCaptions: true,
+    captionType: 'manual',
+    duration: '12:00'
+  },
+
+  // Very popular stable video as fallback
+  fallback: {
+    url: 'https://www.youtube.com/watch?v=kJQP7kiw5Fk', // Despacito - extremely stable and popular
+    title: 'Luis Fonsi - Despacito (Fallback)',
+    hasCaptions: true,
+    captionType: 'asr',
+    duration: '4:00'
+  },
+
+  // Keep the original short video as backup
   shortVideo: {
-    url: 'https://www.youtube.com/watch?v=BROWqjuTM0g', // Very short video
-    title: 'Short video test',
-    hasCaptions: false
+    url: 'https://www.youtube.com/watch?v=BROWqjuTM0g',
+    title: 'Backup short video',
+    hasCaptions: false,
+    captionType: 'none',
+    duration: '0:30'
   }
 };
+
+/**
+ * Handle YouTube cookies consent dialog
+ */
+export async function handleYouTubeCookies(page: Page): Promise<void> {
+  try {
+    console.log('🍪 Checking for YouTube consent dialog...');
+
+    // Czekaj na consent dialog (max 5s)
+    const consentDialog = page.locator('[aria-label*="consent"], [data-purpose="consent"], .consent-dialog').first();
+
+    if (await consentDialog.isVisible({ timeout: 5000 })) {
+      console.log('🍪 Found YouTube consent dialog, handling...');
+
+      // Szukaj przycisków akceptacji w różnych językach
+      const acceptButtons = [
+        page.locator('button:has-text("Accept all")'),
+        page.locator('button:has-text("Akceptuj wszystkie")'),
+        page.locator('button:has-text("I agree")'),
+        page.locator('button:has-text("Zgadzam się")'),
+        page.locator('button:has-text("Accept")'),
+        page.locator('button:has-text("Akceptuj")'),
+        page.locator('button:has-text("Agree")'),
+        page.locator('button:has-text("Wyrażam zgodę")')
+      ];
+
+      // Szukaj przycisków odrzucenia jako fallback
+      const rejectButtons = [
+        page.locator('button:has-text("Reject all")'),
+        page.locator('button:has-text("Odrzuć wszystkie")'),
+        page.locator('button:has-text("Reject")'),
+        page.locator('button:has-text("Odrzuć")')
+      ];
+
+      // Najpierw próbuj znaleźć przycisk akceptacji
+      for (const button of acceptButtons) {
+        if (await button.isVisible({ timeout: 1000 })) {
+          await button.click();
+          console.log('✅ Clicked accept button');
+          await page.waitForTimeout(1000); // Daj czas na zamknięcie dialogu
+          return;
+        }
+      }
+
+      // Jeśli nie ma akceptacji, spróbuj odrzucenia (mniej tracking)
+      for (const button of rejectButtons) {
+        if (await button.isVisible({ timeout: 1000 })) {
+          await button.click();
+          console.log('⚠️ Clicked reject button (fallback)');
+          await page.waitForTimeout(1000);
+          return;
+        }
+      }
+
+      // Jeśli nie ma przycisków, spróbuj zamknąć dialog krzyżykiem
+      console.log('⚠️ No buttons found, trying to close dialog...');
+      const closeButton = page.locator('button[aria-label="Close"], .close-button, [aria-label*="close"]').first();
+      if (await closeButton.isVisible({ timeout: 1000 })) {
+        await closeButton.click();
+        console.log('✅ Closed consent dialog');
+      } else {
+        console.log('⚠️ Could not find way to close consent dialog');
+      }
+
+      await page.waitForTimeout(1000);
+    } else {
+      console.log('🍪 No consent dialog found');
+    }
+  } catch (error) {
+    console.log('🍪 No consent dialog found or already handled');
+  }
+}
 
 /**
  * Navigate to YouTube video and wait for it to load
@@ -54,11 +151,21 @@ export async function navigateToYouTubeVideo(page: Page, videoUrl: string): Prom
     timeout: 30000
   });
 
+  // Handle YouTube cookies
+  await handleYouTubeCookies(page);
+
+  // Check if video is available
+  const unavailableMessage = page.locator('h1:has-text("Video unavailable"), .unavailable-message').first();
+  if (await unavailableMessage.isVisible({ timeout: 3000 })) {
+    const errorText = await unavailableMessage.textContent();
+    throw new Error(`Video unavailable: ${errorText}`);
+  }
+
   // Wait for YouTube player to load
-  await page.waitForSelector('ytd-player', { timeout: 15000 });
+  await page.waitForSelector('ytd-player, #player', { timeout: 15000 });
 
   // Wait for video title to appear (indicates page is fully loaded)
-  await page.waitForSelector('h1.ytd-video-primary-info-renderer', { timeout: 10000 });
+  await page.waitForSelector('h1.ytd-video-primary-info-renderer, .title', { timeout: 10000 });
 
   // Wait additional time for content script to initialize
   await page.waitForTimeout(3000);
@@ -263,17 +370,123 @@ export async function waitForYouTubeConsoleMessage(page: Page, message: string, 
 }
 
 /**
- * Check if content script is loaded by looking for global functions
+ * Debug content script loading with detailed diagnostics
  */
-export async function isYouTubeContentScriptLoaded(page: Page): Promise<boolean> {
+export async function debugContentScriptLoading(page: Page): Promise<boolean> {
+  console.log('🔍 Debugging content script loading...');
+
   try {
-    const result = await page.evaluate(() => {
-      // Check if our content script has injected elements
-      return document.querySelector('#zentala-youtube-sidebar') !== null;
+    // Check if sidebar element exists
+    const sidebarExists = await page.evaluate(() => {
+      const sidebar = document.querySelector('#zentala-youtube-sidebar');
+      if (sidebar) {
+        console.log('✅ Sidebar element found');
+        return true;
+      } else {
+        console.log('❌ Sidebar element not found');
+        return false;
+      }
     });
-    return result;
+
+    if (sidebarExists) {
+      console.log('✅ Content script loaded successfully');
+      return true;
+    }
+
+    // Check if content script is injected by looking for script tags
+    const scripts = await page.evaluate(() => {
+      const scriptTags = Array.from(document.querySelectorAll('script'));
+      const youtubeScripts = scriptTags.filter(script =>
+        script.src.includes('youtube') ||
+        script.textContent?.includes('zentala') ||
+        script.textContent?.includes('Zentala')
+      );
+      return youtubeScripts.length;
+    });
+
+    console.log(`📊 Found ${scripts} YouTube-related scripts`);
+
+    // Check console logs for our content script
+    const logs = await page.evaluate(() => {
+      // This is a simplified check - in real scenario we'd need to capture console logs
+      return document.readyState;
+    });
+
+    console.log(`📄 Document readyState: ${logs}`);
+
+    // Check if we're on the right domain
+    const url = page.url();
+    const isYouTube = url.includes('youtube.com');
+    console.log(`🌐 Current URL: ${url} (YouTube: ${isYouTube})`);
+
+    if (!isYouTube) {
+      console.log('❌ Not on YouTube domain');
+      return false;
+    }
+
+    console.log('⚠️ Content script may not have loaded yet');
+    return false;
+
   } catch (error) {
-    console.log('❌ Error checking content script:', error);
+    console.error('❌ Error debugging content script:', error);
     return false;
   }
+}
+
+/**
+ * Enhanced content script detection with retry
+ */
+export async function isYouTubeContentScriptLoaded(page: Page, maxRetries = 3): Promise<boolean> {
+  for (let i = 0; i < maxRetries; i++) {
+    try {
+      const result = await page.evaluate(() => {
+        // Check if our content script has injected elements
+        return document.querySelector('#zentala-youtube-sidebar') !== null;
+      });
+
+      if (result) {
+        console.log('✅ Content script loaded successfully');
+        return true;
+      }
+
+      if (i < maxRetries - 1) {
+        console.log(`⏳ Content script not found, retrying... (${i + 1}/${maxRetries})`);
+        await page.waitForTimeout(1000);
+      }
+
+    } catch (error) {
+      console.log(`❌ Error checking content script (attempt ${i + 1}):`, error);
+    }
+  }
+
+  // Run detailed diagnostics
+  await debugContentScriptLoading(page);
+  return false;
+}
+
+/**
+ * Navigate with fallback videos
+ */
+export async function navigateToYouTubeVideoWithFallback(page: Page): Promise<string> {
+  const videos = [
+    YOUTUBE_TEST_VIDEOS.kurzgesagt, // Short and stable
+    YOUTUBE_TEST_VIDEOS.tedTalk,
+    YOUTUBE_TEST_VIDEOS.khanAcademy,
+    YOUTUBE_TEST_VIDEOS.vsauce,
+    YOUTUBE_TEST_VIDEOS.fallback // Most stable fallback
+  ];
+
+  for (const video of videos) {
+    try {
+      console.log(`🎬 Trying video: ${video.title}`);
+      await navigateToYouTubeVideo(page, video.url);
+      console.log(`✅ Successfully loaded: ${video.title}`);
+      return video.url;
+    } catch (error) {
+      console.log(`❌ Failed to load ${video.title}:`, error.message);
+      continue;
+    }
+  }
+
+  throw new Error('All test videos failed to load');
 }
