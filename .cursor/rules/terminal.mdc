@@ -79,16 +79,32 @@ When encountering terminal problems, document in `./.cursor/PWSH_ISSUES.md`:
 
 ### Git Best Practices
 
-- **Always use --no-pager flag** for git commands that may hang:
-  ```bash
-  git --no-pager log --oneline -10
-  git --no-pager show --name-only HEAD
-  git --no-pager diff
-  ```
+#### Git Pager Configuration (Recommended)
+Set up git to never use pager for better automation:
 
+```bash
+# One-time global setup (recommended)
+git config --global core.pager cat
+
+# Alternative: disable pager for specific commands
+git config --global pager.diff false
+git config --global pager.log false
+git config --global pager.show false
+```
+
+#### Git Usage Tips
+- **After pager setup, all git commands work without manual scrolling**
 - **Terminate hanging commands** with Ctrl+C immediately
 - **Document hanging commands** in PWSH_ISSUES.md for future reference
 - **Test git commands** before using them in scripts
+
+#### Manual Pager Control (if needed)
+```bash
+# If you ever need pager, use --no-pager explicitly
+git --no-pager log --oneline -10
+git --no-pager show --name-only HEAD
+git --no-pager diff
+```
 
 ## Common Commands
 
@@ -103,19 +119,22 @@ pnpm run lint
 
 ### Git Operations
 ```bash
-# Always use --no-pager to prevent hanging
-git --no-pager log --oneline -10
-git --no-pager show --name-only HEAD
-git --no-pager diff
+# Git pager configuration (recommended global setup)
+git config --global core.pager cat  # Disable pager completely
 
-# Standard git commands
+# All git commands now work without pager
+git log --oneline -10
+git show --name-only HEAD
+git diff
 git status
 git add .
 git commit -m "message"
 git push origin main
 
-# If command hangs, use Ctrl+C to terminate
-# Document hanging commands in PWSH_ISSUES.md
+# If you prefer individual control, you can still use --no-pager
+git --no-pager log --oneline -10
+git --no-pager show --name-only HEAD
+git --no-pager diff
 ```
 
 ### File System
