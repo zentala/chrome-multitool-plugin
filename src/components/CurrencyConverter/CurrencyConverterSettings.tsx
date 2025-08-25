@@ -37,7 +37,7 @@ const CurrencyConverterSettings: React.FC<CurrencyConverterSettingsProps> = ({ o
   const [connectionStatus, setConnectionStatus] = useState<'unknown' | 'success' | 'error'>('unknown');
 
   // Supported currencies
-  const supportedCurrencies = ['PLN', 'EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY'];
+  const supportedCurrencies = ['PLN', 'EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY', 'IDR'];
 
   // Load current settings on component mount
   useEffect(() => {

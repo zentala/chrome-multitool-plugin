@@ -28,7 +28,7 @@ export class ExchangeRateServiceError extends Error {
 
 // --- Constants --- //
 
-export const CACHE_DURATION_MS = 24 * 60 * 60 * 1000; // 24 hours
+export const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours - optimize for API limits
 
 // Define structure for API response (adjust based on actual API)
 interface ExchangeRateApiResponse {

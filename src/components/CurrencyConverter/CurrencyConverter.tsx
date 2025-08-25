@@ -8,7 +8,7 @@ import MenuItem from '@mui/material/MenuItem';
 import FormControl from '@mui/material/FormControl';
 
 // Define supported target currencies
-const SUPPORTED_TARGET_CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CHF'];
+const SUPPORTED_TARGET_CURRENCIES = ['PLN', 'EUR', 'USD', 'GBP', 'CHF', 'IDR'];
 const DEFAULT_TARGET_CURRENCY = 'PLN';
 const STORAGE_KEY = 'targetCurrency'; // Key for chrome.storage
 

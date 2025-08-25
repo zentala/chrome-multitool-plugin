@@ -70,26 +70,207 @@ test.describe('Currency Converter - Real Extension', () => {
 - [ ] **Prawdziwe exchange rate API**
 - [ ] **Cross-currency conversions**
 
-### **FAZA 3: Historyczne Kursy (tylko jeśli potrzebne)**
+### **FAZA 3: Optymalizacja Cache i Performance**
 
-#### **Czy na pewno potrzebne?**
-**Aktualnie:** Currency converter pobiera **aktualne kursy** i cache'uje je na 24h
-**Alternatywy:** Zamiast historycznych kursów można:
-- Pokaż **date of rate** w interfejsie
-- Dodaj **manual date selection** dla historycznych kursów
-- Użyj **free tier API** z ograniczeniami
+#### **💡 Ważne: Historyczne kursy NIE są potrzebne**
+**Skupienie na efektywności API:**
+- Cache kursów na **6-24 godzin** (nie dni)
+- **Oszczędność requestów** do API (masz limit!)
+- **Smart refresh** tylko gdy potrzebne
+- **Offline fallback** z cached rates
 
-#### **Jeśli potrzebne - proste rozwiązanie:**
+#### **Optymalizacja cache:**
 ```typescript
-// Dodać do settings:
-const [showHistorical, setShowHistorical] = useState(false);
-const [historicalDate, setHistoricalDate] = useState('');
+// Skrócić cache duration do 6 godzin:
+const CACHE_DURATION_MS = 6 * 60 * 60 * 1000; // 6 hours
 
-// W API call:
-const historicalRates = showHistorical
-  ? await fetchHistoricalRates(date)
-  : await fetchCurrentRates();
+// Smart refresh logic:
+const shouldRefresh = (timestamp: number) =>
+  Date.now() - timestamp > CACHE_DURATION_MS;
+
+// Rate limiting:
+const limiter = new RateLimiter({
+  tokensPerInterval: 10,  // Mniej requestów na minutę
+  interval: 'minute'
+});
 ```
+
+#### **Dodanie waluty IDR (Indonezyjska Rupia):**
+```typescript
+// Dodać do SUPPORTED_TARGET_CURRENCIES:
+const SUPPORTED_TARGET_CURRENCIES = [
+  'PLN', 'EUR', 'USD', 'GBP', 'CHF', 'CAD', 'AUD', 'JPY',
+  'IDR'  // 🆕 Indonezyjska Rupia
+];
+```
+
+## 🔍 **JAK DZIAŁA INTEGRACJA Z PRZEGLĄDARKĄ**
+
+### **🚀 DWA SPOSOBY UŻYCIA:**
+
+#### **1. Input w Popup Extension (Manualny)**
+```typescript
+// Workflow:
+1. Użytkownik otwiera popup extension
+2. Wpisuje/wkleja tekst z walutą: "100 USD", "€50", "25 IDR"
+3. Wybiera target currency (PLN domyślnie)
+4. Klika "Convert to PLN"
+5. Wynik pokazuje się w popup: "100 USD ≈ 450.25 PLN"
+```
+
+#### **2. Context Menu na Stronie (Automatyczny)**
+```typescript
+// Workflow:
+1. Użytkownik zaznacza tekst na stronie: "Buy for 150 USD"
+2. Kliknięcie prawym przyciskiem → "ZNTL: Convert to PLN"
+3. Extension:
+   - Wyciąga zaznaczony tekst
+   - Parsuje przez AI: "150 USD"
+   - Pobiera kurs USD→PLN z cache/API
+   - Oblicza: 150 * 4.335 = 650.25
+4. Pokazuje wynik w modal/popup
+```
+
+### **🎯 INTEGRACJA Z PRZEGLĄDARKĄ:**
+
+#### **Manifest V2 Permissions:**
+```json
+{
+  "permissions": [
+    "activeTab",        // Dostęp do aktywnej karty
+    "contextMenus",     // Menu kontekstowe
+    "storage"           // Cache kursów
+  ],
+  "content_scripts": [
+    {
+      "matches": ["<all_urls>"],
+      "js": ["globalInjector.js"],
+      "run_at": "document_start"
+    }
+  ]
+}
+```
+
+#### **Background Script Flow:**
+```typescript
+// 1. Content script nasłuchuje zaznaczeń
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+  if (request.action === 'parseAndConvertCurrency') {
+    // 2. Wywołuje AI parsing
+    const parsed = await aiProvider.parseCurrency(request.text);
+
+    // 3. Pobiera kurs walutowy
+    const rate = await exchangeRateService.getRate(
+      parsed.currency,
+      request.targetCurrency
+    );
+
+    // 4. Oblicza konwersję
+    const result = parsed.amount * rate;
+
+    // 5. Zwraca wynik do content script
+    sendResponse({ success: true, convertedAmount: result });
+  }
+});
+```
+
+### **💬 JAK POKAZUJĄ SIĘ WYNIKI?**
+
+#### **Obecnie (Popup Extension):**
+```
+┌─────────────────────────────────┐
+│ 💱 Currency Converter           │
+├─────────────────────────────────┤
+│ Input: 100 USD                 │
+│ Target: PLN                     │
+│                                 │
+│ ✅ 100 USD ≈ 450.25 PLN        │
+│ Rate: 4.5025 (24h cache)       │
+└─────────────────────────────────┘
+```
+
+#### **Context Menu (Propozycja):**
+```typescript
+// Dwie opcje wyświetlania:
+
+// Opcja 1: Modal/Popup nad zaznaczeniem
+showConversionModal(selectedText, conversionResult);
+
+// Opcja 2: Zamiana tekstu na stronie (niepolecane)
+replaceSelectedText(`${original} ≈ ${converted} PLN`);
+```
+
+### **🎯 ZALECANA IMPLEMENTACJA:**
+
+#### **Context Menu Integration:**
+```typescript
+// 1. Rejestracja context menu
+chrome.contextMenus.create({
+  title: "ZNTL: Convert to PLN",
+  contexts: ["selection"],
+  onclick: handleCurrencyConversion
+});
+
+// 2. Handler dla kliknięć
+function handleCurrencyConversion(info, tab) {
+  const selectedText = info.selectionText;
+
+  // Wysyłanie do background script
+  chrome.runtime.sendMessage({
+    action: 'convertSelection',
+    text: selectedText,
+    targetCurrency: 'PLN'  // Z settings
+  }, (response) => {
+    if (response.success) {
+      showResultModal(response);
+    } else {
+      showErrorModal(response.error);
+    }
+  });
+}
+```
+
+### **🔧 NAJLEPSZE ROZWIĄZANIE:**
+
+**NIE zamieniać tekstu na stronie** - to może być intrusive i niebezpieczne.
+
+**Zamiast tego:**
+1. **Modal/Popup** nad zaznaczeniem z wynikiem
+2. **Notification** w prawym dolnym rogu
+3. **Copy to clipboard** button w wyniku
+4. **Quick conversion** bez opuszczania strony
+
+### **📱 USER EXPERIENCE:**
+
+#### **Idealny Workflow:**
+```
+1. Zaznacz tekst: "199.99 USD"
+2. Right-click → "Convert to PLN"
+3. Pojawia się małe popup/modal:
+   "199.99 USD ≈ 898.45 PLN
+    [Copy] [Close]"
+4. Użytkownik kopiuje wynik lub zamyka
+```
+
+#### **Fallback dla błędów:**
+```
+- AI nie rozpoznaje waluty → "Nie rozpoznano waluty"
+- Brak kursu → "Brak kursu dla tej waluty"
+- API error → "Spróbuj ponownie za chwilę"
+```
+
+---
+
+## 🎯 **PODSUMOWANIE:**
+
+**Currency Converter będzie działać tak:**
+1. **Popup** - manualne wpisywanie/wklejanie tekstu
+2. **Context menu** - automatyczne na zaznaczonym tekście
+3. **Wyniki w modalach** - NIE zamiana tekstu na stronie
+4. **Smart cache** - 6-24h żeby oszczędzać API calls
+5. **IDR support** - dodana indonezyjska rupia
+
+**Gotowy do implementacji! 🚀**
 
 ## 🎯 **PRIORYTETY**
 
@@ -125,6 +306,8 @@ const historicalRates = showHistorical
 - 🔄 80% test coverage na integration level
 - 🚀 <500ms response time
 - 💾 <100KB storage usage
+- 📊 6h cache duration (API limits optimization)
+- 🌍 9 obsługiwanych walut (PLN, EUR, USD, GBP, CHF, CAD, AUD, JPY, IDR)
 
 ## 🚀 **ROADMAP - NASTĘPNE KROKI**
 
@@ -154,7 +337,8 @@ const historicalRates = showHistorical
 ## 💡 **REKOMENDACJE**
 
 ### **Currency Converter:**
-- **NIE dodawać** historycznych kursów jeśli nie są potrzebne
+- ✅ **Historyczne kursy NIE są potrzebne** - focus na cache 6h
+- ✅ **Dodać IDR** - indonezyjska rupia już dodana
 - **Skupić się** na stabilizacji istniejącego kodu
 - **Dodać** prawdziwe testy z extension loading
 - **Zoptymalizować** AI parsing dla edge cases
