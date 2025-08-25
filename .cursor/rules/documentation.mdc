@@ -1,0 +1,70 @@
+---
+description: Documentation generation and maintenance standards
+globs: [".cursor/**", "**/*.meta.md", "**/*.usage.md"]
+alwaysApply: true
+---
+
+# 📚 Documentation Standards
+
+## Required Files
+
+### .meta.md Files
+Every important folder must have a `.meta.md` file describing:
+- Purpose and structure
+- Key components and their roles
+- Dependencies and relationships
+
+### .usage.md Files
+Complex modules should have `.usage.md` files with:
+- Usage examples
+- Common patterns
+- Integration guidelines
+
+## Context Documentation
+
+### Metadata and Documentation Files
+- `.cursor/WHY.md` - Key architectural decisions
+- `.cursor/DECISIONS_<date>.md` - Major decisions log
+- `.cursor/failedexperiments/` - Failed technical experiments
+- `.cursor/ERRORS.md` - Known issues and solutions
+- `.cursor/CODE_SMELLS.md` - Typical mistakes documentation
+- `.cursor/DEV_MOOD_TRACKER.md` - Weekly developer mood log
+- `.cursor/PHILOSOPHY.md` - Project values and philosophy
+- `.cursor/RANDOM_WISDOM.md` - Programming wisdom and reminders
+
+## Documentation Generation
+
+### Automation Scripts
+```pwsh
+# Generate .meta.md for folder
+.\.cursor\scripts\gen-meta.ps1 "src/components"
+
+# Generate .usage.md for module
+.\.cursor\scripts\gen-usage.ps1 "src/hooks/useFetch.ts"
+```
+
+### Template-Based Creation
+Use `mcp_context_create_from_template` for `.cursor/` files:
+
+- **Decision**: `templateName: "decision"`, `type: "decisions"`
+- **Error**: `templateName: "error"`, `type: "errors"`
+- **Failed Experiment**: `templateName: "failed-experiment"`, `type: "failedexperiments"`
+
+## Maintenance Standards
+
+### Regular Updates
+- Refresh all files under `.cursor/` regularly
+- Update diagrams when architecture changes
+- Document failed approaches, not just successes
+
+### Quality Standards
+- Prefer lightweight but accurate diagrams (`.puml` or `.md`)
+- Keep documentation current with code changes
+- Use consistent formatting and structure
+
+## Folder Cleanliness
+
+- **Remove outdated files** after major changes
+- **Archive legacy documentation** rather than delete
+- **Update references** when moving files
+- **Maintain TODO.md** when structure changes

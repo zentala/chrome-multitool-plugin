@@ -1,0 +1,104 @@
+---
+description: Chrome extension architecture and E2E testing decisions
+globs: ["src/**", "tests/**", "playwright.config.ts", "webpack.config.*", "public/manifest*.json"]
+alwaysApply: true
+---
+
+# 🏗️ Architecture Summary - Chrome Extension E2E Testing
+
+## 🎯 Key Decisions Made
+
+### 1. Manifest Version: V2 (Not V3)
+**Decision**: Use Manifest V2 despite being deprecated
+**Reason**: Playwright cannot reliably detect MV3 service workers
+**Impact**: Reliable E2E testing now possible
+**Future**: Migrate to MV3 when Playwright support improves
+
+**Files Changed**:
+- `public/manifest.dev.json` - manifest_version: 2
+- `public/manifest.json` - manifest_version: 2
+- `src/background/index.ts` - removed self.addEventListener
+
+### 2. Always headless: false for Extension Tests
+**Decision**: Never use headless mode for extension testing
+**Reason**: Chrome Extensions cannot load in headless mode
+**Impact**: Tests require headful browser, use xvfb in CI
+**Implementation**: `playwright.config.ts` enforces headless: false
+
+**Files Changed**:
+- `playwright.config.ts` - headless: false
+- `package.json` - test:e2e:ci with xvfb-run
+
+### 3. Persistent Context Strategy
+**Decision**: Use single persistent context per test run
+**Reason**: Extensions cannot be shared between contexts
+**Impact**: Stable extension ID, reliable background page detection
+**Implementation**: `launchPersistentContext` with extension path
+
+### 4. Fallback Extension ID Strategy
+**Decision**: Use fallback ID when real detection fails
+**Reason**: Playwright cannot reliably detect extension IDs
+**Impact**: Reliable testing, but less realistic context
+**Implementation**: `fallback-extension-id` + `file://` URLs for popup testing
+**ADR**: [ADR 003](ADR/003-fallback-extension-id-strategy.md)
+
+## 📊 Current Test Status
+
+### ✅ Working Now
+- Extension builds successfully with MV2
+- Persistent context loads extension
+- Background pages are detectable
+- Popup pages can be opened
+- MV2 manifest validation passes
+
+### 🔄 Next Steps
+- Complete popup functionality tests
+- Add content script integration tests
+- Implement CI with xvfb
+- Document migration path to MV3
+
+## 🏗️ Architecture Overview
+
+### Test Structure
+```
+tests/
+├── fixtures/
+│   ├── stable-extension.ts    # Main MV2 extension loading
+│   └── shared-browser.ts      # Multi-context support
+├── e2e/
+│   ├── stable-popup.spec.ts   # Popup functionality
+│   └── debug-*.spec.ts        # Debug utilities
+└── playwright.config.ts       # headless: false, persistent context
+```
+
+### Key Components
+1. **Stable Extension Fixture**: Handles MV2 background page detection
+2. **MV2 Manifest**: Traditional background scripts, no service workers
+3. **Headful Testing**: Always GUI mode for extension loading
+4. **CI Support**: xvfb-run for headless CI environments
+
+## 📚 Documentation
+
+### Architecture Decisions
+- See [ADR documentation](.cursor/rules/adr.mdc) for complete list of Architecture Decision Records
+
+### Tasks & Goals
+- See [Tasks & Goals](.cursor/rules/tasks&goals.mdc) for implementation checklist and success criteria
+
+### Extension Testing
+- [Extension Testing Usage](.cursor/extension-testing-usage.md)
+
+### Technical References
+- [Playwright Extension Testing](https://playwright.dev/docs/chrome-extensions)
+- [Chrome MV2 Documentation](https://developer.chrome.com/docs/extensions/mv2/)
+- [xvfb CI Setup](https://github.com/microsoft/playwright/issues/7259)
+
+## 🚀 Current Status
+
+**Status**: ✅ **MV2 E2E testing foundation is solid**
+- Extension loads reliably in headful mode
+- Background pages detectable
+- Popup testing framework ready
+- CI infrastructure prepared
+
+**Next**: Focus on comprehensive test implementation and CI setup.

@@ -1,0 +1,173 @@
+---
+description: Continuous Integration and Deployment standards
+globs: [".github/workflows/**", "**/.gitlab-ci.yml", "Dockerfile", "docker-compose.yml"]
+alwaysApply: true
+---
+
+# 🔄 CI/CD Standards
+
+## Pipeline Overview
+
+Every project should have automated CI/CD pipeline that:
+- Runs on every push/PR
+- Executes full test suite
+- Performs linting and type checking
+- Builds the project
+- Deploys to staging/production (if applicable)
+
+## Test Execution in CI
+
+### Chrome Extension Specific
+- **Never run headed in CI** - use `xvfb-run` for headless display emulation
+- **Build extension first** - tests require `dist/` folder to exist
+- **Single extension instance** - parallel execution disabled for stability
+
+### Commands
+```bash
+# CI mode with xvfb (headless display emulation)
+npm run test:e2e:ci
+
+# Full test suite
+pnpm run test
+pnpm run test:e2e:ci
+```
+
+## Pipeline Stages
+
+### 1. Setup & Install
+```yaml
+- checkout code
+- setup Node.js (version 18+)
+- install dependencies: pnpm install
+- install Playwright browsers: npx playwright install --with-deps
+```
+
+### 2. Quality Checks
+```yaml
+- lint code: pnpm run lint
+- type check: pnpm run type-check
+- run unit tests: pnpm run test
+```
+
+### 3. Build
+```yaml
+- build extension: pnpm run build
+- build test version: pnpm run build:test
+```
+
+### 4. E2E Tests
+```yaml
+- run E2E tests: pnpm run test:e2e:ci
+- upload test artifacts (screenshots, videos)
+- generate test reports
+```
+
+### 5. Deploy (Optional)
+```yaml
+- deploy to staging
+- run smoke tests
+- promote to production
+```
+
+## Artifacts & Reports
+
+### Test Artifacts
+- Screenshots for failed tests
+- Video recordings of test execution
+- HTML report with detailed test results
+- JSON output for CI integration
+
+### Build Artifacts
+- Built extension (`dist/` folder)
+- Test results and logs
+- Coverage reports
+
+## Environment Variables
+
+### Required for CI
+```bash
+NODE_ENV=ci
+EXTENSION_PATH=./dist  # or absolute path
+CI=true               # for conditional logic
+```
+
+### Chrome Extension Specific
+```bash
+CHROME_EXTENSION_ID=your-extension-id  # for published extensions
+```
+
+## Best Practices
+
+### Performance
+- **Cache dependencies** between runs
+- **Run tests in parallel** when possible (except extension tests)
+- **Use matrix builds** for multiple Node.js versions
+
+### Security
+- **Don't commit secrets** to repository
+- **Use environment variables** for sensitive data
+- **Scan dependencies** for vulnerabilities
+
+### Monitoring
+- **Set up notifications** for failed builds
+- **Monitor test flakiness**
+- **Track build times** and optimize slow steps
+
+## Common CI Platforms
+
+### GitHub Actions
+```yaml
+name: CI
+on: [push, pull_request]
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      - run: pnpm install
+      - run: pnpm run lint
+      - run: pnpm run test
+      - run: pnpm run build
+      - run: pnpm run test:e2e:ci
+```
+
+### GitLab CI
+```yaml
+stages:
+  - test
+  - build
+  - deploy
+
+test:
+  stage: test
+  script:
+    - pnpm install
+    - pnpm run test
+    - pnpm run lint
+
+e2e:
+  stage: test
+  script:
+    - pnpm run build:test
+    - xvfb-run -a pnpm run test:e2e
+```
+
+## Troubleshooting
+
+### Common Issues
+- **Extension not loading**: Check `EXTENSION_PATH` variable
+- **Tests timing out**: Increase timeout values for CI
+- **Memory issues**: Add swap space or increase runner size
+- **Browser crashes**: Use `--no-sandbox` flag in CI
+
+### Debug Mode
+```bash
+# Run tests with debug output
+DEBUG=pw:api pnpm run test:e2e:ci
+
+# Save test results for analysis
+pnpm run test:e2e:ci -- --reporter=json > test-results.json
+```

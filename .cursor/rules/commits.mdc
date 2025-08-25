@@ -1,0 +1,137 @@
+---
+description: Git commit standards and practices
+globs: ["**/*"]
+alwaysApply: true
+---
+
+# 📝 Commit Standards
+
+## When to Commit
+
+- **After Every Task**: Commit when a logical unit of work is complete
+- **Before Major Changes**: Commit stable state before risky operations
+- **Fix Issues First**: Never commit with lint errors or failing tests
+
+## Commit Process
+
+```bash
+# Check status
+git status
+
+# Stage relevant changes
+git add <specific-files>
+
+# Commit with conventional format
+git commit -m "feat: add user authentication"
+git commit -m "test(e2e): user authentication"
+git commit -m "docs(readme): update installation instructions"
+git commit -m "refactor(utils): simplify date formatting"
+git commit -m "chore(ci): add test coverage badge"
+git commit -m "feat(auth): ...."
+
+
+# Or for multiple changes
+git add . && git commit -m "fix: resolve login issues"
+```
+
+## Conventional Commits
+
+Use format: `type(scope): description`
+
+### Types
+- `feat:` - New feature
+- `fix:` - Bug fix
+- `docs:` - Documentation changes
+- `style:` - Code style changes
+- `refactor:` - Code restructuring
+- `test:` - Test additions
+- `chore:` - Maintenance tasks
+
+### Examples
+- `feat(auth): add OAuth login`
+- `fix(ui): resolve mobile layout issue`
+- `docs(api): update endpoint documentation`
+- `refactor(utils): simplify date formatting`
+
+## Best Practices
+
+- **Atomic Commits**: Each commit should be a single, complete change
+- **Clear Messages**: Write descriptive commit messages
+- **Reference Issues**: Include issue numbers when relevant
+- **Test Before Commit**: Run tests and lint before committing
+
+## 🔄 Pre-commit Workflow
+
+### Option 1: Manual Checks (Always Available)
+```bash
+# Run before committing (manual approach)
+pnpm run test
+pnpm run lint
+```
+
+**What to do if checks fail:**
+- Fix the issues shown in the console output
+- Re-run the commands to verify the fixes
+- Only commit when all checks pass
+
+### Option 2: Husky Automation (Automated)
+
+Husky automatically runs the same checks on every `git commit`:
+
+```bash
+# Install husky
+pnpm add -D husky
+
+# Initialize husky
+pnpm exec husky install
+
+# Add pre-commit hook (already configured)
+# The .husky/pre-commit file includes skip functionality
+```
+
+**How it works together:**
+- **Husky**: Automatically checks every commit
+- **Manual**: Can be run independently at any time
+- **Skip**: Bypass functionality works only with Husky hooks
+
+### ⚡ Skipping Pre-commit Checks
+
+**When to Skip:**
+- Emergency hotfixes that need immediate deployment
+- Work-in-progress commits during development
+- When tests are temporarily broken due to external factors
+- Quick documentation updates
+
+**How to Skip:**
+
+**Option 1: Automatic Script (Recommended)**
+```bash
+# Skip with helper script
+.\scripts\skip-commit.ps1 -Message "fix: urgent hotfix" -AddAll
+
+# Or without adding all files
+git add specific-file.ts
+.\scripts\skip-commit.ps1 "fix: targeted fix"
+```
+
+**Option 2: Manual Git Commands**
+```bash
+# Skip using git commit --no-verify
+git add .
+git commit --no-verify -m "fix: urgent hotfix"
+
+# Skip using commit message flag
+git add .
+git commit -m "fix: urgent hotfix [skip ci]"
+```
+
+**How It Works:**
+1. **Script Method**: Automatically adds `[skip ci]` flag to commit message
+2. **--no-verify**: Bypasses all Git hooks entirely
+3. **Message Flag**: Pre-commit hook detects `[skip ci]` and exits early
+
+**Important Notes:**
+- Skipped commits still appear in history
+- Use sparingly - prefer running full checks when possible
+- CI/CD pipelines may still run full tests on skipped commits
+- Always run tests manually before skipping if possible

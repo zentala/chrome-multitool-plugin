@@ -1,0 +1,46 @@
+---
+description: Project tasks, goals and implementation checklist
+globs: ["TODO.md", "*.md"]
+alwaysApply: true
+---
+
+# 📋 Tasks & Goals
+
+## 🎯 Success Criteria
+
+### Current Goals (MV2)
+1. **All popup functionality** testable in E2E
+2. **Background script messaging** works in tests
+3. **Content script injection** testable on real pages
+4. **CI pipeline** runs successfully with xvfb
+5. **Cross-platform testing** works (Windows/Linux)
+
+### Future Goals (MV3 Migration)
+1. **Service worker detection** works in Playwright
+2. **Background script** uses service worker APIs
+3. **Same test coverage** maintained
+4. **Performance improvements** from MV3 architecture
+
+## 📋 Implementation Checklist
+
+### ✅ Completed
+- [x] Create ADR explaining MV2 decision
+- [x] Document headless:false requirement
+- [x] Create ADR for fallback extension ID strategy
+- [x] Convert manifest from MV3 to MV2
+- [x] Fix background script MV2 compatibility
+- [x] Update Playwright config for headful mode
+- [x] Implement stable extension loading fixture
+- [x] Create MV2 manifest validation tests
+
+### 🔄 In Progress
+- [ ] Implement comprehensive popup tests
+- [ ] Add content script integration tests
+- [ ] Setup CI pipeline with xvfb
+- [ ] Document MV3 migration plan
+
+### 📋 Future
+- [ ] Monitor Playwright MV3 support
+- [ ] Plan MV3 migration when stable
+- [ ] Update background script to service worker
+- [ ] Test new MV3 extension loading

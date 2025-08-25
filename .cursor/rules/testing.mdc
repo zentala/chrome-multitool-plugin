@@ -1,0 +1,134 @@
+---
+description: General testing standards and best practices
+globs: ["**/*.test.*", "**/*.spec.*", "vitest.config.*"]
+alwaysApply: true
+---
+
+# 🧪 Testing Standards
+
+## Test Coverage Philosophy
+
+- **Quality over Quantity**: Focus on critical paths first
+- **Progressive Coverage**: Add tests as features stabilize
+- **Core Logic Priority**: Test business logic before UI details
+
+## When to Skip Tests
+
+### Acceptable Cases
+```typescript
+// Skip complex UI interactions initially
+test.skip('drag and drop functionality', () => {
+  // TODO: Implement when UI testing framework is stable
+});
+
+// Skip external service integrations in unit tests
+test.skip('payment gateway integration', () => {
+  // TODO: Add integration tests when API contracts are finalized
+});
+```
+
+### Documentation Requirements
+Always explain why tests are skipped:
+
+```typescript
+/**
+ * Test temporarily disabled due to:
+ * - External API instability
+ * - Complex setup requirements
+ * - Time constraints
+ * TODO: Re-enable when conditions improve
+ */
+```
+
+## Test Organization
+
+### File Naming
+- `*.test.ts` - Unit tests
+- `*.test.tsx` - Component tests
+- `*.spec.ts` - Integration/E2E tests
+
+### Test Structure
+```typescript
+describe('User Authentication', () => {
+  beforeEach(() => {
+    // Setup test data
+    mockUser = createMockUser();
+  });
+
+  describe('login', () => {
+    it('should authenticate valid credentials', async () => {
+      // Test implementation
+    });
+
+    it('should reject invalid password', async () => {
+      // Test implementation
+    });
+  });
+});
+```
+
+## E2E Testing
+
+For Chrome extension E2E testing specifics, see [E2E Testing](.cursor/rules/testing.e2e.mdc).
+
+## Mocking Strategy
+
+### External Dependencies
+```typescript
+// Mock API calls
+jest.mock('../services/api', () => ({
+  fetchUser: jest.fn().mockResolvedValue(mockUser),
+}));
+
+// Mock browser APIs
+Object.defineProperty(window, 'chrome', {
+  value: { storage: { local: { get: jest.fn() } } },
+});
+```
+
+## Test Data Management
+
+### Factory Functions
+```typescript
+function createMockUser(overrides = {}) {
+  return {
+    id: 'user-123',
+    email: 'test@example.com',
+    name: 'Test User',
+    ...overrides,
+  };
+}
+```
+
+### Test Fixtures
+```typescript
+// fixtures/users.json
+{
+  "admin": { "role": "admin", "permissions": ["read", "write", "delete"] },
+  "user": { "role": "user", "permissions": ["read"] }
+}
+```
+
+## Continuous Integration
+
+### Pre-commit Checks
+For pre-commit hooks and automated testing before commits, see [Commit Standards](.cursor/rules/commits.mdc).
+
+### CI/CD Pipeline
+For full CI/CD pipeline setup and best practices, see [CI/CD Standards](.cursor/rules/ci.mdc).
+
+## Debugging Tests
+
+### Common Issues
+- **Flaky Tests**: Add retry logic or stabilize test data
+- **Timing Issues**: Use proper waits instead of fixed delays
+- **Environment Differences**: Mock external dependencies
+
+### Debug Mode
+```bash
+# Run specific test in debug mode
+pnpm run test -- --testNamePattern="login" --verbose
+
+# Run with coverage
+pnpm run test -- --coverage --coverageReporters=text
+```

@@ -1,0 +1,104 @@
+---
+description: Terminal usage standards and PowerShell best practices
+globs: ["**/*.ps1", "**/*.sh", "**/*.bat"]
+alwaysApply: true
+---
+
+# 💻 Terminal Standards
+
+## Environment
+
+- **PowerShell 7**: Use `pwsh` (not Windows PowerShell)
+- **Package Manager**: Use `pnpm` for all Node.js operations
+- **Platform**: Windows 11 with WSL when needed
+
+## Command Best Practices
+
+### Prefer Non-Interactive Mode
+```bash
+# Good - non-interactive
+pnpm install
+npm run build
+
+# Avoid - interactive prompts
+pnpm create next-app
+npm init
+```
+
+### Logging
+```bash
+# Log test results
+pnpm run test >> test.log
+
+# Log lint results
+pnpm run lint >> lint.log
+
+# Check logs after commands
+cat test.log
+```
+
+## PowerShell Specific
+
+### File Operations
+```bash
+# Copy files
+Copy-Item source.txt dest.txt
+
+# Move files
+Move-Item old.txt new.txt
+
+# Remove files/folders
+Remove-Item file.txt -Force
+Remove-Item folder/ -Recurse -Force
+```
+
+### Path Handling
+```bash
+# Use forward slashes for paths
+./scripts/build.ps1
+
+# Join paths properly
+Join-Path $basePath "subfolder" "file.txt"
+```
+
+## Issue Logging
+
+When encountering terminal problems, document in `./.cursor/PWSH_ISSUES.md`:
+
+```
+## Issue: Command hangs on Windows
+**Problem**: pnpm install freezes
+**Workaround**: Use --no-cache flag
+**Best Practice**: Run in new shell session
+```
+
+## Common Commands
+
+### Build & Test
+```bash
+pnpm install
+pnpm run build
+pnpm run dev
+pnpm run test
+pnpm run lint
+```
+
+### Git Operations
+```bash
+git status
+git add .
+git commit -m "message"
+git push origin main
+```
+
+### File System
+```bash
+# List files
+Get-ChildItem -Name
+
+# Create directory
+New-Item -ItemType Directory -Name "folder"
+
+# Check file existence
+Test-Path "file.txt"
+```

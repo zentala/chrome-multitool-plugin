@@ -1,0 +1,21 @@
+---
+description: Architecture Decision Records for Chrome extension E2E testing
+globs: ["ADR/**"]
+alwaysApply: true
+---
+
+# 🏗️ Architecture Decisions
+
+## Current ADRs
+
+* [Why use MV2 instead of MV3](ADR/001-manifest-v2-over-v3.md): Playwright has limited support for MV3 service workers. We use MV2 for reliable E2E testing and will migrate to MV3 when Playwright support improves.
+* [E2E Testing: Always headless: false](ADR/002-always-headless-false-for-extension-testing.md): Chrome Extensions cannot load in headless mode. Use `xvfb-run` for CI environments.
+* [Fallback Extension ID Approach](ADR/003-fallback-extension-id-strategy.md): Use `fallback-extension-id` and `file://` URLs when real extension ID detection fails. Ensures reliable testing while maintaining functionality coverage.
+
+## 📋 Procedure for documentation of ADRs
+
+1. Create new ADR file in `./ADR/NNN-short-description.md` where NNN is number of the ADR, e.g. `./ADR/001-use-MV2.md`
+2. Always add new ADRs [here](.cursor/rules/adr.mdc) to `ADRs`>`Current ADRs` as above
+3. Follow the ADR template format for consistency
+4. Reference ADRs in relevant MDC rule files instead of duplicating information
+

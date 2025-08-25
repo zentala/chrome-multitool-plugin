@@ -1,0 +1,140 @@
+---
+description: Code style, documentation, and file organization standards
+globs: ["src/**", "**/*.ts", "**/*.tsx", "**/*.js", "**/*.jsx"]
+alwaysApply: true
+---
+
+# 🎨 Code & Documentation Style
+
+## File Organization
+
+### File Length Limit
+- **Maximum 200 lines** per file
+- Split larger files into logical modules
+- Create separate files for utilities, types, constants
+
+### File Purpose Comments
+Every TypeScript/React file must start with:
+
+```typescript
+/**
+ * User authentication service
+ * Handles login, logout, and session management
+ */
+```
+
+## Code Documentation
+
+### TSDoc Comments
+Use TSDoc for all exported functions, classes, and complex logic:
+
+```typescript
+/**
+ * Authenticates user with email and password
+ * @param email - User email address
+ * @param password - User password
+ * @returns Promise<User> - Authenticated user object
+ * @throws AuthError - When authentication fails
+ */
+export async function login(email: string, password: string): Promise<User> {
+  // implementation
+}
+```
+
+### Inline Comments for Complex Logic
+```typescript
+// Calculate compound interest: P(1 + r/n)^(nt)
+// Where P = principal, r = rate, n = compounds per year, t = time
+const compoundInterest = principal * Math.pow(1 + rate / compounds, compounds * time);
+```
+
+## TODO and FIXME Comments
+
+### Usage
+```typescript
+// TODO: Implement error handling for network failures
+// FIXME: Remove this temporary workaround when API is fixed
+```
+
+### When to Use
+- **TODO**: For planned improvements or missing features
+- **FIXME**: For known bugs or temporary solutions
+
+## Problem-Solving Documentation
+
+When fixing issues, document what was tried:
+
+```typescript
+/**
+ * FIXED: Resolved memory leak in useEffect
+ *
+ * APPROACHES TRIED:
+ * 1. useCallback - didn't solve cleanup issue
+ * 2. useRef - caused stale closure problems
+ * 3. ✅ useEffect cleanup function - resolved the issue
+ */
+```
+
+## Folder Structure
+
+### Required Files
+- **`.meta.md`**: Every important folder must have description
+- **`.usage.md`**: Complex modules should have usage examples
+- **`.cursor/DIAGRAMS/`**: Visual representations for complex logic
+
+### Example Structure
+```
+src/
+├── components/
+│   ├── Button/
+│   │   ├── Button.tsx
+│   │   ├── Button.test.tsx
+│   │   └── Button.usage.md
+│   └── Button.meta.md
+└── services/
+    ├── auth.service.ts
+    └── auth.service.usage.md
+```
+
+## Naming Conventions
+
+### Files
+- `PascalCase` for components: `UserProfile.tsx`
+- `camelCase` for utilities: `dateUtils.ts`
+- `kebab-case` for config: `webpack.config.js`
+
+### Variables & Functions
+- `camelCase` for variables and functions
+- `PascalCase` for classes and types
+- `SCREAMING_SNAKE_CASE` for constants
+
+## Error Handling
+
+### Consistent Patterns
+```typescript
+try {
+  const result = await riskyOperation();
+  return result;
+} catch (error) {
+  console.error('Operation failed:', error);
+  throw new CustomError('User-friendly message', error);
+}
+```
+
+## Import Organization
+
+### Group Imports
+```typescript
+// React imports
+import React, { useState } from 'react';
+
+// Third-party libraries
+import { format } from 'date-fns';
+
+// Local modules
+import { User } from '../types';
+import { api } from '../services';
+
+// Relative imports
+import Button from './Button';
+```
