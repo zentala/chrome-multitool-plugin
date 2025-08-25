@@ -1,0 +1,46 @@
+#!/bin/sh
+. "$(dirname -- "$0")/_/husky.sh"
+
+# Allow skipping hooks with --no-verify flag
+if git rev-parse --verify HEAD >/dev/null 2>&1; then
+    against=HEAD
+else
+    against=$(git hash-object -t tree /dev/null)
+fi
+
+# Skip pre-commit hooks if --no-verify is used
+if git diff --cached --quiet --exit-code; then
+    exit 0
+fi
+
+# Check for skip flag in commit message
+SKIP_HOOKS=$(git log -1 --oneline -n 1 2>/dev/null | grep -o "\[skip ci\]" || echo "")
+
+if [ "$SKIP_HOOKS" = "[skip ci]" ]; then
+    echo "⏭️  Skipping pre-commit checks due to [skip ci] in commit message"
+    exit 0
+fi
+
+echo "🔍 Running pre-commit checks..."
+
+# Run tests
+echo "🧪 Running tests..."
+if pnpm run test; then
+    echo "✅ Tests passed"
+else
+    echo "❌ Tests failed"
+    echo "💡 To skip checks, add [skip ci] to your commit message"
+    exit 1
+fi
+
+# Run linting
+echo "🔍 Running linter..."
+if pnpm run lint; then
+    echo "✅ Linting passed"
+else
+    echo "❌ Linting failed"
+    echo "💡 To skip checks, add [skip ci] to your commit message"
+    exit 1
+fi
+
+echo "🎉 All checks passed!"
