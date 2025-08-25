@@ -12,3 +12,8 @@ keys
 
 #Ignore vscode AI rules
 .github\instructions\codacy.instructions.md
+
+# Playwright Tests Artifccts
+test-results.*
+test-results/
+playwright-report/

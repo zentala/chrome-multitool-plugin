@@ -3,6 +3,7 @@
   "name": "Zentala Chrome Multitool Plugin",
   "version": "1.0.0",
   "description": "Personal browser extension with custom shortcuts, automations, integrations and productivity tools",
+
   "permissions": [
     "activeTab",
     "bookmarks",
@@ -28,7 +29,6 @@
     "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;",
     "sandbox": "sandbox allow-scripts; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
   },
-  
   "content_scripts": [
     {
       "matches": ["https://allegro.pl/*"],
@@ -46,13 +46,6 @@
       "run_at": "document_start"
     }
   ],
-
-
-  // ** Background working scripts **
-  // "background": {
-  //   "service_worker": "background.js"
-  // },
-  
   "web_accessible_resources": [{
     "resources": ["allegroCartPageInjector.js"],
     "matches": ["<all_urls>"]

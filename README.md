@@ -10,6 +10,18 @@
 
 Personal browser extension with custom shortcuts, automations, integrations and productivity tools.
 
+## 🏗️ Architecture Decisions
+
+### Manifest Version: V2 vs V3
+📄 **[ADR 001: Use Manifest V2 instead of Manifest V3](ADR/001-manifest-v2-over-v3.md)**
+
+**Why MV2?** Playwright has limited support for MV3 service workers. We use MV2 for reliable E2E testing and will migrate to MV3 when Playwright support improves.
+
+### E2E Testing: Always headless: false
+📄 **[ADR 002: Always Use headless: false for Extension E2E Tests](ADR/002-always-headless-false-for-extension-testing.md)**
+
+**Why always headful?** Chrome Extensions cannot load in headless mode. Use `xvfb-run` for CI environments.
+
 ## 🚀 Features
 
 - Custom keyboard shortcuts

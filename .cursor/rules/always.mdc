@@ -149,3 +149,36 @@ Przykład:
 
 Szablony znajdują się w `.cursor/context/_templates/`.
 
+## Playwright E2E tests
+
+- nigdy nie uruchamiaj headed, zawesze headles
+- zawsze gemerik raport aby nie otwirac wiszaego serwera: `npx playwright test --reporter=html,line`
+
+```
+# Normalne testy (headless, bez otwierania przeglądarki)
+npm run test:e2e
+
+# Jeśli potrzebujesz debugować z widoczną przeglądarką
+npm run test:e2e:headed
+
+# Obejrzeć wyniki później
+npm run test:e2e:report
+```
+
+nie pokazuj mi raportu, nie odpala show-report, sam sobie zobacz pliki json z reporem czy jakies inne i dzialaj na ich podsatawie
+
+
+## ADR
+
+documentacja ADR:
+
+`./ADR/NNN-short-description.md`
+
+where NNN is number of the ADR
+
+eg `./ADR/001-use-MV2.md`
+
+For now:
+
+* `ADR/001-manifest-v2-over-v3.md` - Dlaczego MV2 zamiast MV3
+* `ADR/002-always-headless-false-for-extension-testing.md` - Dlaczego zawsze `headless: false`

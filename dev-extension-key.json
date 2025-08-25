@@ -1,0 +1,5 @@
+{
+  "manifestKey": "MIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEAnYhYKcWctNUHmuPyepz5DaZZ3Fk6B0J+z6VS+tV/P9SkmM/5gCQsY4Ux7QQVB1RcJVLUylMvJZN3pI/ch9BRX3HoKpmKdNPQsWRCYfao0uKYy1M8scRPRpd8pBR1OhvUbxvqaVNHbg1rBCnz3HPQAv7gEPhL7tI8J5NakC5VmJETBgrD0qnMQ7KZ6LRK7GGkCTxMQ7fCnF5wK7TSgQiR2qFXVVj2F6/w9Tg0L4qpqFNfQSJK7P6aeAcT2gKNW4UKZV0K4X5BcP4ZBs0FLwKZJNJpJQgqNJRMLKJG0vCJpVEh5iU/dTB1cE5vh1jqwPEhJL9xXEKvhH3a8nCqFQIDAQAB",
+  "expectedExtensionId": "mfgccidlmgmcellpkjhepnhmfgdmnhae",
+  "note": "This is a development key. Do not use in production!"
+}

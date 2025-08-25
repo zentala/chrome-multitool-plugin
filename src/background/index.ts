@@ -169,6 +169,9 @@ export async function handleCurrencyClarificationRequest(
 // export async function getApiKey(provider: string): Promise<string | null> { ... }
 
 // Log any unhandled promise rejections
-self.addEventListener('unhandledrejection', (event) => {
-  console.error('Background: Unhandled promise rejection:', event.reason);
-});
+// Handle unhandled promise rejections (MV2 compatible)
+if (typeof window !== 'undefined') {
+  window.addEventListener('unhandledrejection', (event) => {
+    console.error('Background: Unhandled promise rejection:', event.reason);
+  });
+}

@@ -330,3 +330,4 @@ expect.extend({
 
 ### Rekomendacja:
 Rozpocząć od **Fazy 1** (unit tests) jako fundamentu, następnie stopniowo dodawać integration i E2E testy. Priorytetować testy krytycznych user flows związanych z currency converter i bookmark AI search.
+

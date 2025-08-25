@@ -1,0 +1,125 @@
+# Architecture Summary - Chrome Extension E2E Testing
+
+## 🎯 Key Decisions Made
+
+### 1. Manifest Version: V2 (Not V3)
+**Decision**: Use Manifest V2 despite being deprecated
+**Reason**: Playwright cannot reliably detect MV3 service workers
+**Impact**: Reliable E2E testing now possible
+**Future**: Migrate to MV3 when Playwright support improves
+
+**Files Changed**:
+- `public/manifest.dev.json` - manifest_version: 2
+- `public/manifest.json` - manifest_version: 2
+- `src/background/index.ts` - removed self.addEventListener
+
+### 2. Always headless: false for Extension Tests
+**Decision**: Never use headless mode for extension testing
+**Reason**: Chrome Extensions cannot load in headless mode
+**Impact**: Tests require headful browser, use xvfb in CI
+**Implementation**: `playwright.config.ts` enforces headless: false
+
+**Files Changed**:
+- `playwright.config.ts` - headless: false
+- `package.json` - test:e2e:ci with xvfb-run
+
+### 3. Persistent Context Strategy
+**Decision**: Use single persistent context per test run
+**Reason**: Extensions cannot be shared between contexts
+**Impact**: Stable extension ID, reliable background page detection
+**Implementation**: `launchPersistentContext` with extension path
+
+## 📊 Current Test Status
+
+### ✅ Working Now
+- Extension builds successfully with MV2
+- Persistent context loads extension
+- Background pages are detectable
+- Popup pages can be opened
+- MV2 manifest validation passes
+
+### 🔄 Next Steps
+- Complete popup functionality tests
+- Add content script integration tests
+- Implement CI with xvfb
+- Document migration path to MV3
+
+## 🏗️ Architecture Overview
+
+### Test Structure
+```
+tests/
+├── fixtures/
+│   ├── stable-extension.ts    # Main MV2 extension loading
+│   └── shared-browser.ts      # Multi-context support
+├── e2e/
+│   ├── stable-popup.spec.ts   # Popup functionality
+│   └── debug-*.spec.ts        # Debug utilities
+└── playwright.config.ts       # headless: false, persistent context
+```
+
+### Key Components
+1. **Stable Extension Fixture**: Handles MV2 background page detection
+2. **MV2 Manifest**: Traditional background scripts, no service workers
+3. **Headful Testing**: Always GUI mode for extension loading
+4. **CI Support**: xvfb-run for headless CI environments
+
+## 📋 Implementation Checklist
+
+### ✅ Completed
+- [x] Create ADR explaining MV2 decision
+- [x] Document headless:false requirement
+- [x] Convert manifest from MV3 to MV2
+- [x] Fix background script MV2 compatibility
+- [x] Update Playwright config for headful mode
+- [x] Implement stable extension loading fixture
+- [x] Create MV2 manifest validation tests
+
+### 🔄 In Progress
+- [ ] Implement comprehensive popup tests
+- [ ] Add content script integration tests
+- [ ] Setup CI pipeline with xvfb
+- [ ] Document MV3 migration plan
+
+### 📋 Future
+- [ ] Monitor Playwright MV3 support
+- [ ] Plan MV3 migration when stable
+- [ ] Update background script to service worker
+- [ ] Test new MV3 extension loading
+
+## 🎯 Success Criteria
+
+### Current Goals (MV2)
+1. **All popup functionality** testable in E2E
+2. **Background script messaging** works in tests
+3. **Content script injection** testable on real pages
+4. **CI pipeline** runs successfully with xvfb
+5. **Cross-platform testing** works (Windows/Linux)
+
+### Future Goals (MV3 Migration)
+1. **Service worker detection** works in Playwright
+2. **Background script** uses service worker APIs
+3. **Same test coverage** maintained
+4. **Performance improvements** from MV3 architecture
+
+## 📚 Documentation
+
+### Architecture Decisions
+- [ADR 001: MV2 vs MV3](ADR/001-manifest-v2-over-v3.md)
+- [Headless Mode Explanation](.cursor/HEADLESS_FALSE_EXPLANATION.md)
+- [Extension Testing Usage](.cursor/extension-testing-usage.md)
+
+### Technical References
+- [Playwright Extension Testing](https://playwright.dev/docs/chrome-extensions)
+- [Chrome MV2 Documentation](https://developer.chrome.com/docs/extensions/mv2/)
+- [xvfb CI Setup](https://github.com/microsoft/playwright/issues/7259)
+
+## 🚀 Current Status
+
+**Status**: ✅ **MV2 E2E testing foundation is solid**
+- Extension loads reliably in headful mode
+- Background pages detectable
+- Popup testing framework ready
+- CI infrastructure prepared
+
+**Next**: Focus on comprehensive test implementation and CI setup.
