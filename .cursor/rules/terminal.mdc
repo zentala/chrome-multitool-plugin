@@ -70,7 +70,25 @@ When encountering terminal problems, document in `./.cursor/PWSH_ISSUES.md`:
 **Problem**: pnpm install freezes
 **Workaround**: Use --no-cache flag
 **Best Practice**: Run in new shell session
+
+## Issue: Git commands hang
+**Problem**: git log, git show hang with pager
+**Workaround**: Always use git --no-pager flag
+**Best Practice**: Document in terminal rules
 ```
+
+### Git Best Practices
+
+- **Always use --no-pager flag** for git commands that may hang:
+  ```bash
+  git --no-pager log --oneline -10
+  git --no-pager show --name-only HEAD
+  git --no-pager diff
+  ```
+
+- **Terminate hanging commands** with Ctrl+C immediately
+- **Document hanging commands** in PWSH_ISSUES.md for future reference
+- **Test git commands** before using them in scripts
 
 ## Common Commands
 
@@ -85,10 +103,19 @@ pnpm run lint
 
 ### Git Operations
 ```bash
+# Always use --no-pager to prevent hanging
+git --no-pager log --oneline -10
+git --no-pager show --name-only HEAD
+git --no-pager diff
+
+# Standard git commands
 git status
 git add .
 git commit -m "message"
 git push origin main
+
+# If command hangs, use Ctrl+C to terminate
+# Document hanging commands in PWSH_ISSUES.md
 ```
 
 ### File System

@@ -76,4 +76,20 @@ Podczas używania terminala `pwsh` zintegrowanego z Cursorem, z aktywnym modułe
 
 **Diagnoza:**
 - Problem **nie występował** podczas uruchamiania tych samych poleceń w standardowym terminalu `pwsh` poza Cursorem.
-- Problem **nie występował** w terminalu Cursora po tymczasowym wyłączeniu (zakomentowaniu) inicjalizacji `
+- Problem **nie występował** w terminalu Cursora po tymczasowym wyłączeniu (zakomentowaniu) inicjalizacji `oh-my-posh`.
+
+## Issue: Git commands hang with pager
+**Date:** 2025-01-XX
+**Problem:** `git log`, `git show`, `git diff` hang when using pager (less)
+**Symptoms:** Command appears to run but never completes, requires Ctrl+C
+**Environment:** Windows 11, PowerShell 7, Git for Windows
+**Workaround:** Always use `git --no-pager` flag
+**Best Practice:** Updated terminal rules to include --no-pager for all git commands
+
+## Issue: Select-String with git config hangs
+**Date:** 2025-01-XX
+**Problem:** `git config --list | Select-String -Pattern "pager"` hangs
+**Symptoms:** Pipeline hangs when trying to search git config output
+**Environment:** Windows 11, PowerShell 7
+**Workaround:** Avoid piping git config to Select-String, use git config directly
+**Best Practice:** Test commands before using in pipelines
