@@ -1,0 +1,121 @@
+---
+description: Implementation tasks and development roadmap
+globs: ["TODO.md", "*.md"]
+alwaysApply: true
+---
+
+# 📋 Implementation Tasks & Roadmap
+
+## 🎯 Development Phases
+
+### ✅ **COMPLETED - Infrastructure & Testing**
+- [x] Create ADR explaining MV2 decision
+- [x] Document headless:false requirement
+- [x] Create ADR for fallback extension ID strategy
+- [x] Convert manifest from MV3 to MV2
+- [x] Fix background script MV2 compatibility
+- [x] Update Playwright config for headful mode
+- [x] Implement stable extension loading fixture
+- [x] Create MV2 manifest validation tests
+- [x] Reorganize documentation into structured rules
+- [x] Add git non-interactive best practices
+- [x] Document terminal issues and solutions
+
+### 🚀 **PHASE 1: Extended Bookmark Model (2-3 weeks)**
+
+#### **AI Metadata Foundation**
+- [ ] Extend bookmark interfaces with AI fields (tags, summary, category, notes)
+- [ ] Add user suggestions and AI recommendations fields
+- [ ] Create database migration for new fields
+- [ ] Implement change tracking between Chrome and database
+
+#### **Suggestions System**
+- [ ] Create suggestion model (pending/accepted/rejected states)
+- [ ] Add change history and user decision tracking
+- [ ] Build UI for accepting/rejecting suggestions
+
+### 🏗️ **PHASE 2: AI Pipeline & Scraping (3-4 weeks)**
+
+#### **Architecture Decision**
+- [ ] Analyze plugin vs external server for AI pipeline
+- [ ] Define API between plugin and AI service
+- [ ] Create proof-of-concept for both approaches
+
+#### **AI Processing Pipeline**
+- [ ] Implement safe web scraping for bookmarks
+- [ ] Add AI summarization and tag generation
+- [ ] Create batch processing pipeline
+- [ ] Add rate limiting and error handling
+
+### 🎨 **PHASE 3: UI & User Experience (2-3 weeks)**
+
+#### **Enhanced UI Components**
+- [ ] Extend BookmarkManager to display AI metadata
+- [ ] Add forms for editing metadata
+- [ ] Implement filtering by AI tags
+- [ ] Create suggestion approval workflows
+
+#### **Mindmap Visualization**
+- [ ] Add bookmark tree visualization
+- [ ] Implement collapsible tree view
+- [ ] Add drag&drop reorganization
+- [ ] Create folder-based organization
+
+### 🔍 **PHASE 4: Search & Vector Search (2-3 weeks)**
+
+#### **Enhanced Search**
+- [ ] Add AI metadata to existing search
+- [ ] Implement vector search for semantic search
+- [ ] Optimize indexing performance
+- [ ] Add search result ranking
+
+#### **Media & Screenshots**
+- [ ] Add page screenshot functionality
+- [ ] Implement thumbnail storage in IndexedDB
+- [ ] Add media preview in UI
+- [ ] Optimize storage and retrieval
+
+### 📚 **LONG-TERM: Advanced AI Features (3-6 months)**
+
+#### **Complex AI Workflows**
+- [ ] Integrate @langchain/langgraph for complex AI workflows
+- [ ] Implement smart folder suggestions
+- [ ] Add automated bookmark organization
+- [ ] Create learning system from user preferences
+
+#### **Performance & Scalability**
+- [ ] Optimize vector search performance
+- [ ] Add AI response caching
+- [ ] Implement incremental indexing
+- [ ] Add offline AI processing capabilities
+
+## 🔄 **Weekly Sprint Focus**
+
+### **Current Sprint: Model Extension**
+- Focus on database schema changes
+- Implement basic AI metadata storage
+- Create suggestion system foundation
+
+### **Next Sprint: AI Pipeline Decision**
+- Architecture analysis and decision
+- API design between components
+- Proof-of-concept implementation
+
+## 📊 **Progress Tracking**
+
+| Phase | Status | Progress | Target Completion |
+|-------|--------|----------|-------------------|
+| Infrastructure | ✅ Complete | 100% | Done |
+| Model Extension | 🔄 In Progress | 20% | End Q1 2025 |
+| AI Pipeline | 📋 Planned | 0% | Mid Q1 2025 |
+| UI Enhancement | 📋 Planned | 0% | Late Q1 2025 |
+| Search & Vector | 📋 Planned | 0% | Early Q2 2025 |
+| Advanced AI | 📋 Backlog | 0% | Q2-Q3 2025 |
+
+## 🎯 **Success Metrics**
+
+- **AI Metadata Coverage**: 80% of bookmarks with AI-generated metadata
+- **Search Accuracy**: 90% relevant results for natural language queries
+- **User Adoption**: 70% of suggestions accepted by users
+- **Performance**: <500ms for vector search queries
+- **Storage Efficiency**: <100MB for 10k bookmarks with thumbnails

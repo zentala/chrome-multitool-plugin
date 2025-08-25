@@ -1,0 +1,128 @@
+---
+description: e2e testing (every functionallity should be e2e tested)
+globs: ["tests/e2e/**", "playwright.config.ts"]
+alwaysApply: true
+---
+
+# 🚀 E2E Testing with Playwright
+
+## Core Principle
+**Every functionality should be E2E tested** - comprehensive test coverage ensures extension reliability across different scenarios and environments.
+
+## 📋 Available Test Commands
+
+### Main Test Commands
+```bash
+# Run all E2E tests (headless mode)
+npm run test:e2e
+
+# Run with browser visible (headed mode)
+npm run test:e2e:headed
+
+# Debug mode (step-by-step execution)
+npm run test:e2e:debug
+
+# Visual test runner (UI mode)
+npm run test:e2e:ui
+```
+
+### Specific Module Tests
+```bash
+# Currency converter tests
+npm run test:e2e:currency
+
+# Allegro integration tests
+npm run test:e2e:allegro
+
+# Popup functionality tests
+npm run test:e2e:popup
+
+# Stable popup tests
+npm run test:e2e:stable
+```
+
+### CI/CD Commands
+```bash
+# CI mode with xvfb (headless display emulation)
+npm run test:e2e:ci
+
+# View test reports
+npm run test:e2e:report
+```
+
+## 🏗️ Test Structure
+
+```
+tests/
+├── e2e/                          # E2E test files
+│   ├── currency-converter.spec.ts   # Currency conversion tests
+│   ├── allegro-integration.spec.ts  # Allegro integration tests
+│   ├── popup.spec.ts               # Extension popup tests
+│   └── stable-popup.spec.ts        # Stable popup functionality
+├── fixtures/                     # Test helpers and utilities
+│   ├── extension-helpers.ts         # Extension loading utilities
+│   ├── shared-browser.ts           # Browser setup helpers
+│   └── stable-extension.ts         # Stable extension fixtures
+└── global-setup.ts               # Global test configuration
+```
+
+## 🔧 Configuration Notes
+
+### Important Settings
+- **Headless Mode**: Always `false` for Chrome extension testing ([ADR 002](.cursor/rules/adr.mdc))
+- **Parallel Execution**: Disabled (`fullyParallel: false`) for extension stability
+- **Single Worker**: `workers: 1` to prevent extension conflicts
+- **Manifest V2**: Using MV2 for reliable E2E testing ([ADR 001](.cursor/rules/adr.mdc))
+
+### Extension Loading Strategy
+- Uses `fallback-extension-id` approach when real ID detection fails ([ADR 003](.cursor/rules/adr.mdc))
+- Supports both `file://` URLs and real extension IDs
+- Automatic extension detection from `chrome://extensions/`
+
+## 🎯 Best Practices
+
+### Test Organization
+- Each major feature should have dedicated test file
+- Use descriptive test names that explain the scenario
+- Group related tests with `test.describe()`
+
+### Extension-Specific Testing
+- Always wait for extension to fully load before testing
+- Use `chrome-extension://` protocol for extension pages
+- Handle cross-origin scenarios properly
+- Mock external APIs for consistent test results
+
+### Debugging
+- Use `--debug` flag for step-by-step execution
+- Check `test-results/` for screenshots and videos on failures
+- Use browser dev tools for extension debugging
+- Review traces with `npx playwright show-trace`
+
+## 📊 Test Reports
+
+Reports are automatically generated in `playwright-report/` and include:
+- HTML report with detailed test results
+- Screenshots for failed tests
+- Video recordings of test execution
+- JSON output for CI integration
+
+## 🚨 Important Constraints
+
+1. **Never run headed in CI** - use `xvfb-run` for headless display emulation
+2. **Build extension first** - tests require `dist/` folder to exist
+3. **Single extension instance** - parallel execution disabled for stability
+4. **Cross-origin handling** - proper CORS and permission management required
+
+## 🔄 CI/CD Integration
+
+Tests automatically run on push/PR with:
+- Extension building step
+- Browser installation
+- Headless execution with `xvfb-run`
+- Artifact upload of test results
+
+## 📚 Additional Resources
+
+- [Playwright Documentation](https://playwright.dev/)
+- [Chrome Extension Testing Guide](https://playwright.dev/docs/chrome-extensions)
+- [Architecture Decisions](.cursor/rules/adr.mdc) - Complete ADR documentation
