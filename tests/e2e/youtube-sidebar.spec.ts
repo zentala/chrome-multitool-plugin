@@ -30,12 +30,6 @@ test.describe('YouTube Sidebar Integration', () => {
       ]
     });
 
-    context = await browser.newBrowserContext();
-
-    // Mock external services
-    await mockAIService(context);
-    await mockYouTubeAPI(context);
-
     console.log('✅ YouTube test setup complete');
   });
 
@@ -48,7 +42,13 @@ test.describe('YouTube Sidebar Integration', () => {
     test('TC-001: Content script loads on YouTube pages', async () => {
       console.log('🧪 TC-001: Testing content script loading...');
 
-      const page = await browser.newPage();
+      context = await browser.newBrowserContext();
+
+      // Mock external services
+      await mockAIService(context);
+      await mockYouTubeAPI(context);
+
+      const page = await context.newPage();
 
       try {
         // Navigate to YouTube video
@@ -65,6 +65,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
 
@@ -88,6 +89,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
   });
@@ -119,6 +121,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
 
@@ -167,6 +170,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
 
@@ -201,6 +205,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
   });
@@ -232,6 +237,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
 
@@ -267,6 +273,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
   });
@@ -297,6 +304,7 @@ test.describe('YouTube Sidebar Integration', () => {
         throw error;
       } finally {
         await page.close();
+        await context?.close();
       }
     });
   });

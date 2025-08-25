@@ -1,0 +1,435 @@
+{
+  "config": {
+    "configFile": "C:\\code\\chrome-multitool-plugin\\playwright.config.ts",
+    "rootDir": "C:/code/chrome-multitool-plugin/tests/e2e",
+    "forbidOnly": false,
+    "fullyParallel": false,
+    "globalSetup": null,
+    "globalTeardown": null,
+    "globalTimeout": 0,
+    "grep": {},
+    "grepInvert": null,
+    "maxFailures": 0,
+    "metadata": {
+      "project": "Zentala Chrome Multitool Plugin",
+      "version": "1.0.0",
+      "description": "E2E tests for Chrome extension",
+      "actualWorkers": 1
+    },
+    "preserveOutput": "always",
+    "reporter": [
+      [
+        "html",
+        {
+          "open": "never"
+        }
+      ],
+      [
+        "line",
+        null
+      ],
+      [
+        "json",
+        {
+          "outputFile": "test-results.json"
+        }
+      ]
+    ],
+    "reportSlowTests": {
+      "max": 5,
+      "threshold": 300000
+    },
+    "quiet": false,
+    "projects": [
+      {
+        "outputDir": "C:/code/chrome-multitool-plugin/test-results",
+        "repeatEach": 1,
+        "retries": 0,
+        "metadata": {
+          "project": "Zentala Chrome Multitool Plugin",
+          "version": "1.0.0",
+          "description": "E2E tests for Chrome extension",
+          "actualWorkers": 1
+        },
+        "id": "chrome-extension",
+        "name": "chrome-extension",
+        "testDir": "C:/code/chrome-multitool-plugin/tests/e2e",
+        "testIgnore": [],
+        "testMatch": [
+          "**/*.@(spec|test).?(c|m)[jt]s?(x)"
+        ],
+        "timeout": 60000
+      }
+    ],
+    "shard": null,
+    "updateSnapshots": "missing",
+    "updateSourceMethod": "patch",
+    "version": "1.55.0",
+    "workers": 1,
+    "webServer": null
+  },
+  "suites": [
+    {
+      "title": "youtube-sidebar.spec.ts",
+      "file": "youtube-sidebar.spec.ts",
+      "column": 0,
+      "line": 0,
+      "specs": [],
+      "suites": [
+        {
+          "title": "YouTube Sidebar Integration",
+          "file": "youtube-sidebar.spec.ts",
+          "line": 19,
+          "column": 6,
+          "specs": [],
+          "suites": [
+            {
+              "title": "Content Script Loading",
+              "file": "youtube-sidebar.spec.ts",
+              "line": 47,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "TC-001: Content script loads on YouTube pages",
+                  "ok": false,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": 0,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 1,
+                          "error": {
+                            "message": "TypeError: browser.newBrowserContext is not a function",
+                            "stack": "TypeError: browser.newBrowserContext is not a function\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:33:29",
+                            "location": {
+                              "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                              "column": 29,
+                              "line": 33
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 31 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 32 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 33 |\u001b[39m     context \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m browser\u001b[33m.\u001b[39mnewBrowserContext()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 34 |\u001b[39m\n \u001b[90m 35 |\u001b[39m     \u001b[90m// Mock external services\u001b[39m\n \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m mockAIService(context)\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                                "column": 29,
+                                "line": 33
+                              },
+                              "message": "TypeError: browser.newBrowserContext is not a function\n\n\u001b[0m \u001b[90m 31 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 32 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 33 |\u001b[39m     context \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m browser\u001b[33m.\u001b[39mnewBrowserContext()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 34 |\u001b[39m\n \u001b[90m 35 |\u001b[39m     \u001b[90m// Mock external services\u001b[39m\n \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m mockAIService(context)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:33:29\u001b[22m"
+                            }
+                          ],
+                          "stdout": [
+                            {
+                              "text": "🚀 Setting up YouTube extension tests...\n"
+                            },
+                            {
+                              "text": "🧹 Cleaning up YouTube tests...\n"
+                            }
+                          ],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.168Z",
+                          "annotations": [],
+                          "attachments": [],
+                          "errorLocation": {
+                            "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                            "column": 29,
+                            "line": 33
+                          }
+                        }
+                      ],
+                      "status": "unexpected"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-f09c1f0a1ba737acb503",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 48,
+                  "column": 9
+                },
+                {
+                  "title": "TC-002: Content script does not load on non-YouTube pages",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": -1,
+                          "parallelIndex": -1,
+                          "status": "skipped",
+                          "duration": 0,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.847Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-4f91b8749556e611710c",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 71,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "Sidebar Functionality",
+              "file": "youtube-sidebar.spec.ts",
+              "line": 95,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "TC-003: Sidebar injects correctly on YouTube",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": -1,
+                          "parallelIndex": -1,
+                          "status": "skipped",
+                          "duration": 0,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.852Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-a85ffcc6944f0b81b9df",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 96,
+                  "column": 9
+                },
+                {
+                  "title": "TC-004: Sidebar has correct UI elements",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": -1,
+                          "parallelIndex": -1,
+                          "status": "skipped",
+                          "duration": 0,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.856Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-7c458189becea25efa72",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 125,
+                  "column": 9
+                },
+                {
+                  "title": "TC-005: Sidebar close button works",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": -1,
+                          "parallelIndex": -1,
+                          "status": "skipped",
+                          "duration": 0,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.862Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-979e2225b91fe10a8893",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 173,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "Video Detection",
+              "file": "youtube-sidebar.spec.ts",
+              "line": 208,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "TC-006: Video ID is correctly extracted",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": -1,
+                          "parallelIndex": -1,
+                          "status": "skipped",
+                          "duration": 0,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.866Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-0d8ef2ac9125981a2a36",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 209,
+                  "column": 9
+                },
+                {
+                  "title": "TC-007: Sidebar reinitializes on navigation",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": -1,
+                          "parallelIndex": -1,
+                          "status": "skipped",
+                          "duration": 0,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.870Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-84013f9ce62464efff96",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 238,
+                  "column": 9
+                }
+              ]
+            },
+            {
+              "title": "Error Handling",
+              "file": "youtube-sidebar.spec.ts",
+              "line": 274,
+              "column": 8,
+              "specs": [
+                {
+                  "title": "TC-008: Graceful handling of videos without captions",
+                  "ok": true,
+                  "tags": [],
+                  "tests": [
+                    {
+                      "timeout": 60000,
+                      "annotations": [],
+                      "expectedStatus": "passed",
+                      "projectId": "chrome-extension",
+                      "projectName": "chrome-extension",
+                      "results": [
+                        {
+                          "workerIndex": -1,
+                          "parallelIndex": -1,
+                          "status": "skipped",
+                          "duration": 0,
+                          "errors": [],
+                          "stdout": [],
+                          "stderr": [],
+                          "retry": 0,
+                          "startTime": "2025-08-25T13:20:39.875Z",
+                          "annotations": [],
+                          "attachments": []
+                        }
+                      ],
+                      "status": "skipped"
+                    }
+                  ],
+                  "id": "4b7d8860a57622f449a0-eafffb3e73dd6b4cc34d",
+                  "file": "youtube-sidebar.spec.ts",
+                  "line": 275,
+                  "column": 9
+                }
+              ]
+            }
+          ]
+        }
+      ]
+    }
+  ],
+  "errors": [],
+  "stats": {
+    "startTime": "2025-08-25T13:20:37.403Z",
+    "duration": 2510.7219999999998,
+    "expected": 0,
+    "skipped": 7,
+    "unexpected": 1,
+    "flaky": 0
+  }
+}
