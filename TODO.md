@@ -15,7 +15,7 @@
 * [ ] **FAZA 4: Advanced Features** - multi-language, export, etc.
 * [ ] **CLEANUP** - usunąć folder chrome-zentala-yt/
 
-**📋 Szczegółowy plan:** `.cursor/MIGRATION_YOUTUBE_PLUGIN.md`
+**📋 Szczegółowy plan:** [MIGRATION_YOUTUBE_PLUGIN.md](.cursor/MIGRATION_YOUTUBE_PLUGIN.md)
 
 ## 🚀 **FAZA 1: ROZSZERZONY MODEL BOOKMARKÓW (NASTĘPNE 2-3 TYGODNIE)**
 
