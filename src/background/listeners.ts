@@ -165,10 +165,7 @@ export function setupRuntimeMessageListener() {
 
 // --- Initialization --- //
 
-// Initialize context menu when the extension is installed or updated
-chrome.runtime.onInstalled.addListener(initializeContextMenu);
-
-// Setup listeners
+// Setup listeners (context menu initialization is handled in index.ts)
 setupContextMenuOnClickListener();
 setupRuntimeMessageListener();
 

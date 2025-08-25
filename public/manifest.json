@@ -6,6 +6,8 @@
   "permissions": [
     "activeTab",
     "bookmarks",
+    "contextMenus",
+    "notifications",
     "scripting",
     "storage",
     "tabs"
@@ -34,7 +36,7 @@
   "content_scripts": [
     {
       "matches": ["https://allegro.pl/*"],
-      "js": ["allegroCart.js"],
+      "js": ["allegroCartPageInjector.js"],
       "run_at": "document_end"
     },
     {
@@ -44,7 +46,7 @@
     },
     {
       "matches": ["<all_urls>"],
-      "js": ["global.js"],
+      "js": ["globalInjector.js"],
       "run_at": "document_start"
     }
   ],

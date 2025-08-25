@@ -1,4 +1,13 @@
 // Typy
+export interface AllegroFavourite {
+  id: string;
+  name: string;
+  price: string;
+  thumbnailUrl: string;
+  url: string;
+  addedAt: string;
+}
+
 export interface StorageResponse {
   success: boolean;
   message: string;
@@ -82,4 +91,4 @@ class StorageService {
   }
 }
 
-export const storageService = new StorageService(); 
+export const storageService = new StorageService();

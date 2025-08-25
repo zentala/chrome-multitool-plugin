@@ -13,11 +13,11 @@ console.log('Background script loaded.');
 chrome.runtime.onInstalled.addListener(() => {
   console.log('Extension installed/updated. Initializing context menu...');
   initializeContextMenu();
-  // Optionally pre-initialize AI provider on install? 
-  // getAIProvider(); 
+  // Optionally pre-initialize AI provider on install?
+  // getAIProvider();
 });
 
-// Setup other listeners
+// Setup other listeners (context menu initialization is now handled by listeners.ts)
 setupContextMenuOnClickListener();
 setupRuntimeMessageListener();
 
@@ -85,11 +85,11 @@ export async function handleCurrencyConversionRequest(
 
     if (!parsed.success) {
       // Check if clarification is needed and prompt is a string
-      if (parsed.needsClarification && typeof parsed.clarificationPrompt === 'string') { 
+      if (parsed.needsClarification && typeof parsed.needsClarification === 'string') {
         return {
           success: false,
           needsClarification: true,
-          clarificationQuestion: parsed.clarificationPrompt, // We know it's a string here
+          clarificationQuestion: parsed.needsClarification, // Use the needsClarification field as the question
           originalText: text,
           error: 'AI requires clarification.',
         };
@@ -171,4 +171,4 @@ export async function handleCurrencyClarificationRequest(
 // Log any unhandled promise rejections
 self.addEventListener('unhandledrejection', (event) => {
   console.error('Background: Unhandled promise rejection:', event.reason);
-}); 
+});

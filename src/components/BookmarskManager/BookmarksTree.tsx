@@ -131,7 +131,7 @@ export const BookmarksTree: React.FC<BookmarksTreeProps> = ({
     return (
       <TreeItem
         key={nodePath}
-        itemId={nodePath}
+        nodeId={nodePath}
         label={label}
       >
         {isFolder && bookmark.children?.map((child) => renderBookmarkTree(child, nodePath))}
@@ -149,4 +149,4 @@ export const BookmarksTree: React.FC<BookmarksTreeProps> = ({
       {bookmarks.map((bookmark) => renderBookmarkTree(bookmark))}
     </TreeView>
   );
-}; 
+};

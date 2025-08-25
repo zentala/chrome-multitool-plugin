@@ -14,7 +14,7 @@ import { ChatAnthropic } from "@langchain/anthropic";
 import { HumanMessage, SystemMessage } from "@langchain/core/messages";
 import { settingsService } from '../../services/settings.service';
 import { BookmarkEntity } from '../../types/bookmarks.types';
-import { vectorStoreService } from '../../services/vectorStore.service';
+import { vectorStoreService } from '../../services/vectorStore';
 import { EmbeddingsConfirmDialog } from './EmbeddingsConfirmDialog';
 import { SearchResults, SearchResult } from './SearchResults';
 import { DebugPanel } from '../FavouritiesAllegro/components/DebugPanel'
@@ -85,7 +85,7 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
         }
 
         // Ustawienie callbacka potwierdzenia przed inicjalizacją
-        vectorStoreService.setConfirmCallback(async (bookmarksToProcess) => {
+        vectorStoreService.setConfirmCallback(async (bookmarksToProcess: BookmarkEntity[]) => {
           return new Promise((resolve) => {
             setConfirmDialogData({
               open: true,
@@ -236,7 +236,7 @@ export const BookmarkChat: React.FC<BookmarkChatProps> = ({ bookmarks, onCommand
             console.log('Debug info:', debug);
             setMessages(prev => [...prev, {
               role: 'assistant',
-              content: <DebugPanel debugInfo={debug} />
+              content: <DebugPanel debugInfo={debug as any} />
             }]);
           }}
           size="small"
