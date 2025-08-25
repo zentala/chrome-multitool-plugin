@@ -79,14 +79,14 @@
         {
           "title": "YouTube Sidebar Integration",
           "file": "youtube-sidebar.spec.ts",
-          "line": 19,
+          "line": 18,
           "column": 6,
           "specs": [],
           "suites": [
             {
               "title": "Content Script Loading",
               "file": "youtube-sidebar.spec.ts",
-              "line": 47,
+              "line": 39,
               "column": 8,
               "specs": [
                 {
@@ -105,25 +105,25 @@
                           "workerIndex": 0,
                           "parallelIndex": 0,
                           "status": "failed",
-                          "duration": 1,
+                          "duration": 14,
                           "error": {
                             "message": "TypeError: browser.newBrowserContext is not a function",
-                            "stack": "TypeError: browser.newBrowserContext is not a function\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:33:29",
+                            "stack": "TypeError: browser.newBrowserContext is not a function\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:43:37",
                             "location": {
                               "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
-                              "column": 29,
-                              "line": 33
+                              "column": 37,
+                              "line": 43
                             },
-                            "snippet": "\u001b[0m \u001b[90m 31 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 32 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 33 |\u001b[39m     context \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m browser\u001b[33m.\u001b[39mnewBrowserContext()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 34 |\u001b[39m\n \u001b[90m 35 |\u001b[39m     \u001b[90m// Mock external services\u001b[39m\n \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m mockAIService(context)\u001b[33m;\u001b[39m\u001b[0m"
+                            "snippet": "\u001b[0m \u001b[90m 41 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m'🧪 TC-001: Testing content script loading...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 43 |\u001b[39m       \u001b[36mconst\u001b[39m context \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m browser\u001b[33m.\u001b[39mnewBrowserContext()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 44 |\u001b[39m       \u001b[36mawait\u001b[39m mockAIService(context)\u001b[33m;\u001b[39m\n \u001b[90m 45 |\u001b[39m       \u001b[36mawait\u001b[39m mockYouTubeAPI(context)\u001b[33m;\u001b[39m\n \u001b[90m 46 |\u001b[39m\u001b[0m"
                           },
                           "errors": [
                             {
                               "location": {
                                 "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
-                                "column": 29,
-                                "line": 33
+                                "column": 37,
+                                "line": 43
                               },
-                              "message": "TypeError: browser.newBrowserContext is not a function\n\n\u001b[0m \u001b[90m 31 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 32 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 33 |\u001b[39m     context \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m browser\u001b[33m.\u001b[39mnewBrowserContext()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                             \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 34 |\u001b[39m\n \u001b[90m 35 |\u001b[39m     \u001b[90m// Mock external services\u001b[39m\n \u001b[90m 36 |\u001b[39m     \u001b[36mawait\u001b[39m mockAIService(context)\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:33:29\u001b[22m"
+                              "message": "TypeError: browser.newBrowserContext is not a function\n\n\u001b[0m \u001b[90m 41 |\u001b[39m       console\u001b[33m.\u001b[39mlog(\u001b[32m'🧪 TC-001: Testing content script loading...'\u001b[39m)\u001b[33m;\u001b[39m\n \u001b[90m 42 |\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 43 |\u001b[39m       \u001b[36mconst\u001b[39m context \u001b[33m=\u001b[39m \u001b[36mawait\u001b[39m browser\u001b[33m.\u001b[39mnewBrowserContext()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m                                     \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 44 |\u001b[39m       \u001b[36mawait\u001b[39m mockAIService(context)\u001b[33m;\u001b[39m\n \u001b[90m 45 |\u001b[39m       \u001b[36mawait\u001b[39m mockYouTubeAPI(context)\u001b[33m;\u001b[39m\n \u001b[90m 46 |\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:43:37\u001b[22m"
                             }
                           ],
                           "stdout": [
@@ -131,18 +131,24 @@
                               "text": "🚀 Setting up YouTube extension tests...\n"
                             },
                             {
+                              "text": "✅ YouTube test setup complete\n"
+                            },
+                            {
+                              "text": "🧪 TC-001: Testing content script loading...\n"
+                            },
+                            {
                               "text": "🧹 Cleaning up YouTube tests...\n"
                             }
                           ],
                           "stderr": [],
                           "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.168Z",
+                          "startTime": "2025-08-25T13:22:15.546Z",
                           "annotations": [],
                           "attachments": [],
                           "errorLocation": {
                             "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
-                            "column": 29,
-                            "line": 33
+                            "column": 37,
+                            "line": 43
                           }
                         }
                       ],
@@ -151,12 +157,12 @@
                   ],
                   "id": "4b7d8860a57622f449a0-f09c1f0a1ba737acb503",
                   "file": "youtube-sidebar.spec.ts",
-                  "line": 48,
+                  "line": 40,
                   "column": 9
                 },
                 {
                   "title": "TC-002: Content script does not load on non-YouTube pages",
-                  "ok": true,
+                  "ok": false,
                   "tags": [],
                   "tests": [
                     {
@@ -167,25 +173,71 @@
                       "projectName": "chrome-extension",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
-                          "errors": [],
-                          "stdout": [],
+                          "workerIndex": 1,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 2922,
+                          "error": {
+                            "message": "ReferenceError: context is not defined",
+                            "stack": "ReferenceError: context is not defined\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:88:9",
+                            "location": {
+                              "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                              "column": 9,
+                              "line": 88
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 86 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 87 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 88 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 89 |\u001b[39m       }\n \u001b[90m 90 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 91 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                                "column": 9,
+                                "line": 88
+                              },
+                              "message": "ReferenceError: context is not defined\n\n\u001b[0m \u001b[90m 86 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 87 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 88 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m    |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 89 |\u001b[39m       }\n \u001b[90m 90 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 91 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:88:9\u001b[22m"
+                            }
+                          ],
+                          "stdout": [
+                            {
+                              "text": "🚀 Setting up YouTube extension tests...\n"
+                            },
+                            {
+                              "text": "✅ YouTube test setup complete\n"
+                            },
+                            {
+                              "text": "🧪 TC-002: Testing content script on non-YouTube pages...\n"
+                            },
+                            {
+                              "text": "✅ Content script correctly ignored non-YouTube page\n"
+                            },
+                            {
+                              "text": "🧹 Cleaning up YouTube tests...\n"
+                            }
+                          ],
                           "stderr": [],
                           "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.847Z",
+                          "startTime": "2025-08-25T13:22:18.491Z",
                           "annotations": [],
-                          "attachments": []
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "C:\\code\\chrome-multitool-plugin\\test-results\\youtube-sidebar-YouTube-Si-48ab6-t-load-on-non-YouTube-pages-chrome-extension\\test-failed-1.png"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                            "column": 9,
+                            "line": 88
+                          }
                         }
                       ],
-                      "status": "skipped"
+                      "status": "unexpected"
                     }
                   ],
                   "id": "4b7d8860a57622f449a0-4f91b8749556e611710c",
                   "file": "youtube-sidebar.spec.ts",
-                  "line": 71,
+                  "line": 68,
                   "column": 9
                 }
               ]
@@ -193,12 +245,12 @@
             {
               "title": "Sidebar Functionality",
               "file": "youtube-sidebar.spec.ts",
-              "line": 95,
+              "line": 93,
               "column": 8,
               "specs": [
                 {
                   "title": "TC-003: Sidebar injects correctly on YouTube",
-                  "ok": true,
+                  "ok": false,
                   "tags": [],
                   "tests": [
                     {
@@ -209,30 +261,80 @@
                       "projectName": "chrome-extension",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
+                          "workerIndex": 2,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 30816,
+                          "error": {
+                            "message": "ReferenceError: context is not defined",
+                            "stack": "ReferenceError: context is not defined\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:120:9",
+                            "location": {
+                              "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                              "column": 9,
+                              "line": 120
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 118 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 119 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 120 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 121 |\u001b[39m       }\n \u001b[90m 122 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 123 |\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                                "column": 9,
+                                "line": 120
+                              },
+                              "message": "ReferenceError: context is not defined\n\n\u001b[0m \u001b[90m 118 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 119 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 120 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 121 |\u001b[39m       }\n \u001b[90m 122 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 123 |\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:120:9\u001b[22m"
+                            }
+                          ],
+                          "stdout": [
+                            {
+                              "text": "🚀 Setting up YouTube extension tests...\n"
+                            },
+                            {
+                              "text": "✅ YouTube test setup complete\n"
+                            },
+                            {
+                              "text": "🧪 TC-003: Testing sidebar injection...\n"
+                            },
+                            {
+                              "text": "🎬 Navigating to YouTube video: https://www.youtube.com/watch?v=BROWqjuTM0g\n"
+                            },
+                            {
+                              "text": "🧹 Cleaning up YouTube tests...\n"
+                            }
+                          ],
+                          "stderr": [
+                            {
+                              "text": "❌ TC-003 failed: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('ytd-player') to be visible\u001b[22m\n\u001b[2m    2 × locator resolved to hidden <ytd-player id=\"inline-player\" class=\"style-scope ytd-video-preview\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_INLINE_PREVIEW\">…</ytd-player>\u001b[22m\n\u001b[2m    27 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\u001b[22m\n\n    at navigateToYouTubeVideo \u001b[90m(C:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\utils\\youtube-helpers.ts:58:14\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\e2e\\youtube-sidebar.spec.ts:101:9 {\n  name: \u001b[32m'TimeoutError'\u001b[39m,\n  [\u001b[32mSymbol(step)\u001b[39m]: {\n    location: {\n      file: \u001b[32m'C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts'\u001b[39m,\n      line: \u001b[33m58\u001b[39m,\n      column: \u001b[33m14\u001b[39m,\n      function: \u001b[32m'navigateToYouTubeVideo'\u001b[39m\n    },\n    category: \u001b[32m'pw:api'\u001b[39m,\n    title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n    apiName: \u001b[32m'page.waitForSelector'\u001b[39m,\n    params: { selector: \u001b[32m'ytd-player'\u001b[39m, timeout: \u001b[33m15000\u001b[39m },\n    group: \u001b[90mundefined\u001b[39m,\n    stepId: \u001b[32m'pw:api@77'\u001b[39m,\n    boxedStack: \u001b[90mundefined\u001b[39m,\n    steps: [],\n    attachmentIndices: [],\n    info: TestStepInfoImpl {\n      annotations: [],\n      _testInfo: \u001b[36m[TestInfoImpl]\u001b[39m,\n      _stepId: \u001b[32m'pw:api@77'\u001b[39m,\n      _title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n      _parentStep: \u001b[90mundefined\u001b[39m,\n      skip: \u001b[36m[Function (anonymous)]\u001b[39m\n    },\n    recoverFromStepError: \u001b[36m[AsyncFunction: recoverFromStepError]\u001b[39m,\n    complete: \u001b[36m[Function: complete]\u001b[39m,\n    endWallTime: \u001b[33m1756128174649\u001b[39m,\n    error: {\n      message: \u001b[32m'TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    2 × locator resolved to hidden <ytd-player id=\"inline-player\" class=\"style-scope ytd-video-preview\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_INLINE_PREVIEW\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    27 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m,\n      stack: \u001b[32m'TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    2 × locator resolved to hidden <ytd-player id=\"inline-player\" class=\"style-scope ytd-video-preview\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_INLINE_PREVIEW\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    27 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\n'\u001b[39m +\n        \u001b[32m'    at navigateToYouTubeVideo (C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts:58:14)\\n'\u001b[39m +\n        \u001b[32m'    at C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\e2e\\\\youtube-sidebar.spec.ts:101:9'\u001b[39m,\n      cause: \u001b[90mundefined\u001b[39m\n    }\n  }\n}\n"
+                            }
+                          ],
                           "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.852Z",
+                          "startTime": "2025-08-25T13:22:23.747Z",
                           "annotations": [],
-                          "attachments": []
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "C:\\code\\chrome-multitool-plugin\\test-results\\youtube-sidebar-YouTube-Si-a9a46-njects-correctly-on-YouTube-chrome-extension\\test-failed-1.png"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                            "column": 9,
+                            "line": 120
+                          }
                         }
                       ],
-                      "status": "skipped"
+                      "status": "unexpected"
                     }
                   ],
                   "id": "4b7d8860a57622f449a0-a85ffcc6944f0b81b9df",
                   "file": "youtube-sidebar.spec.ts",
-                  "line": 96,
+                  "line": 94,
                   "column": 9
                 },
                 {
                   "title": "TC-004: Sidebar has correct UI elements",
-                  "ok": true,
+                  "ok": false,
                   "tags": [],
                   "tests": [
                     {
@@ -243,30 +345,80 @@
                       "projectName": "chrome-extension",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
+                          "workerIndex": 3,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 29836,
+                          "error": {
+                            "message": "ReferenceError: context is not defined",
+                            "stack": "ReferenceError: context is not defined\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:169:9",
+                            "location": {
+                              "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                              "column": 9,
+                              "line": 169
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 167 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 168 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 169 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 170 |\u001b[39m       }\n \u001b[90m 171 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 172 |\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                                "column": 9,
+                                "line": 169
+                              },
+                              "message": "ReferenceError: context is not defined\n\n\u001b[0m \u001b[90m 167 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 168 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 169 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 170 |\u001b[39m       }\n \u001b[90m 171 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 172 |\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:169:9\u001b[22m"
+                            }
+                          ],
+                          "stdout": [
+                            {
+                              "text": "🚀 Setting up YouTube extension tests...\n"
+                            },
+                            {
+                              "text": "✅ YouTube test setup complete\n"
+                            },
+                            {
+                              "text": "🧪 TC-004: Testing sidebar UI elements...\n"
+                            },
+                            {
+                              "text": "🎬 Navigating to YouTube video: https://www.youtube.com/watch?v=BROWqjuTM0g\n"
+                            },
+                            {
+                              "text": "🧹 Cleaning up YouTube tests...\n"
+                            }
+                          ],
+                          "stderr": [
+                            {
+                              "text": "❌ TC-004 failed: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('ytd-player') to be visible\u001b[22m\n\u001b[2m    - locator resolved to hidden <ytd-player id=\"inline-player\" class=\"style-scope ytd-video-preview\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_INLINE_PREVIEW\">…</ytd-player>\u001b[22m\n\u001b[2m    28 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\u001b[22m\n\n    at navigateToYouTubeVideo \u001b[90m(C:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\utils\\youtube-helpers.ts:58:14\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\e2e\\youtube-sidebar.spec.ts:131:9 {\n  name: \u001b[32m'TimeoutError'\u001b[39m,\n  [\u001b[32mSymbol(step)\u001b[39m]: {\n    location: {\n      file: \u001b[32m'C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts'\u001b[39m,\n      line: \u001b[33m58\u001b[39m,\n      column: \u001b[33m14\u001b[39m,\n      function: \u001b[32m'navigateToYouTubeVideo'\u001b[39m\n    },\n    category: \u001b[32m'pw:api'\u001b[39m,\n    title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n    apiName: \u001b[32m'page.waitForSelector'\u001b[39m,\n    params: { selector: \u001b[32m'ytd-player'\u001b[39m, timeout: \u001b[33m15000\u001b[39m },\n    group: \u001b[90mundefined\u001b[39m,\n    stepId: \u001b[32m'pw:api@77'\u001b[39m,\n    boxedStack: \u001b[90mundefined\u001b[39m,\n    steps: [],\n    attachmentIndices: [],\n    info: TestStepInfoImpl {\n      annotations: [],\n      _testInfo: \u001b[36m[TestInfoImpl]\u001b[39m,\n      _stepId: \u001b[32m'pw:api@77'\u001b[39m,\n      _title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n      _parentStep: \u001b[90mundefined\u001b[39m,\n      skip: \u001b[36m[Function (anonymous)]\u001b[39m\n    },\n    recoverFromStepError: \u001b[36m[AsyncFunction: recoverFromStepError]\u001b[39m,\n    complete: \u001b[36m[Function: complete]\u001b[39m,\n    endWallTime: \u001b[33m1756128207439\u001b[39m,\n    error: {\n      message: \u001b[32m'TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    - locator resolved to hidden <ytd-player id=\"inline-player\" class=\"style-scope ytd-video-preview\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_INLINE_PREVIEW\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    28 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m,\n      stack: \u001b[32m'TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    - locator resolved to hidden <ytd-player id=\"inline-player\" class=\"style-scope ytd-video-preview\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_INLINE_PREVIEW\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    28 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\n'\u001b[39m +\n        \u001b[32m'    at navigateToYouTubeVideo (C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts:58:14)\\n'\u001b[39m +\n        \u001b[32m'    at C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\e2e\\\\youtube-sidebar.spec.ts:131:9'\u001b[39m,\n      cause: \u001b[90mundefined\u001b[39m\n    }\n  }\n}\n"
+                            }
+                          ],
                           "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.856Z",
+                          "startTime": "2025-08-25T13:22:57.632Z",
                           "annotations": [],
-                          "attachments": []
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "C:\\code\\chrome-multitool-plugin\\test-results\\youtube-sidebar-YouTube-Si-d2c48-bar-has-correct-UI-elements-chrome-extension\\test-failed-1.png"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                            "column": 9,
+                            "line": 169
+                          }
                         }
                       ],
-                      "status": "skipped"
+                      "status": "unexpected"
                     }
                   ],
                   "id": "4b7d8860a57622f449a0-7c458189becea25efa72",
                   "file": "youtube-sidebar.spec.ts",
-                  "line": 125,
+                  "line": 124,
                   "column": 9
                 },
                 {
                   "title": "TC-005: Sidebar close button works",
-                  "ok": true,
+                  "ok": false,
                   "tags": [],
                   "tests": [
                     {
@@ -277,20 +429,70 @@
                       "projectName": "chrome-extension",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
+                          "workerIndex": 4,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 22226,
+                          "error": {
+                            "message": "ReferenceError: context is not defined",
+                            "stack": "ReferenceError: context is not defined\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:204:9",
+                            "location": {
+                              "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                              "column": 9,
+                              "line": 204
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 202 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 203 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 204 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 205 |\u001b[39m       }\n \u001b[90m 206 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 207 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                                "column": 9,
+                                "line": 204
+                              },
+                              "message": "ReferenceError: context is not defined\n\n\u001b[0m \u001b[90m 202 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 203 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 204 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 205 |\u001b[39m       }\n \u001b[90m 206 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 207 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:204:9\u001b[22m"
+                            }
+                          ],
+                          "stdout": [
+                            {
+                              "text": "🚀 Setting up YouTube extension tests...\n"
+                            },
+                            {
+                              "text": "✅ YouTube test setup complete\n"
+                            },
+                            {
+                              "text": "🧪 TC-005: Testing sidebar close functionality...\n"
+                            },
+                            {
+                              "text": "🎬 Navigating to YouTube video: https://www.youtube.com/watch?v=BROWqjuTM0g\n"
+                            },
+                            {
+                              "text": "🧹 Cleaning up YouTube tests...\n"
+                            }
+                          ],
+                          "stderr": [
+                            {
+                              "text": "❌ TC-005 failed: page.waitForSelector: Timeout 15000ms exceeded.\nCall log:\n\u001b[2m  - waiting for locator('ytd-player') to be visible\u001b[22m\n\u001b[2m    27 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\u001b[22m\n\n    at navigateToYouTubeVideo \u001b[90m(C:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\utils\\youtube-helpers.ts:58:14\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\e2e\\youtube-sidebar.spec.ts:180:9 {\n  name: \u001b[32m'TimeoutError'\u001b[39m,\n  [\u001b[32mSymbol(step)\u001b[39m]: {\n    location: {\n      file: \u001b[32m'C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts'\u001b[39m,\n      line: \u001b[33m58\u001b[39m,\n      column: \u001b[33m14\u001b[39m,\n      function: \u001b[32m'navigateToYouTubeVideo'\u001b[39m\n    },\n    category: \u001b[32m'pw:api'\u001b[39m,\n    title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n    apiName: \u001b[32m'page.waitForSelector'\u001b[39m,\n    params: { selector: \u001b[32m'ytd-player'\u001b[39m, timeout: \u001b[33m15000\u001b[39m },\n    group: \u001b[90mundefined\u001b[39m,\n    stepId: \u001b[32m'pw:api@77'\u001b[39m,\n    boxedStack: \u001b[90mundefined\u001b[39m,\n    steps: [],\n    attachmentIndices: [],\n    info: TestStepInfoImpl {\n      annotations: [],\n      _testInfo: \u001b[36m[TestInfoImpl]\u001b[39m,\n      _stepId: \u001b[32m'pw:api@77'\u001b[39m,\n      _title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n      _parentStep: \u001b[90mundefined\u001b[39m,\n      skip: \u001b[36m[Function (anonymous)]\u001b[39m\n    },\n    recoverFromStepError: \u001b[36m[AsyncFunction: recoverFromStepError]\u001b[39m,\n    complete: \u001b[36m[Function: complete]\u001b[39m,\n    endWallTime: \u001b[33m1756128233146\u001b[39m,\n    error: {\n      message: \u001b[32m'TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    27 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m,\n      stack: \u001b[32m'TimeoutError: page.waitForSelector: Timeout 15000ms exceeded.\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    27 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\n'\u001b[39m +\n        \u001b[32m'    at navigateToYouTubeVideo (C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts:58:14)\\n'\u001b[39m +\n        \u001b[32m'    at C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\e2e\\\\youtube-sidebar.spec.ts:180:9'\u001b[39m,\n      cause: \u001b[90mundefined\u001b[39m\n    }\n  }\n}\n"
+                            }
+                          ],
                           "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.862Z",
+                          "startTime": "2025-08-25T13:23:30.699Z",
                           "annotations": [],
-                          "attachments": []
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "C:\\code\\chrome-multitool-plugin\\test-results\\youtube-sidebar-YouTube-Si-43b63--Sidebar-close-button-works-chrome-extension\\test-failed-1.png"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                            "column": 9,
+                            "line": 204
+                          }
                         }
                       ],
-                      "status": "skipped"
+                      "status": "unexpected"
                     }
                   ],
                   "id": "4b7d8860a57622f449a0-979e2225b91fe10a8893",
@@ -303,12 +505,12 @@
             {
               "title": "Video Detection",
               "file": "youtube-sidebar.spec.ts",
-              "line": 208,
+              "line": 209,
               "column": 8,
               "specs": [
                 {
                   "title": "TC-006: Video ID is correctly extracted",
-                  "ok": true,
+                  "ok": false,
                   "tags": [],
                   "tests": [
                     {
@@ -319,25 +521,69 @@
                       "projectName": "chrome-extension",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
+                          "workerIndex": 5,
+                          "parallelIndex": 0,
+                          "status": "failed",
+                          "duration": 18737,
+                          "error": {
+                            "message": "ReferenceError: context is not defined",
+                            "stack": "ReferenceError: context is not defined\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:236:9",
+                            "location": {
+                              "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                              "column": 9,
+                              "line": 236
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 234 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 235 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 236 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 237 |\u001b[39m       }\n \u001b[90m 238 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 239 |\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                                "column": 9,
+                                "line": 236
+                              },
+                              "message": "ReferenceError: context is not defined\n\n\u001b[0m \u001b[90m 234 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 235 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 236 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 237 |\u001b[39m       }\n \u001b[90m 238 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 239 |\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:236:9\u001b[22m"
+                            }
+                          ],
+                          "stdout": [
+                            {
+                              "text": "🚀 Setting up YouTube extension tests...\n"
+                            },
+                            {
+                              "text": "✅ YouTube test setup complete\n"
+                            },
+                            {
+                              "text": "🧪 TC-006: Testing video ID extraction...\n"
+                            },
+                            {
+                              "text": "🎬 Navigating to YouTube video: https://www.youtube.com/watch?v=BROWqjuTM0g\n"
+                            },
+                            {
+                              "text": "🧹 Cleaning up YouTube tests...\n"
+                            }
+                          ],
+                          "stderr": [
+                            {
+                              "text": "❌ TC-006 failed: page.waitForSelector: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('ytd-player') to be visible\u001b[22m\n\u001b[2m    6 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\u001b[22m\n\u001b[2m    - waiting for\" https://www.youtube.com/watch?v=BROWqjuTM0g\" navigation to finish...\u001b[22m\n\u001b[2m    - navigated to \"https://www.youtube.com/watch?v=BROWqjuTM0g\"\u001b[22m\n\u001b[2m    8 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\u001b[22m\n\n    at navigateToYouTubeVideo \u001b[90m(C:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\utils\\youtube-helpers.ts:58:14\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\e2e\\youtube-sidebar.spec.ts:217:9 {\n  [\u001b[32mSymbol(step)\u001b[39m]: {\n    location: {\n      file: \u001b[32m'C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts'\u001b[39m,\n      line: \u001b[33m58\u001b[39m,\n      column: \u001b[33m14\u001b[39m,\n      function: \u001b[32m'navigateToYouTubeVideo'\u001b[39m\n    },\n    category: \u001b[32m'pw:api'\u001b[39m,\n    title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n    apiName: \u001b[32m'page.waitForSelector'\u001b[39m,\n    params: { selector: \u001b[32m'ytd-player'\u001b[39m, timeout: \u001b[33m15000\u001b[39m },\n    group: \u001b[90mundefined\u001b[39m,\n    stepId: \u001b[32m'pw:api@77'\u001b[39m,\n    boxedStack: \u001b[90mundefined\u001b[39m,\n    steps: [],\n    attachmentIndices: [],\n    info: TestStepInfoImpl {\n      annotations: [],\n      _testInfo: \u001b[36m[TestInfoImpl]\u001b[39m,\n      _stepId: \u001b[32m'pw:api@77'\u001b[39m,\n      _title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n      _parentStep: \u001b[90mundefined\u001b[39m,\n      skip: \u001b[36m[Function (anonymous)]\u001b[39m\n    },\n    recoverFromStepError: \u001b[36m[AsyncFunction: recoverFromStepError]\u001b[39m,\n    complete: \u001b[36m[Function: complete]\u001b[39m,\n    endWallTime: \u001b[33m1756128255357\u001b[39m,\n    error: {\n      message: \u001b[32m'Error: page.waitForSelector: Target page, context or browser has been closed\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    6 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    - waiting for\" https://www.youtube.com/watch?v=BROWqjuTM0g\" navigation to finish...\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    - navigated to \"https://www.youtube.com/watch?v=BROWqjuTM0g\"\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    8 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m,\n      stack: \u001b[32m'Error: page.waitForSelector: Target page, context or browser has been closed\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    6 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    - waiting for\" https://www.youtube.com/watch?v=BROWqjuTM0g\" navigation to finish...\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    - navigated to \"https://www.youtube.com/watch?v=BROWqjuTM0g\"\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\x1B[2m    8 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\n'\u001b[39m +\n        \u001b[32m'    at navigateToYouTubeVideo (C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts:58:14)\\n'\u001b[39m +\n        \u001b[32m'    at C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\e2e\\\\youtube-sidebar.spec.ts:217:9'\u001b[39m,\n      cause: \u001b[90mundefined\u001b[39m\n    }\n  }\n}\n"
+                            }
+                          ],
                           "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.866Z",
+                          "startTime": "2025-08-25T13:23:56.094Z",
                           "annotations": [],
-                          "attachments": []
+                          "attachments": [],
+                          "errorLocation": {
+                            "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                            "column": 9,
+                            "line": 236
+                          }
                         }
                       ],
-                      "status": "skipped"
+                      "status": "unexpected"
                     }
                   ],
                   "id": "4b7d8860a57622f449a0-0d8ef2ac9125981a2a36",
                   "file": "youtube-sidebar.spec.ts",
-                  "line": 209,
+                  "line": 210,
                   "column": 9
                 },
                 {
@@ -353,17 +599,67 @@
                       "projectName": "chrome-extension",
                       "results": [
                         {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
+                          "workerIndex": 6,
+                          "parallelIndex": 0,
+                          "status": "interrupted",
+                          "duration": 7583,
+                          "error": {
+                            "message": "ReferenceError: context is not defined",
+                            "stack": "ReferenceError: context is not defined\n    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:272:9",
+                            "location": {
+                              "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                              "column": 9,
+                              "line": 272
+                            },
+                            "snippet": "\u001b[0m \u001b[90m 270 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 271 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 272 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 273 |\u001b[39m       }\n \u001b[90m 274 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 275 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m"
+                          },
+                          "errors": [
+                            {
+                              "location": {
+                                "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                                "column": 9,
+                                "line": 272
+                              },
+                              "message": "ReferenceError: context is not defined\n\n\u001b[0m \u001b[90m 270 |\u001b[39m       } \u001b[36mfinally\u001b[39m {\n \u001b[90m 271 |\u001b[39m         \u001b[36mawait\u001b[39m page\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n\u001b[31m\u001b[1m>\u001b[22m\u001b[39m\u001b[90m 272 |\u001b[39m         \u001b[36mawait\u001b[39m context\u001b[33m?\u001b[39m\u001b[33m.\u001b[39mclose()\u001b[33m;\u001b[39m\n \u001b[90m     |\u001b[39m         \u001b[31m\u001b[1m^\u001b[22m\u001b[39m\n \u001b[90m 273 |\u001b[39m       }\n \u001b[90m 274 |\u001b[39m     })\u001b[33m;\u001b[39m\n \u001b[90m 275 |\u001b[39m   })\u001b[33m;\u001b[39m\u001b[0m\n\u001b[2m    at C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts:272:9\u001b[22m"
+                            }
+                          ],
+                          "stdout": [
+                            {
+                              "text": "🚀 Setting up YouTube extension tests...\n"
+                            },
+                            {
+                              "text": "✅ YouTube test setup complete\n"
+                            },
+                            {
+                              "text": "🧪 TC-007: Testing navigation handling...\n"
+                            },
+                            {
+                              "text": "🎬 Navigating to YouTube video: https://www.youtube.com/watch?v=BROWqjuTM0g\n"
+                            },
+                            {
+                              "text": "🧹 Cleaning up YouTube tests...\n"
+                            }
+                          ],
+                          "stderr": [
+                            {
+                              "text": "❌ TC-007 failed: page.waitForSelector: Target page, context or browser has been closed\nCall log:\n\u001b[2m  - waiting for locator('ytd-player') to be visible\u001b[22m\n\u001b[2m    3 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\u001b[22m\n\n    at navigateToYouTubeVideo \u001b[90m(C:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\utils\\youtube-helpers.ts:58:14\u001b[90m)\u001b[39m\n    at \u001b[90mC:\\code\\chrome-multitool-plugin\\\u001b[39mtests\\e2e\\youtube-sidebar.spec.ts:247:9 {\n  [\u001b[32mSymbol(step)\u001b[39m]: {\n    location: {\n      file: \u001b[32m'C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts'\u001b[39m,\n      line: \u001b[33m58\u001b[39m,\n      column: \u001b[33m14\u001b[39m,\n      function: \u001b[32m'navigateToYouTubeVideo'\u001b[39m\n    },\n    category: \u001b[32m'pw:api'\u001b[39m,\n    title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n    apiName: \u001b[32m'page.waitForSelector'\u001b[39m,\n    params: { selector: \u001b[32m'ytd-player'\u001b[39m, timeout: \u001b[33m15000\u001b[39m },\n    group: \u001b[90mundefined\u001b[39m,\n    stepId: \u001b[32m'pw:api@78'\u001b[39m,\n    boxedStack: \u001b[90mundefined\u001b[39m,\n    steps: [],\n    attachmentIndices: [],\n    info: TestStepInfoImpl {\n      annotations: [],\n      _testInfo: \u001b[36m[TestInfoImpl]\u001b[39m,\n      _stepId: \u001b[32m'pw:api@78'\u001b[39m,\n      _title: \u001b[32m\"Wait for selector locator('ytd-player')\"\u001b[39m,\n      _parentStep: \u001b[36m[TestStepInfoImpl]\u001b[39m,\n      skip: \u001b[36m[Function (anonymous)]\u001b[39m\n    },\n    recoverFromStepError: \u001b[36m[AsyncFunction: recoverFromStepError]\u001b[39m,\n    complete: \u001b[36m[Function: complete]\u001b[39m,\n    endWallTime: \u001b[33m1756128265607\u001b[39m,\n    error: {\n      message: \u001b[32m'Error: page.waitForSelector: Target page, context or browser has been closed\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    3 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m,\n      stack: \u001b[32m'Error: page.waitForSelector: Target page, context or browser has been closed\\n'\u001b[39m +\n        \u001b[32m'Call log:\\n'\u001b[39m +\n        \u001b[32m\"\\x1B[2m  - waiting for locator('ytd-player') to be visible\\x1B[22m\\n\"\u001b[39m +\n        \u001b[32m'\\x1B[2m    3 × locator resolved to 2 elements. Proceeding with the first one: <ytd-player id=\"ytd-player\" class=\"style-scope ytd-watch-flexy\" context=\"WEB_PLAYER_CONTEXT_CONFIG_ID_KEVLAR_WATCH\">…</ytd-player>\\x1B[22m\\n'\u001b[39m +\n        \u001b[32m'\\n'\u001b[39m +\n        \u001b[32m'    at navigateToYouTubeVideo (C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\utils\\\\youtube-helpers.ts:58:14)\\n'\u001b[39m +\n        \u001b[32m'    at C:\\\\code\\\\chrome-multitool-plugin\\\\tests\\\\e2e\\\\youtube-sidebar.spec.ts:247:9'\u001b[39m,\n      cause: \u001b[90mundefined\u001b[39m\n    }\n  }\n}\n"
+                            }
+                          ],
                           "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.870Z",
+                          "startTime": "2025-08-25T13:24:17.369Z",
                           "annotations": [],
-                          "attachments": []
+                          "attachments": [
+                            {
+                              "name": "screenshot",
+                              "contentType": "image/png",
+                              "path": "C:\\code\\chrome-multitool-plugin\\test-results\\youtube-sidebar-YouTube-Si-bb4cf-reinitializes-on-navigation-chrome-extension\\test-failed-1.png"
+                            }
+                          ],
+                          "errorLocation": {
+                            "file": "C:\\code\\chrome-multitool-plugin\\tests\\e2e\\youtube-sidebar.spec.ts",
+                            "column": 9,
+                            "line": 272
+                          }
                         }
                       ],
                       "status": "skipped"
@@ -371,7 +667,7 @@
                   ],
                   "id": "4b7d8860a57622f449a0-84013f9ce62464efff96",
                   "file": "youtube-sidebar.spec.ts",
-                  "line": 238,
+                  "line": 240,
                   "column": 9
                 }
               ]
@@ -379,7 +675,7 @@
             {
               "title": "Error Handling",
               "file": "youtube-sidebar.spec.ts",
-              "line": 274,
+              "line": 277,
               "column": 8,
               "specs": [
                 {
@@ -393,27 +689,13 @@
                       "expectedStatus": "passed",
                       "projectId": "chrome-extension",
                       "projectName": "chrome-extension",
-                      "results": [
-                        {
-                          "workerIndex": -1,
-                          "parallelIndex": -1,
-                          "status": "skipped",
-                          "duration": 0,
-                          "errors": [],
-                          "stdout": [],
-                          "stderr": [],
-                          "retry": 0,
-                          "startTime": "2025-08-25T13:20:39.875Z",
-                          "annotations": [],
-                          "attachments": []
-                        }
-                      ],
+                      "results": [],
                       "status": "skipped"
                     }
                   ],
                   "id": "4b7d8860a57622f449a0-eafffb3e73dd6b4cc34d",
                   "file": "youtube-sidebar.spec.ts",
-                  "line": 275,
+                  "line": 278,
                   "column": 9
                 }
               ]
@@ -425,11 +707,11 @@
   ],
   "errors": [],
   "stats": {
-    "startTime": "2025-08-25T13:20:37.403Z",
-    "duration": 2510.7219999999998,
+    "startTime": "2025-08-25T13:22:14.112Z",
+    "duration": 133129.283,
     "expected": 0,
-    "skipped": 7,
-    "unexpected": 1,
+    "skipped": 2,
+    "unexpected": 6,
     "flaky": 0
   }
 }

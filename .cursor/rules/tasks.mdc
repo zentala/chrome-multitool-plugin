@@ -21,6 +21,26 @@ alwaysApply: true
 - [x] Add git non-interactive best practices
 - [x] Document terminal issues and solutions
 
+### 🔧 **PHASE 0: YouTube Test Fixes (1-2 weeks)**
+
+#### **Critical Issues to Fix**
+- [ ] **Browser Context API Error** - `browser.newBrowserContext is not a function`
+- [ ] **YouTube Player Detection** - Timeout waiting for ytd-player element
+- [ ] **Page Context Management** - Pages/contexts closing prematurely
+- [ ] **Cookie Consent Handling** - Automate YouTube cookie dialogs
+
+#### **Test Infrastructure Improvements**
+- [ ] **Mock Services Setup** - Proper AI and YouTube API mocking
+- [ ] **Video Fallback System** - Multiple stable test videos with auto-selection
+- [ ] **Content Script Detection** - Reliable sidebar loading verification
+- [ ] **Error Recovery** - Automatic retry mechanisms for flaky tests
+
+#### **Test Coverage Expansion**
+- [ ] **Basic Navigation Tests** - YouTube page loading and basic functionality
+- [ ] **Sidebar Integration Tests** - Content script injection and UI elements
+- [ ] **Caption Processing Tests** - Download and AI processing workflows
+- [ ] **Extension Communication Tests** - Background script messaging
+
 ### 🚀 **PHASE 1: Extended Bookmark Model (2-3 weeks)**
 
 #### **AI Metadata Foundation**
