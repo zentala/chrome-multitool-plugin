@@ -1,0 +1,86 @@
+---
+description: Project goals and success criteria
+globs: ["TODO.md", "*.md"]
+alwaysApply: true
+---
+
+# 🎯 Project Goals & Success Criteria
+
+## 📊 Current Goals (MV2)
+1. **All popup functionality** testable in E2E
+2. **Background script messaging** works in tests
+3. **Content script injection** testable on real pages
+4. **CI pipeline** runs successfully with xvfb
+5. **Cross-platform testing** works (Windows/Linux)
+
+## 🚀 Future Goals (MV3 Migration)
+1. **Service worker detection** works in Playwright
+2. **Background script** uses service worker APIs
+3. **Same test coverage** maintained
+4. **Performance improvements** from MV3 architecture
+
+## 🧠 AI-Powered Multi-Tool Extension Vision
+
+### **🎯 Core Mission:**
+**Intelligent Chrome extension** that enhances productivity through AI-powered tools and seamless integration.
+
+### **📚 YouTube Integration:**
+- **🎬 AI-Powered YouTube Analysis** - automatyczna analiza filmów z AI
+- **📝 Smart Transcripts** - ekstrakcja i analiza transkryptów z AI
+- **🔍 Semantic Search** - wyszukiwanie w filmach po znaczeniu
+- **📊 Content Summarization** - automatyczne podsumowania filmów
+- **🏷️ Auto-tagging** - tagowanie filmów na podstawie zawartości
+
+### **🔖 Advanced Bookmark Management:**
+- **Precyzyjne wyszukiwanie** bookmarków po słowach kluczowych i znaczeniach
+- **AI-generowane metadane** (tags, summaries, categories)
+- **Smart suggestions** dla reorganizacji i optymalizacji
+- **Mindmap visualization** drzewa bookmarków
+- **Seamless integration** między Chrome a lokalną bazą
+
+### **🛠️ Multi-Tool Capabilities:**
+- **💱 Currency Converter** - z integracją AI
+- **📊 Allegro Price Tracking** - z inteligentnymi alertami
+- **🎯 Productivity Tools** - rozszerzane o nowe funkcjonalności
+
+### ✅ Completed
+- [x] Create ADR explaining MV2 decision
+- [x] Document headless:false requirement
+- [x] Create ADR for fallback extension ID strategy
+- [x] Convert manifest from MV3 to MV2
+- [x] Fix background script MV2 compatibility
+- [x] Update Playwright config for headful mode
+- [x] Implement stable extension loading fixture
+- [x] Create MV2 manifest validation tests
+- [x] Reorganize documentation into structured rules
+- [x] Add git non-interactive best practices
+- [x] Document terminal issues and solutions
+
+### 🔄 In Progress - Core Features Development
+
+#### **YouTube Integration** (Priority: High)
+- [ ] **FAZA 1: Analiza** - przeanalizować kod chrome-zentala-yt i problemy
+- [ ] **FAZA 2: Migracja** - przenieść funkcjonalność do multitool
+- [ ] **FAZA 3: AI Enhancement** - dodać AI analysis dla transkryptów
+- [ ] **FAZA 4: Advanced Features** - multi-language, export, etc.
+- [ ] **CLEANUP** - usunąć folder chrome-zentala-yt/
+
+**📋 Szczegółowy plan:** [MIGRATION_YOUTUBE_PLUGIN.md](.cursor/MIGRATION_YOUTUBE_PLUGIN.md)
+
+#### **Currency Converter Enhancement**
+- [ ] Dodać AI-powered currency detection w tekście
+- [ ] Implementować smart suggestions dla walut
+- [ ] Dodać historyczne kursy walut
+- [ ] Ulepszyć error handling i clarification system
+
+#### **Allegro Integration**
+- [ ] Rozszerzyć price tracking system
+- [ ] Dodać AI analysis dla produktów
+- [ ] Implementować alert system dla cen
+- [ ] Stworzyć wishlist management
+
+### 📋 Future Goals
+- [ ] Monitor Playwright MV3 support
+- [ ] Plan MV3 migration when stable
+- [ ] Update background script to service worker
+- [ ] Test new MV3 extension loading
