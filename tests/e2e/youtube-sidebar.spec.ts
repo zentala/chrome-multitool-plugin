@@ -14,15 +14,13 @@ import {
 } from '../utils/youtube-helpers';
 
 let browser: any;
-let context: any;
 
 test.describe('YouTube Sidebar Integration', () => {
   test.beforeAll(async () => {
     console.log('🚀 Setting up YouTube extension tests...');
 
-    // Launch browser with extension
     browser = await chromium.launch({
-      headless: false, // Extensions wymagają headful mode!
+      headless: false,
       args: [
         '--disable-web-security',
         '--disable-features=VizDisplayCompositor',
@@ -38,20 +36,15 @@ test.describe('YouTube Sidebar Integration', () => {
     await browser?.close();
   });
 
-  // Helper function to create fresh context for each test
-  async function createTestContext() {
-    const testContext = await browser.newBrowserContext();
-    await mockAIService(testContext);
-    await mockYouTubeAPI(testContext);
-    return testContext;
-  }
-
   test.describe('Content Script Loading', () => {
     test('TC-001: Content script loads on YouTube pages', async () => {
       console.log('🧪 TC-001: Testing content script loading...');
 
-      const testContext = await createTestContext();
-      const page = await testContext.newPage();
+      const context = await browser.newBrowserContext();
+      await mockAIService(context);
+      await mockYouTubeAPI(context);
+
+      const page = await context.newPage();
 
       try {
         // Navigate to YouTube video
