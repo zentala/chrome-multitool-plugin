@@ -24,10 +24,7 @@
     "scripts": ["background.js"],
     "persistent": false
   },
-  "content_security_policy": {
-    "extension_pages": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;",
-    "sandbox": "sandbox allow-scripts; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;"
-  },
+  "content_security_policy": "script-src 'self' 'wasm-unsafe-eval'; object-src 'self'; style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; font-src 'self' https://fonts.gstatic.com;",
   
   "content_scripts": [
     {
@@ -46,19 +43,8 @@
       "run_at": "document_start"
     }
   ],
-
-
-  // ** Background working scripts **
-  // "background": {
-  //   "service_worker": "background.js"
-  // },
-  
-  "web_accessible_resources": [{
-    "resources": ["allegroCartPageInjector.js"],
-    "matches": ["<all_urls>"]
-  },
-  {
-    "resources": ["globalInjector.js"],
-    "matches": ["<all_urls>"]
-  }]
+  "web_accessible_resources": [
+    "allegroCartPageInjector.js",
+    "globalInjector.js"
+  ]
 }

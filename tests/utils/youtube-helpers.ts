@@ -465,7 +465,37 @@ export async function isYouTubeContentScriptLoaded(page: Page, maxRetries = 3): 
 }
 
 /**
- * Navigate with fallback videos
+ * Generic retry mechanism for flaky operations
+ */
+export async function withRetry<T>(
+  operation: () => Promise<T>,
+  maxRetries: number = 3,
+  delay: number = 1000,
+  operationName: string = 'operation'
+): Promise<T> {
+  let lastError: Error;
+
+  for (let attempt = 1; attempt <= maxRetries; attempt++) {
+    try {
+      console.log(`🔄 ${operationName} - Attempt ${attempt}/${maxRetries}`);
+      return await operation();
+    } catch (error) {
+      lastError = error as Error;
+      console.log(`❌ ${operationName} - Attempt ${attempt} failed: ${error.message}`);
+
+      if (attempt < maxRetries) {
+        console.log(`⏳ ${operationName} - Retrying in ${delay}ms...`);
+        await new Promise(resolve => setTimeout(resolve, delay));
+        delay *= 2; // Exponential backoff
+      }
+    }
+  }
+
+  throw new Error(`${operationName} failed after ${maxRetries} attempts. Last error: ${lastError.message}`);
+}
+
+/**
+ * Navigate with fallback videos and retry mechanism
  */
 export async function navigateToYouTubeVideoWithFallback(page: Page): Promise<string> {
   const videos = [
@@ -476,17 +506,23 @@ export async function navigateToYouTubeVideoWithFallback(page: Page): Promise<st
     YOUTUBE_TEST_VIDEOS.fallback // Most stable fallback
   ];
 
-  for (const video of videos) {
-    try {
-      console.log(`🎬 Trying video: ${video.title}`);
-      await navigateToYouTubeVideo(page, video.url);
-      console.log(`✅ Successfully loaded: ${video.title}`);
-      return video.url;
-    } catch (error) {
-      console.log(`❌ Failed to load ${video.title}:`, error.message);
-      continue;
-    }
-  }
-
-  throw new Error('All test videos failed to load');
+  return await withRetry(
+    async () => {
+      for (const video of videos) {
+        try {
+          console.log(`🎬 Trying video: ${video.title}`);
+          await navigateToYouTubeVideo(page, video.url);
+          console.log(`✅ Successfully loaded: ${video.title}`);
+          return video.url;
+        } catch (error) {
+          console.log(`❌ Failed to load ${video.title}:`, error.message);
+          continue;
+        }
+      }
+      throw new Error('All test videos failed to load');
+    },
+    2, // max retries for the entire operation
+    2000, // delay between retries
+    'YouTube Video Navigation'
+  );
 }
